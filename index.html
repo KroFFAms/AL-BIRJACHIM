@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1b33"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Buxgalter paneli</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--line:#e3e8f0;--tx:#18212f;--mut:#667085;--acc:#2f6fed;--acc2:#e9f0ff;--ok:#12a150;--bad:#e5484d;--warn:#d98a00;--inp:#fff;--shadow:0 1px 2px rgba(16,24,40,.05),0 6px 18px rgba(16,24,40,.05);--side:#0f1b33;--sidetx:#b8c4dc}
+[data-theme=dark]{--bg:#0e1420;--card:#161e2e;--line:#253046;--tx:#e8edf6;--mut:#8e9ab0;--acc:#5b92ff;--acc2:#1b2947;--ok:#3ccf7e;--bad:#ff6b6f;--warn:#f0b13a;--inp:#111a2a;--shadow:none;--side:#09101c;--sidetx:#9fb0cc}
+*{box-sizing:border-box}
+html{color-scheme:light}[data-theme=dark]{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{display:flex;min-height:100vh}.mainw{flex:1;min-width:0}
+.side{display:none}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ttl{font-size:18px;font-weight:700;flex:1;min-width:140px;letter-spacing:-.01em}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.syn{font-size:12px;color:var(--mut)}
+main{padding:16px;max-width:1200px;margin:0 auto;padding-bottom:96px}
+select,input,textarea{width:100%;background:var(--inp);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:var(--acc)}
+.co{width:auto;min-width:150px;font-weight:600}.mo{width:150px}
+button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer;transition:.15s}
+button:hover{border-color:var(--acc)}
+button.p{background:var(--acc);color:#fff;border:0;font-weight:600}button.p:hover{filter:brightness(1.08)}
+button.s{padding:5px 10px;font-size:13px}.ib{width:38px;padding:8px 0;text-align:center}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:12px;margin:0 0 10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.card.bad{border-color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:14px}
+.kpi{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+.kpi small{color:var(--mut);display:block;font-size:12px}.kpi b{font-size:22px;letter-spacing:-.02em;display:block;margin:2px 0}.dl{font-size:12px}
+.ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--acc2);color:var(--acc)}
+.ic.ok{background:rgba(18,161,80,.12);color:var(--ok)}.ic.bad{background:rgba(229,72,77,.12);color:var(--bad)}.ic.warn{background:rgba(217,138,0,.14);color:var(--warn)}
+.g2,.g2e{display:grid;gap:14px;margin-bottom:14px}.g2>.card,.g2e>.card{margin-bottom:0}
+.leg{display:flex;gap:16px;font-size:12px;color:var(--mut);margin-top:6px;flex-wrap:wrap}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.don{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.qa{display:flex;gap:8px;flex-wrap:wrap}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.mut{color:var(--mut)}
+.item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.item:first-of-type{border-top:0}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--acc2);color:var(--acc);font-weight:600}
+.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:8px}.f .w{grid-column:1/-1}
+.chat{max-height:48vh;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.m{padding:9px 13px;border-radius:14px;max-width:86%;white-space:pre-wrap}
+.m.u{background:var(--acc);color:#fff;align-self:flex-end}.m.a{background:var(--acc2);align-self:flex-start}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+details.ck{border-top:1px solid var(--line);padding:10px 0}details.ck:first-of-type{border-top:0}details.ck summary{cursor:pointer}
+label.mut{font-size:12px;display:block;margin-bottom:3px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chips button{font-size:12px;padding:6px 11px;border-radius:99px}
+.paper{background:#fff;color:#111;padding:20px;border-radius:10px;border:1px solid var(--line);font:14px/1.55 'Times New Roman',Georgia,serif;overflow-x:auto}
+.paper table{border-collapse:collapse;width:100%;margin:8px 0}.paper td,.paper th{border:1px solid #333;padding:4px 6px;font-size:13px}
+.paper table.sg td{border:0;padding-top:22px}.paper h3{text-align:center;margin:12px 0}.paper .c{text-align:center}.paper .r{text-align:right}
+.hero{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,var(--acc),#6f9bff);color:#fff;border:0}
+.hero h2{color:#e6eeff}.hero p{margin:0 0 8px}.hero button{background:#fff;color:#1d4ed8;border:0;font-weight:700}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;overflow-x:auto;padding-bottom:env(safe-area-inset-bottom,0);z-index:6}
+nav button{flex:1 0 auto;min-width:64px;border:0;border-radius:0;background:none;color:var(--mut);padding:8px 8px;font-size:11px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--acc);font-weight:700}
+@media(max-width:600px){
+ .top{padding:10px 12px;gap:6px}.ttl{font-size:16px;flex:1 0 100%}.ctl{width:100%;flex-wrap:nowrap}.co{flex:1;min-width:0}.mo{width:128px}
+ main{padding:12px;padding-bottom:84px}
+ .kpis{grid-template-columns:1fr 1fr;gap:10px}.kpi{padding:12px;gap:8px;flex-direction:column;align-items:flex-start}.kpi b{font-size:18px}.ic{width:34px;height:34px}.dl .mut{display:none}
+ .card{padding:14px}.g2,.g2e{grid-template-columns:1fr}
+}
+@media(min-width:900px){
+ .side{display:flex;flex-direction:column;gap:2px;width:236px;flex:none;position:sticky;top:0;height:100vh;background:var(--side);padding:18px 12px;overflow:auto}
+ .logo{font-weight:800;font-size:18px;color:#fff;padding:4px 12px 18px;display:flex;align-items:center;gap:10px}.logo .dot{width:26px;height:26px;border-radius:8px;background:var(--acc);display:grid;place-items:center;font-size:14px}
+ .si{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--sidetx);cursor:pointer;border:0;background:none;width:100%;text-align:left;font-size:14px}
+ .si:hover{background:rgba(255,255,255,.06)}.si.on{background:rgba(255,255,255,.12);color:#fff;font-weight:600}
+ .sfoot{margin-top:auto;font-size:12px;color:var(--sidetx);padding:10px 12px}
+ nav{display:none}main{padding:22px;padding-bottom:40px}
+ .g2{grid-template-columns:2fr 1fr}.g2e{grid-template-columns:1fr 1fr}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="mainw">
+    <header class="top">
+      <div class="ttl" id="ttl"></div>
+      <div class="ctl"><select id="co" class="co"></select><input id="mo" class="mo" type="month"><span id="syn" class="syn"></span><button id="thm" class="ib" title="Kun / tun rejimi"></button></div>
+    </header>
+    <main id="v"></main>
+  </div>
+</div>
+<nav id="nav"></nav>
+
+<script>
+const KEY='buxgalter_panel_v1', VAT=12;
+const TABS=[['bosh','Bosh','Boshqaruv paneli'],['hujjat','Hujjat','Hujjatlar'],['bank','Bank','Bank va solishtirish'],['qqs','Soliq','Soliq hisobi'],['muddat','Muddat','Muddatlar'],['lot','Lotlar','Lotlar tahlili'],['arxiv','Arxiv','Hujjatlar arxivi'],['namuna','Namuna','Hujjat namunalari'],['bot','Yordamchi','Yordamchi'],['sozlama','Sozlama','Sozlamalar va bulut']];
+const IC={bosh:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10',hujjat:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8',
+ bank:'M2 5h20v14H2z M2 10h20',qqs:'M19 5L5 19 M7 5.5a2 2 0 1 0 .01 0 M17 16.5a2 2 0 1 0 .01 0',muddat:'M3 4h18v18H3z M16 2v4 M8 2v4 M3 10h18',
+ arxiv:'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z',namuna:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M12 18v-6 M9 15h6',
+ bot:'M21 12a8 8 0 0 1-11.7 7L3 21l2-5.3A8 8 0 1 1 21 12z',sozlama:'M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6',
+ lot:'M12 20V10 M18 20V4 M6 20v-4',up:'M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6',cart:'M6 6h15l-1.5 9h-12z M6 6L5 2H2 M9 20a1 1 0 1 0 .01 0 M18 20a1 1 0 1 0 .01 0',money:'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'};
+const ico=(k,s)=>`<svg width="${s||20}" height="${s||20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${IC[k]}"/></svg>`;
+function applyTheme(){if(document.documentElement&&document.documentElement.setAttribute)document.documentElement.setAttribute('data-theme',S.theme==='dark'?'dark':'light')}
+function blank(){return{docs:[],bank:[],dl:[],files:[],chat:[]}}
+function load(){
+  try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.cos)return r}catch(e){}
+  return{co:'KROFF',month:new Date().toISOString().slice(0,7),tab:'bosh',cos:{'KROFF':blank(),'AMS':blank(),'Drive Upgrade':blank()}};
+}
+let S=load();S.cfg=S.cfg||{};S.hash=S.hash||{};S.lastPull=S.lastPull||0;
+const TAXDEF={'KROFF':{mode:'aylanma',rate:4},'AMS':{mode:'qqs',rate:12},'Drive Upgrade':{mode:'qqs',rate:12}};
+Object.keys(S.cos).forEach(c=>{S.cos[c].tax=S.cos[c].tax||Object.assign({},TAXDEF[c]||{mode:'qqs',rate:12});S.cos[c].files=S.cos[c].files||[]});
+function taxOf(d){return d.tax||{mode:'qqs',rate:12}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}syncSoon()}
+const D=()=>S.cos[S.co];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const today=()=>new Date().toISOString().slice(0,10);
+const vatOf=d=>d.vat?d.sum*VAT/(100+VAT):0;
+
+/* ---- hisob-kitob ---- */
+function reconcile(d){
+  const used=new Set(),by={};
+  d.docs.forEach(doc=>{if(!doc.link)return;const b=d.bank.find(x=>x.id===doc.link&&!used.has(x.id));
+    if(b){used.add(b.id);by[doc.id]={doc,b,st:b.sum===doc.sum?'ok':'diff',diff:b.sum-doc.sum,linked:true}}});
+  d.docs.forEach(doc=>{
+    if(by[doc.id])return;
+    const dir=doc.type==='sotuv'?'in':'out';
+    const c=d.bank.filter(b=>!used.has(b.id)&&b.dir===dir);
+    let b=c.find(x=>x.sum===doc.sum);
+    if(b){used.add(b.id);by[doc.id]={doc,b,st:'ok',diff:0};return}
+    b=doc.no&&c.find(x=>x.desc.toLowerCase().includes(doc.no.toLowerCase()));
+    if(b){used.add(b.id);by[doc.id]={doc,b,st:'diff',diff:b.sum-doc.sum};return}
+    by[doc.id]={doc,b:null,st:'none',diff:0};
+  });
+  return{rows:d.docs.map(x=>by[x.id]),extra:d.bank.filter(b=>!used.has(b.id))};
+}
+function debts(d){
+  const r=reconcile(d),rec={},pay={};
+  r.rows.forEach(x=>{
+    let amt=0;if(x.st==='none')amt=x.doc.sum;else if(x.st==='diff'&&x.diff<0)amt=-x.diff;
+    if(amt<=0)return;
+    const m=x.doc.type==='sotuv'?rec:pay,k=(x.doc.party||'(nomsiz)').trim(),kk=k.toLowerCase();
+    m[kk]=m[kk]||{party:k,sum:0,n:0};m[kk].sum+=amt;m[kk].n++;
+  });
+  const f=m=>Object.values(m).sort((a,b)=>b.sum-a.sum);
+  return{rec:f(rec),pay:f(pay)};
+}
+function debtsHtml(d){
+  const db=debts(d),row=(a,c)=>a.slice(0,5).map(x=>`<div class="item"><span>${esc(x.party)} <span class="mut">(${x.n})</span></span><b class="${c}">${fmt(x.sum)}</b></div>`).join('')||'<div class="mut">—</div>';
+  if(!db.rec.length&&!db.pay.length)return'<div class="card"><h2>Qarzlar</h2><span class="mut">Bank tasdiqlamagan qarz yoʻq.</span></div>';
+  return`<div class="card"><h2>Qarzlar (bank tasdiqlamagan)</h2><div class="mut">Mijozlar sizga:</div>${row(db.rec,'ok')}<div class="mut" style="margin-top:8px">Siz taʼminotchilarga:</div>${row(db.pay,'warn')}</div>`;
+}
+function stats(d,m){
+  const ds=d.docs.filter(x=>x.date.startsWith(m));
+  const s=ds.filter(x=>x.type==='sotuv'),h=ds.filter(x=>x.type==='xarid');
+  const sum=a=>a.reduce((t,x)=>t+x.sum,0), v=a=>a.reduce((t,x)=>t+vatOf(x),0);
+  const out=v(s),inn=v(h);
+  const tx=taxOf(d),turn=sum(s)*tx.rate/100;
+  return{sales:sum(s),buys:sum(h),outVat:out,inVat:inn,pay:out-inn,turn,tax:tx.mode==='qqs'?out-inn:turn,mode:tx.mode,rate:tx.rate,profit:sum(s)-sum(h),n:ds.length};
+}
+function daysLeft(dt){return Math.ceil((new Date(dt+'T00:00:00')-new Date(today()+'T00:00:00'))/864e5)}
+function nextMonthDay(m,day){const[y,mm]=m.split('-').map(Number);const dt=new Date(y,mm,day);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+
+/* ---- ekranlar ---- */
+
+let PEND=null;
+function normDate(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date)return new Date(v.getTime()+432e5).toISOString().slice(0,10);
+  const s=String(v).trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))return m[1]+'-'+m[2]+'-'+m[3];
+  if(m=s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/))return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');
+  return null;
+}
+function num(v){
+  if(typeof v==='number')return v;
+  if(v==null)return NaN;
+  let s=String(v).replace(/[\s\u00a0]/g,'');
+  if(s==='')return NaN;
+  if(/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s))s=s.replace(/,/g,'');
+  else if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s))s=s.replace(/\./g,'').replace(',','.');
+  else s=s.replace(',','.');
+  return /^-?\d+(\.\d+)?$/.test(s)?parseFloat(s):NaN;
+}
+function parseDelim(txt,dl){
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"'&&cur==='')q=true;
+    else if(c===dl){row.push(cur.trim());cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cur.trim());cur='';if(row.some(x=>x!==''))rows.push(row);row=[]}
+    else cur+=c}
+  row.push(cur.trim());if(row.some(x=>x!==''))rows.push(row);
+  return rows;
+}
+function readRows(file){return new Promise((res,rej)=>{
+  const fr=new FileReader();
+  fr.onerror=()=>rej(new Error('Fayl oʻqilmadi'));
+  fr.onload=()=>{try{
+    const buf=fr.result;
+    if(/\.json$/i.test(file.name)){
+      let j=JSON.parse(new TextDecoder('utf-8').decode(buf));if(!Array.isArray(j))j=j.items||j.data||j.results||[];
+      if(!j.length||typeof j[0]!=='object')throw new Error('JSON ichida roʻyxat topilmadi');
+      const keys=[];j.forEach(o=>Object.keys(o).forEach(k=>{if(keys.indexOf(k)<0)keys.push(k)}));
+      return res([keys].concat(j.map(o=>keys.map(k=>o[k]==null?'':(typeof o[k]==='object'?JSON.stringify(o[k]):o[k])))));
+    }
+    if(/\.xlsx?$/i.test(file.name)){
+      if(!window.XLSX)throw new Error('Excel kutubxonasi yuklanmadi (internet kerak)');
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      return res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''}));
+    }
+    let txt;try{txt=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){txt=new TextDecoder('windows-1251').decode(buf)}
+    const lines=txt.split(/\r?\n/).filter(l=>l.trim());
+    const dl=['#',';','\t','|',','].map(c=>[c,lines.slice(0,20).reduce((a,l)=>a+(l.split(c).length-1),0)]).sort((a,b)=>b[1]-a[1])[0][0];
+    res(parseDelim(txt,dl));
+  }catch(e){rej(e)}};
+  fr.readAsArrayBuffer(file);
+})}
+function guess(rows){
+  const sm=rows.slice(0,200),n=Math.max(0,...sm.map(r=>r.length)),dc=[],nu=[],tx=[];
+  for(let i=0;i<n;i++){let d=0,m=0,t=0,c=0,mx=0;
+    sm.forEach(r=>{const v=r[i];if(v===''||v==null)return;c++;
+      if(normDate(v))d++;else if(!isNaN(num(v))){m++;mx=Math.max(mx,Math.abs(num(v)))}else t+=String(v).length});
+    dc.push(d);nu.push(m>=2&&mx>=1000?m:0);tx.push(c?t/c:0)}
+  const date=dc.indexOf(Math.max(...dc)),numc=[];
+  nu.forEach((m,i)=>{if(i!==date&&m>0)numc.push(i)});
+  return{date,desc:tx.indexOf(Math.max(...tx)),num:numc};
+}
+function opts(rows,ref,sel,none){
+  const n=Math.max(0,...rows.slice(0,50).map(r=>r.length));
+  let h=none?`<option value="-1" ${sel===-1?'selected':''}>— yoʻq —</option>`:'';
+  for(let i=0;i<n;i++)h+=`<option value="${i}" ${i===sel?'selected':''}>${i+1}: ${esc(String(ref[i]??'').slice(0,18))}</option>`;
+  return h;
+}
+function importCard(kind){
+  const bank=kind==='bank';
+  let h=`<div class="card"><h2>${bank?'Bank':'Hujjat'} · fayldan yuklash</h2><input id="f_${kind}" type="file" accept=".xlsx,.xls,.csv,.txt,.tsv"><div class="note">Excel, CSV yoki TXT. Keyin ustunlarni tanlaysiz. Qayta yuklasangiz takrorlar qoʻshilmaydi.</div>${bank?'<div style="margin-top:8px"><button class="s" data-a="clrbank">Bank harakatlarini tozalash</button></div>':''}</div>`;
+  if(PEND&&PEND.kind===kind){
+    const g=guess(PEND.rows),ref=PEND.rows.find(r=>r.some(v=>normDate(v)))||PEND.rows[0]||[];
+    const nm=(l,id,sel,none)=>`<div><label class="mut">${l}</label><select id="${id}">${opts(PEND.rows,ref,sel,none)}</select></div>`;
+    const body=bank
+      ?nm('Sana','m_date',g.date)+nm('Izoh (hujjat raqami shu yerda)','m_desc',g.desc)+nm('Kirim yoki summa','m_in',g.num[0]??-1,true)+nm('Chiqim (alohida ustun boʻlsa)','m_out',g.num[1]??-1,true)
+      :nm('Sana','m_date',g.date)+nm('Hujjat raqami','m_no',-1,true)+nm('Kontragent','m_party',g.desc,true)+nm('Summa','m_sum',g.num[0]??-1)+nm('Turi (sotuv/xarid)','m_type',-1,true)
+        +'<div><label class="mut">Turi (ustun boʻlmasa)</label><select id="m_dtype"><option value="sotuv">Sotuv</option><option value="xarid">Xarid</option></select></div><div><label class="mut">QQS</label><select id="m_dvat"><option value="1">QQS bilan</option><option value="0">QQS yoʻq</option></select></div>';
+    h+=`<div class="card"><h2>Ustunlarni tanlang · ${PEND.rows.length} qator</h2><div class="f">${body}<button class="p" data-a="map${kind}">Yuklash</button><button data-a="mapcancel">Bekor</button></div></div>`;
+  }
+  return h;
+}
+function checks(d){
+  const L=[],r=reconcile(d),t=today(),s=stats(d,S.month);
+  const none=r.rows.filter(x=>x.st==='none'),diff=r.rows.filter(x=>x.st==='diff');
+  if(none.length)L.push({c:'bad',t:`${none.length} ta hujjat bankda topilmadi (${fmt(none.reduce((a,x)=>a+x.doc.sum,0))} soʻm)`,
+    w:'toʻlov hali qilinmagan (qarz), boshqa hisob raqamdan oʻtgan, yoki bank izohida hujjat raqami yoʻq va summa boshqacha.',
+    f:'Qarz boʻlsa uni muddat bilan yozib qoʻying. Toʻlangan boʻlsa “Bank” boʻlimida koʻchirmani yangilang.'});
+  if(diff.length)L.push({c:'warn',t:`${diff.length} ta hujjatda summa farqi bor (jami ${fmt(diff.reduce((a,x)=>a+x.diff,0))} soʻm)`,
+    w:'qisman toʻlov, chegirma, bank komissiyasi yoki hujjatga summa xato kiritilgan boʻlishi mumkin.',
+    f:'“Bank” boʻlimida farqli qatorni oching, hujjat va toʻlov summasini solishtiring. Kerak boʻlsa hujjatni tuzating.'});
+  if(r.extra.length)L.push({c:'warn',t:`${r.extra.length} ta bank harakati hujjatsiz (${fmt(r.extra.reduce((a,b)=>a+b.sum,0))} soʻm)`,
+    w:'avans, kredit yoki qarz, ichki oʻtkazma, soliq toʻlovi yoki hujjat hali kiritilmagan.',
+    f:'Har birining sababini aniqlang. Hujjati yoʻq boʻlsa, hujjatni kiriting yoki buxgalteriyada toʻgʻri hisobga qoʻying.'});
+  const seen={};d.docs.forEach(x=>{if(!x.no)return;const k=x.type+'|'+x.no.toLowerCase()+'|'+(x.party||'').toLowerCase();seen[k]=(seen[k]||0)+1});
+  const dup=Object.keys(seen).filter(k=>seen[k]>1);
+  if(dup.length)L.push({c:'bad',t:`${dup.length} ta hujjat raqami takrorlangan`,w:'bir hujjat ikki marta kiritilgan boʻlishi mumkin. Bu summani va QQSni ikki hissa qiladi.',f:'“Hujjat” roʻyxatida bir xil raqamli qatorlarni topib, ortiqchasini oʻchiring.'});
+  const fut=d.docs.filter(x=>x.date>t).length;
+  if(fut)L.push({c:'warn',t:`${fut} ta hujjat kelajak sanasi bilan`,w:'sana xato yozilgan boʻlishi mumkin.',f:'Sanani tekshiring.'});
+  const nn=d.docs.filter(x=>!x.no).length;
+  if(nn)L.push({c:'warn',t:`${nn} ta hujjatda raqam yoʻq`,w:'raqamsiz hujjatni bank toʻlovi bilan faqat summa orqali bogʻlash mumkin, bu xatoga olib kelishi mumkin.',f:'Hujjat raqamini kiriting.'});
+  if(s.mode==='qqs'&&s.inVat>s.outVat&&s.inVat>0)L.push({c:'warn',t:`${S.month}: xariddan QQS sotuvdagidan katta`,w:'oy davomida koʻproq xarid qilingan yoki sotuv hujjatlari hali kiritilmagan.',f:'Sotuv hujjatlari toʻliqligini tekshiring. Ortiqcha QQSni keyingi oyga oʻtkazish yoki qaytarish masalasini buxgalter bilan hal qiling.'});
+  d.dl.filter(x=>!x.done).forEach(x=>{const n=daysLeft(x.date);
+    if(n<0)L.push({c:'bad',t:`Muddat oʻtgan: ${esc(x.title)} (${-n} kun)`,w:'muddat oʻtib ketgan va bajarilgan deb belgilanmagan.',f:'Bajarilgan boʻlsa ✓ bosing. Boʻlmasa darrov bajaring, jarima boʻlishi mumkin.'});
+    else if(n<=5)L.push({c:'warn',t:`Yaqin muddat: ${esc(x.title)} (${n} kun qoldi)`,w:'muddatga oz qoldi.',f:'Hujjatlarni tayyorlang.'})});
+  return L;
+}
+function ckHtml(d){
+  if(!d.docs.length&&!d.bank.length&&!d.dl.length)return '<span class="mut">Maʼlumot yoʻq. Hujjat va bank yuklang yoki “Namuna maʼlumot”ni bosing.</span>';
+  const ck=checks(d);
+  return ck.length?ck.map(x=>`<details class="ck"><summary class="${x.c}">${x.t}</summary><div class="mut" style="margin-top:6px"><b>Nega:</b> ${x.w}<br><b>Nima qilish:</b> ${x.f}</div></details>`).join(''):'<span class="ok">Muammo topilmadi.</span>';
+}
+const TEACH={
+ qqs:'QQS (12%) hisobi:\n1) Sotuv fakturalaridagi QQS, bu siz mijozdan olgan.\n2) Xarid fakturalaridagi QQS, bu siz taʼminotchiga toʻlagan.\n3) Farq (1 − 2) davlatga toʻlanadi.\nFaqat “QQS bilan” kiritilgan hujjatlar hisoblanadi. Aylanma soliq toʻlovchida QQS boʻlmaydi: bunday hujjatni “QQS yoʻq” deb kiriting. Topshirishdan oldin buxgalter bilan tekshiring.',
+ osv:'1C dan hisobot olish:\n1) Отчеты → Оборотно-сальдовая ведомость.\n2) Davrni tanlang, Сформировать.\n3) Excelga saqlash: hisobotda Ctrl+S, turini “Лист Excel (*.xlsx)” qiling.\nHozircha ОСВ ni panel oʻqimaydi. Keyingi versiyada qoʻshamiz.',
+ bank:'Bank faylini yuklash:\n1) Bankdan koʻchirmani TXT yoki Excel qilib yuklab oling.\n2) Panelda “Bank” boʻlimida “fayldan yuklash” orqali tanlang.\n3) Ustunlarni koʻrsating: sana, izoh, kirim/chiqim. Birinchi marta shuning uchun 1 daqiqa ketadi.\nQayta yuklasangiz takrorlar qoʻshilmaydi.',
+ aylanma:'Aylanma soliq: baza davr daromadi (aylanma), foyda emas. Soliq = aylanma × stavka. Bunda QQS alohida hisoblanmaydi, xarid xarajatlari soliqni kamaytirmaydi. Hisobot muddatini “Muddat” boʻlimiga qoʻying. “Soliq” boʻlimida rejim va stavkani oʻzgartirish mumkin, hisob taxminiy.',
+ didox:'Didox fakturalari:\nAgar Didox roʻyxatni Excel yoki CSV qilib bersa, “Hujjat” boʻlimidan fayl sifatida yuklang va ustunlarni tanlang. Zip arxivdagi fakturalarni toʻgʻridan-toʻgʻri oʻqishni keyingi versiyada qoʻshamiz.'
+};
+
+/* ---- bulut (Supabase) ---- */
+let busy=false,t0=null;
+const setSyn=t=>{const e=$('syn');if(e)e.textContent=t};
+function setSess(j){S.sess={at:j.access_token,rt:j.refresh_token,exp:Date.now()+j.expires_in*1000-60000}}
+async function cloudLogin(email,pw){
+  const r=await fetch(S.cfg.url+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:S.cfg.key,'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+  const j=await r.json();if(!r.ok)throw new Error(j.error_description||j.msg||j.message||j.error||('Kirish xato ('+r.status+')'));setSess(j);
+}
+async function ensureAuth(){
+  if(!S.sess)throw new Error('Kirilmagan');
+  if(Date.now()<S.sess.exp)return;
+  const r=await fetch(S.cfg.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:S.cfg.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:S.sess.rt})});
+  const j=await r.json();if(!r.ok){S.sess=null;throw new Error('Qayta kiring')}setSess(j);
+}
+async function sb(path,opt){
+  opt=opt||{};await ensureAuth();
+  const r=await fetch(S.cfg.url+'/rest/v1/'+path,{method:opt.method||'GET',body:opt.body,headers:Object.assign({apikey:S.cfg.key,Authorization:'Bearer '+S.sess.at,'Content-Type':'application/json'},opt.headers||{})});
+  if(!r.ok)throw new Error(r.status+' '+(await r.text()).slice(0,140));
+  return r.status===204?null:r.json();
+}
+const arrOf=(d,k)=>k==='doc'?d.docs:k==='bank'?d.bank:k==='file'?(d.files=d.files||[]):d.dl;
+async function syncPush(){
+  const up=[],seen={};
+  Object.keys(S.cos).forEach(co=>['doc','bank','dl','file'].forEach(k=>arrOf(S.cos[co],k).forEach(x=>{
+    const key=co+'|'+k+'|'+x.id,js=JSON.stringify(x);seen[key]=1;
+    if(S.hash[key]!==js)up.push({co,kind:k,id:x.id,data:x,deleted:false,ts:Date.now(),_k:key,_js:js})})));
+  Object.keys(S.hash).forEach(key=>{if(!seen[key]){const p=key.split('|');up.push({co:p[0],kind:p[1],id:p[2],data:{},deleted:true,ts:Date.now(),_k:key,_js:null})}});
+  for(let i=0;i<up.length;i+=400){
+    const part=up.slice(i,i+400);
+    await sb('rows?on_conflict=co,kind,id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(part.map(u=>({co:u.co,kind:u.kind,id:u.id,data:u.data,deleted:u.deleted,ts:u.ts})))});
+    part.forEach(u=>{if(u._js===null)delete S.hash[u._k];else S.hash[u._k]=u._js});
+  }
+  return up.length;
+}
+async function syncPull(){
+  let total=0;
+  for(;;){
+    const rows=await sb('rows?select=co,kind,id,data,deleted,ts&ts=gt.'+S.lastPull+'&order=ts.asc&limit=1000');
+    rows.forEach(r=>{
+      const d=S.cos[r.co];if(!d)return;
+      const arr=arrOf(d,r.kind),i=arr.findIndex(x=>x.id===r.id),key=r.co+'|'+r.kind+'|'+r.id;
+      if(r.deleted){if(i>=0)arr.splice(i,1);delete S.hash[key]}
+      else{if(i>=0)arr[i]=r.data;else arr.push(r.data);S.hash[key]=JSON.stringify(r.data)}
+      S.lastPull=Math.max(S.lastPull,r.ts);
+    });
+    total+=rows.length;if(rows.length<1000)break;
+  }
+  return total;
+}
+function syncSoon(){if(!S.cfg.url||!S.sess)return;clearTimeout(t0);t0=setTimeout(()=>syncAll(false),1200)}
+async function syncAll(manual){
+  if(busy||!S.cfg.url||!S.sess)return;busy=true;setSyn('⟳');
+  try{
+    await syncPush();const n=await syncPull();S.last=Date.now();
+    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+    setSyn('☁ ✓');if(n||manual)render();
+  }catch(e){setSyn('☁ xato');if(manual)alert('Sinxron xato: '+e.message)}
+  finally{busy=false}
+}
+function cloudStatus(){
+  if(!S.cfg.url)return'Ulanmagan. Supabase maʼlumotlarini kiriting.';
+  if(!S.sess)return'Kirilmagan. Email va parolni kiriting.';
+  return'Ulangan: '+esc(S.cfg.email||'')+(S.last?' · oxirgi sinxron: '+new Date(S.last).toLocaleTimeString('ru-RU').slice(0,5):'');
+}
+
+/* ---- namunalar, arxiv ---- */
+const REKDEF={
+  'KROFF':{nom:'KROFF',turi:'MChJ',stir:'311880744',rahbar:'Bozorov Anvarjon Akmal oʻgʻli',lav:'Direktor',manzil:'Buxoro viloyati, Qorovulbozor',tel:'+998 93 681 68 67'},
+  'AMS':{nom:'ANVARJON METAL SERVIS 2020',turi:'MChJ',stir:'307291211',rahbar:'Bozorov Anvarjon Akmal oʻgʻli',lav:'Direktor',manzil:'',tel:''},
+  'Drive Upgrade':{nom:'Drive Upgrade',turi:'MChJ',stir:'',rahbar:'',lav:'Direktor',manzil:'',tel:''}
+};
+const REK=()=>D().rek||(D().rek=Object.assign({nom:S.co,turi:'MChJ',stir:'',rahbar:'',lav:'Direktor',manzil:'',tel:''},REKDEF[S.co]||{}));
+const CATS=['Ustav','Dalolatnoma','Maʼlumotnoma','Akt','Bayonnoma','Qaror','Buyruq','Ishonchnoma','Shartnoma','Guvohnoma / litsenziya','Boshqa'];
+let OUT=null;
+function uzWords(n){
+  n=Math.abs(Math.round(n));if(n===0)return'nol';
+  const u=['','bir','ikki','uch','toʻrt','besh','olti','yetti','sakkiz','toʻqqiz'],t=['','oʻn','yigirma','oʻttiz','qirq','ellik','oltmish','yetmish','sakson','toʻqson'];
+  const tri=x=>{let s='';const hh=Math.floor(x/100),r=x%100;if(hh)s+=u[hh]+' yuz ';if(r>=10)s+=t[Math.floor(r/10)]+' ';if(r%10)s+=u[r%10]+' ';return s};
+  let out='';[[1e9,'milliard'],[1e6,'million'],[1e3,'ming'],[1,'']].forEach(([v,nm])=>{const q=Math.floor(n/v);if(q){out+=tri(q)+(nm?nm+' ':'');n%=v}});
+  return out.trim();
+}
+const fd=s=>{const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'.'+m[2]+'.'+m[1]:(s||'____')};
+const no_=s=>esc(s||'____'),nl=s=>esc(s||'').replace(/\n/g,'<br>'),lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const place=c=>(c.manzil||'').split(',').pop().trim()||'____';
+const hd=c=>`<p class="c"><b>${esc(c.nom||'____')} ${esc(c.turi||'')}</b><br>STIR: ${esc(c.stir||'____')}${c.manzil?' · '+esc(c.manzil):''}</p>`;
+const sig=(rol,fio)=>`<table class="sg"><tr><td>${esc(rol)}</td><td class="c">_______________</td><td>${esc(fio||'')}</td></tr></table>`;
+const money=n=>`<b>${fmt(n)}</b> soʻm (${uzWords(n)} soʻm)`;
+function rowsTbl(txt){
+  let total=0;const rows=lines(txt).map((l,i)=>{const p=l.split(';').map(x=>x.trim()),q=num(p[1])||0,pr=num(p[2])||0,s=q*pr;total+=s;
+    return`<tr><td class="c">${i+1}</td><td>${esc(p[0])}</td><td class="r">${fmt(q)}</td><td class="r">${fmt(pr)}</td><td class="r">${fmt(s)}</td></tr>`});
+  return{total,html:`<table><tr><th>№</th><th>Nomi</th><th>Miqdor</th><th>Narx</th><th>Summa</th></tr>${rows.join('')||'<tr><td colspan="5">&nbsp;</td></tr>'}<tr><td colspan="4" class="r"><b>Jami</b></td><td class="r"><b>${fmt(total)}</b></td></tr></table>`};
+}
+const ROWPH='Har qatorga: nomi;miqdor;narx\nPrism rulon;10;250000';
+const TPL=[
+{id:'inv',name:'Dalolatnoma (inventarizatsiya)',cat:'Dalolatnoma',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},
+ {k:'kom',l:'Komissiya aʼzolari (har qatorga bitta F.I.O.)',t:'area'},
+ {k:'rows',l:'Aniqlangan ortiqcha TMB',t:'area',ph:ROWPH},{k:'izoh',l:'Izoh',t:'area'}],
+ gen:(v,c)=>{const t=rowsTbl(v.rows),k=lines(v.kom);
+  return hd(c)+`<h3>DALOLATNOMA № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p>
+  <p>${esc(c.nom)} ${esc(c.turi)} tomonidan ${fd(v.date)} holatiga oʻtkazilgan inventarizatsiya natijasida quyidagi tovar-moddiy boyliklar buxgalteriya hisobida mavjud emasligi, ammo amalda mavjudligi (ortiqcha) aniqlandi:</p>${t.html}
+  <p>Jami: ${money(t.total)}.</p>${v.izoh?`<p>Izoh: ${nl(v.izoh)}</p>`:''}<p>Aniqlangan ortiqcha TMB buxgalteriya hisobiga kirim qilinsin.</p>
+  <p><b>Komissiya aʼzolari:</b></p>${(k.length?k:['','']).map(x=>sig('Aʼzo',x)).join('')}${sig(c.lav||'Rahbar',c.rahbar)}`}},
+{id:'akt',name:'Qabul-topshirish akti',cat:'Akt',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},
+ {k:'tur',l:'Akt turi',t:'sel',o:['Bajarilgan ishlar','Koʻrsatilgan xizmatlar','Topshirilgan tovarlar']},
+ {k:'kont',l:'Kontragent nomi'},{k:'kstir',l:'Kontragent STIR'},{k:'kfio',l:'Kontragent vakili F.I.O.'},
+ {k:'sh',l:'Shartnoma raqami va sanasi',ph:'№12 dan 01.10.2026'},{k:'rows',l:'Roʻyxat',t:'area',ph:ROWPH},
+ {k:'qqs',l:'QQS',t:'sel',o:['QQS yoʻq','QQS bilan (12%) hisobga kiritilgan']}],
+ gen:(v,c)=>{const t=rowsTbl(v.rows),qq=v.qqs&&v.qqs.indexOf('bilan')>=0?t.total*12/112:0;
+  return hd(c)+`<h3>${esc(v.tur||'Qabul-topshirish').toUpperCase()} AKTI № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p>
+  <p>Biz, quyida imzo chekuvchilar, ${esc(c.nom)} ${esc(c.turi)} (keyingi oʻrinlarda “Bajaruvchi/Sotuvchi”) nomidan ${esc(c.lav||'rahbar')} ${esc(c.rahbar||'____')} va ${esc(v.kont||'____')} (STIR: ${esc(v.kstir||'____')}) (keyingi oʻrinlarda “Buyurtmachi/Xaridor”) nomidan ${esc(v.kfio||'____')}, ${esc(v.sh||'____')} shartnoma asosida quyidagilar topshirilganligi/bajarilganligi toʻgʻrisida ushbu aktni tuzdik:</p>${t.html}
+  <p>Jami: ${money(t.total)}${qq?`, shu jumladan QQS (12%): <b>${fmt(qq)}</b> soʻm`:''}.</p><p>Tomonlarning bir-biriga daʼvosi yoʻq.</p>
+  <table class="sg"><tr><td>Bajaruvchi/Sotuvchi:<br>${esc(c.rahbar||'')}</td><td class="c">_____________</td><td>Buyurtmachi/Xaridor:<br>${esc(v.kfio||'')}</td><td class="c">_____________</td></tr></table>`}},
+{id:'malumot',name:'Maʼlumotnoma (ish joyidan)',cat:'Maʼlumotnoma',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},{k:'fio',l:'Xodim F.I.O.'},{k:'lav',l:'Lavozimi'},
+ {k:'bosh',l:'Ishga kirgan sana',t:'date'},{k:'oylik',l:'Oylik ish haqi (soʻm)',t:'num'},{k:'kim',l:'Qayerga taqdim etiladi',ph:'talab qilingan joyga'}],
+ gen:(v,c)=>hd(c)+`<h3>MAʼLUMOTNOMA № ${no_(v.no)}</h3><p class="c">${fd(v.date)}</p>
+  <p>Ushbu maʼlumotnoma <b>${esc(v.fio||'____')}</b> haqiqatan ham ${esc(c.nom)} ${esc(c.turi)} da ${fd(v.bosh)} dan buyon <b>${esc(v.lav||'____')}</b> lavozimida ishlayotganligi toʻgʻrisida berildi.</p>
+  ${num(v.oylik)>0?`<p>Oylik ish haqi: ${money(num(v.oylik))}.</p>`:''}<p>Maʼlumotnoma ${esc(v.kim||'talab qilingan joyga')} taqdim etish uchun berildi.</p>${sig(c.lav||'Rahbar',c.rahbar)}<p>M.Oʻ.</p>`},
+{id:'bayon',name:'Bayonnoma (yigʻilish)',cat:'Bayonnoma',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},{k:'qat',l:'Ishtirokchilar (har qatorga bitta)',t:'area'},
+ {k:'kun',l:'Kun tartibi (har qatorga bitta)',t:'area'},{k:'qaror',l:'Qarorlar (har qatorga bitta, kun tartibi tartibida)',t:'area'}],
+ gen:(v,c)=>{const k=lines(v.kun),q=lines(v.qaror);
+  return hd(c)+`<h3>BAYONNOMA № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p>
+  <p><b>Ishtirok etdi:</b></p><p>${lines(v.qat).map((x,i)=>(i+1)+'. '+esc(x)).join('<br>')||'____'}</p>
+  <p><b>Kun tartibi:</b></p><p>${k.map((x,i)=>(i+1)+'. '+esc(x)).join('<br>')||'____'}</p>
+  <p><b>Qaror qilindi:</b></p><p>${q.map((x,i)=>(i+1)+'. '+esc(x)).join('<br>')||'____'}</p>${sig('Yigʻilish raisi',c.rahbar)}${sig('Kotib','')}`}},
+{id:'qaror',name:'Taʼsischi qarori',cat:'Qaror',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},{k:'ts',l:'Taʼsischi F.I.O.',defc:'rahbar'},
+ {k:'mavzu',l:'Qaror mavzusi',ph:'Inventarizatsiya natijalarini tasdiqlash toʻgʻrisida'},{k:'matn',l:'Qaror matni (har qatorga bitta band)',t:'area'}],
+ gen:(v,c)=>hd(c)+`<h3>TAʼSISCHI QARORI № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p><p class="c"><b>${esc(v.mavzu||'')}</b></p>
+  <p>${esc(c.nom)} ${esc(c.turi)} yagona taʼsischisi ${esc(v.ts||'____')} QAROR QILADI:</p><p>${lines(v.matn).map((x,i)=>(i+1)+'. '+esc(x)).join('<br>')||'____'}</p>${sig('Taʼsischi',v.ts)}`},
+{id:'buyruq',name:'Buyruq (kadrlar)',cat:'Buyruq',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},
+ {k:'tur',l:'Buyruq turi',t:'sel',o:['Ishga qabul qilish','Ishdan boʻshatish','Ish rejimini oʻzgartirish','Mehnat taʼtili','Boshqa']},
+ {k:'fio',l:'Xodim F.I.O.'},{k:'lav',l:'Lavozimi'},{k:'sana',l:'Amal qilish sanasi',t:'date'},{k:'oylik',l:'Oylik / oklad (soʻm)',t:'num'},
+ {k:'izoh',l:'Asos yoki qoʻshimcha shart',t:'area',ph:'Masalan: haftada 3 kun (juma, shanba, yakshanba)'}],
+ gen:(v,c)=>{const f=esc(v.fio||'____'),l=esc(v.lav||'____'),s=fd(v.sana),o=num(v.oylik)>0?`, oylik ish haqi ${money(num(v.oylik))}`:'';
+  const T={'Ishga qabul qilish':`${f} ${s} dan boshlab ${l} lavozimiga ishga qabul qilinsin${o}.`,
+   'Ishdan boʻshatish':`${f} ${s} dan boshlab ${l} lavozimidan mehnat shartnomasi tugatilib, ishdan boʻshatilsin. Qonunchilikka muvofiq hisob-kitob amalga oshirilsin.`,
+   'Ish rejimini oʻzgartirish':`${f} (${l}) ${s} dan boshlab quyidagi ish rejimiga oʻtkazilsin${o}.`,
+   'Mehnat taʼtili':`${f} (${l}) ga ${s} dan boshlab mehnat taʼtili berilsin.`}[v.tur]||`${f} (${l}) boʻyicha ${s} dan boshlab quyidagi amalga oshirilsin.`;
+  return hd(c)+`<h3>BUYRUQ № ${no_(v.no)}</h3><p class="c">${esc(v.tur||'')} toʻgʻrisida · ${fd(v.date)}</p><p>${T}</p>${v.izoh?`<p>Asos / shart: ${nl(v.izoh)}</p>`:''}<p>Buyruq bilan tanishdim: _____________ ${f}</p>${sig(c.lav||'Rahbar',c.rahbar)}`}},
+{id:'ishonch',name:'Ishonchnoma',cat:'Ishonchnoma',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},{k:'fio',l:'Vakil F.I.O.'},{k:'pas',l:'Vakil pasporti (seriya, raqam, kim bergan)'},
+ {k:'vak',l:'Vakolatlar (har qatorga bitta)',t:'area'},{k:'muddat',l:'Amal qilish muddati (gacha)',t:'date'}],
+ gen:(v,c)=>hd(c)+`<h3>ISHONCHNOMA № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p>
+  <p>${esc(c.nom)} ${esc(c.turi)} (STIR: ${esc(c.stir||'____')}) nomidan ${esc(c.lav||'rahbar')} ${esc(c.rahbar||'____')} ushbu ishonchnoma bilan <b>${esc(v.fio||'____')}</b> (pasport: ${esc(v.pas||'____')}) ga quyidagi vakolatlarni beradi:</p>
+  <p>${lines(v.vak).map((x,i)=>(i+1)+'. '+esc(x)).join('<br>')||'____'}</p><p>Ishonchnoma ${fd(v.muddat)} gacha amal qiladi. Qayta ishonch berish huquqisiz.</p>${sig(c.lav||'Rahbar',c.rahbar)}<p>M.Oʻ.</p>`},
+{id:'ustav',name:'Ustav (MChJ) · namuna',cat:'Ustav',f:[
+ {k:'nom',l:'Toʻliq nomi',defc:'nom'},{k:'qisqa',l:'Qisqa nomi',defc:'nom'},{k:'manzil',l:'Joylashgan manzili',defc:'manzil'},
+ {k:'fond',l:'Ustav fondi (soʻm)',t:'num'},{k:'ts',l:'Taʼsischi F.I.O.',defc:'rahbar'},{k:'faol',l:'Faoliyat turlari (har qatorga bitta)',t:'area'},{k:'sana',l:'Ustav sanasi',t:'date',def:'today'}],
+ gen:(v,c)=>{const f=num(v.fond)||0;
+  return`<h3>“${esc(v.nom||'____')}” MASʼULIYATI CHEKLANGAN JAMIYATI<br>USTAVI</h3><p class="c">${fd(v.sana)}</p>
+  <p><b>1. Umumiy qoidalar</b><br>1.1. “${esc(v.nom||'____')}” masʼuliyati cheklangan jamiyati (keyingi oʻrinlarda — Jamiyat) Oʻzbekiston Respublikasi qonunchiligiga muvofiq tashkil etilgan tijorat tashkilotidir.<br>1.2. Jamiyatning qisqa nomi: “${esc(v.qisqa||'____')}”.<br>1.3. Joylashgan manzili: ${esc(v.manzil||'____')}.<br>1.4. Jamiyat yuridik shaxs hisoblanadi, mustaqil balansga, bank hisob raqamlariga, muhrga va oʻz nomi yozilgan blankalarga ega boʻladi.</p>
+  <p><b>2. Jamiyat faoliyatining predmeti va maqsadlari</b><br>2.1. Jamiyatning asosiy maqsadi foyda olishdir.<br>2.2. Faoliyat turlari:<br>${lines(v.faol).map((x,i)=>'&nbsp;&nbsp;'+(i+1)+') '+esc(x)).join('<br>')||'&nbsp;&nbsp;____'}<br>2.3. Jamiyat qonunchilikka zid boʻlmagan boshqa faoliyat turlari bilan ham shugʻullanishi mumkin. Litsenziyalanadigan faoliyat turlari bilan faqat litsenziya olingach shugʻullanadi.</p>
+  <p><b>3. Ustav fondi</b><br>3.1. Jamiyatning ustav fondi ${money(f)} miqdorida shakllantiriladi.<br>3.2. Taʼsischi: <b>${esc(v.ts||'____')}</b> — ustav fondining 100% ulushiga ega.<br>3.3. Ustav fondi qonunchilikda belgilangan tartib va muddatlarda toʻliq toʻlanadi.</p>
+  <p><b>4. Aʼzoning huquq va majburiyatlari</b><br>4.1. Aʼzo: foyda taqsimotida qatnashish, Jamiyat faoliyati haqida axborot olish, boshqaruvda qatnashish, ulushini qonunchilikda belgilangan tartibda boshqaga oʻtkazish huquqiga ega.<br>4.2. Aʼzo: ustav fondiga oʻz ulushini oʻz vaqtida kiritish, Jamiyatning tijorat sirini saqlash majburiyatiga ega.</p>
+  <p><b>5. Boshqaruv</b><br>5.1. Jamiyatning oliy organi — aʼzolarning umumiy yigʻilishi (yagona aʼzo boʻlganda — uning yozma qarori).<br>5.2. Joriy rahbarlik yagona ijroiy organ — direktor tomonidan amalga oshiriladi. Direktor Jamiyat nomidan ishonchnomasiz harakat qiladi.</p>
+  <p><b>6. Foyda taqsimoti</b><br>6.1. Jamiyat foydasi soliqlar va majburiy toʻlovlar toʻlangandan keyin aʼzo(lar) qaroriga muvofiq taqsimlanadi.</p>
+  <p><b>7. Qayta tashkil etish va tugatish</b><br>7.1. Jamiyat qonunchilikda nazarda tutilgan asoslar va tartibda qayta tashkil etilishi yoki tugatilishi mumkin.</p>
+  <p><b>8. Yakuniy qoidalar</b><br>8.1. Ustavga oʻzgartirish va qoʻshimchalar aʼzo(lar) qarori bilan kiritiladi va qonunchilikda belgilangan tartibda roʻyxatdan oʻtkaziladi.<br>8.2. Ustavda nazarda tutilmagan masalalar amaldagi qonunchilik bilan tartibga solinadi.</p>
+  ${sig('Taʼsischi',v.ts)}<p class="c"><i>Namuna. Amaldagi “Masʼuliyati cheklangan va qoʻshimcha masʼuliyatli jamiyatlar toʻgʻrisida”gi qonunga moslab, yurist yoki notarius bilan tekshiring.</i></p>`}},
+{id:'shartnoma',name:'Oldi-sotdi shartnomasi',cat:'Shartnoma',f:[
+ {k:'no',l:'Raqami'},{k:'date',l:'Sana',t:'date',def:'today'},{k:'kont',l:'Xaridor nomi'},{k:'kstir',l:'Xaridor STIR'},{k:'kfio',l:'Xaridor vakili F.I.O.'},
+ {k:'rows',l:'Tovarlar',t:'area',ph:ROWPH},{k:'kun',l:'Toʻlov muddati (kun)',t:'num'},{k:'yet',l:'Yetkazib berish sharti',ph:'Sotuvchi omboridan olib ketish'}],
+ gen:(v,c)=>{const t=rowsTbl(v.rows);
+  return hd(c)+`<h3>OLDI-SOTDI SHARTNOMASI № ${no_(v.no)}</h3><p class="c">${esc(place(c))}, ${fd(v.date)}</p>
+  <p>${esc(c.nom)} ${esc(c.turi)} (keyingi oʻrinlarda “Sotuvchi”) nomidan ${esc(c.lav||'rahbar')} ${esc(c.rahbar||'____')} va ${esc(v.kont||'____')} (STIR: ${esc(v.kstir||'____')}) (keyingi oʻrinlarda “Xaridor”) nomidan ${esc(v.kfio||'____')} quyidagilar haqida shartnoma tuzdilar:</p>
+  <p><b>1. Shartnoma predmeti.</b> Sotuvchi quyidagi tovarlarni Xaridorga topshirish, Xaridor qabul qilib, uning qiymatini toʻlash majburiyatini oladi:</p>${t.html}
+  <p><b>2. Hisob-kitob.</b> Shartnoma summasi ${money(t.total)}. Toʻlov ${esc(v.kun||'____')} kun ichida pul oʻtkazish yoki naqd shaklda amalga oshiriladi.</p>
+  <p><b>3. Yetkazib berish.</b> ${esc(v.yet||'____')}. Tovar sifati va miqdori topshirish vaqtida tekshiriladi.</p>
+  <p><b>4. Tomonlar masʼuliyati.</b> Majburiyatlar bajarilmagan yoki lozim darajada bajarilmagan taqdirda tomonlar amaldagi qonunchilikka muvofiq masʼul boʻladi. Nizolar muzokaralar yoʻli bilan, kelishilmasa sud orqali hal etiladi.</p>
+  <p><b>5. Yakuniy qoidalar.</b> Shartnoma ikki nusxada tuzilgan, har ikki tomonda bittadan saqlanadi va imzolangan paytdan kuchga kiradi.</p>
+  <table class="sg"><tr><td>Sotuvchi:<br>${esc(c.nom)}<br>STIR: ${esc(c.stir||'____')}<br>${esc(c.rahbar||'')}</td><td class="c">_____________</td><td>Xaridor:<br>${esc(v.kont||'____')}<br>STIR: ${esc(v.kstir||'____')}<br>${esc(v.kfio||'')}</td><td class="c">_____________</td></tr></table>`}}
+];
+function fullHtml(title,body){return`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:'Times New Roman',serif;font-size:14pt;line-height:1.5;margin:2cm}h3{text-align:center}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:4px 6px;font-size:12pt}table.sg td{border:0;padding-top:24px}.c{text-align:center}.r{text-align:right}</style></head><body>${body}</body></html>`}
+const fname=()=>(OUT.title+'_'+S.co+'_'+today()).replace(/[^\wА-я]+/g,'_');
+const sz=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+async function stoReq(method,path,opt){
+  opt=opt||{};await ensureAuth();
+  return fetch(S.cfg.url+'/storage/v1/'+path,{method,headers:Object.assign({apikey:S.cfg.key,Authorization:'Bearer '+S.sess.at},opt.headers||{}),body:opt.body});
+}
+async function uploadFile(file,meta){
+  const slug=S.co.toLowerCase().replace(/[^a-z0-9]+/g,'-'),safe=file.name.replace(/[^\w.\-]+/g,'_');
+  const path=slug+'/'+uid()+'_'+safe;
+  const r=await stoReq('POST','object/hujjatlar/'+path,{headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
+  if(!r.ok)throw new Error('Yuklash xato: '+r.status+' '+(await r.text()).slice(0,120));
+  D().files.push({id:uid(),path,name:file.name,size:file.size,mime:file.type||'',cat:meta.cat||'Boshqa',title:meta.title||file.name,note:meta.note||'',date:today()});
+}
+async function openFile(id,w){
+  const f=D().files.find(x=>x.id===id);if(!f)throw new Error('Fayl topilmadi');
+  const r=await stoReq('POST','object/sign/hujjatlar/'+f.path,{headers:{'Content-Type':'application/json'},body:JSON.stringify({expiresIn:300})});
+  const j=await r.json();if(!r.ok)throw new Error('Ochilmadi: '+(j.message||r.status));
+  const u=S.cfg.url+'/storage/v1'+j.signedURL;if(w)w.location=u;else window.open(u,'_blank');
+}
+function arList(){
+  const d=D(),c=S.fc||'',l=d.files.filter(f=>!c||f.cat===c).sort((a,b)=>b.date.localeCompare(a.date));
+  return`<h2>Arxiv (${l.length})</h2>`+(l.map(f=>`<div class="item"><div><b>${esc(f.title)}</b> <span class="tag">${esc(f.cat)}</span><br><span class="mut">${f.date} · ${sz(f.size)}${f.note?' · '+esc(f.note):''}</span></div>
+   <div style="text-align:right"><button class="s" data-a="openf" data-id="${f.id}">Ochish</button> <button class="s" data-a="delf" data-id="${f.id}">✕</button></div></div>`).join('')||'<span class="mut">Boʻsh</span>');
+}
+function fieldHtml(f,val){
+  const id='f_'+f.k,ph=esc(f.ph||'');
+  const inp=f.t==='area'?`<textarea id="${id}" rows="4" placeholder="${ph}">${esc(val)}</textarea>`
+   :f.t==='sel'?`<select id="${id}">${f.o.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`
+   :`<input id="${id}" type="${f.t==='date'?'date':f.t==='num'?'number':'text'}" value="${esc(val)}" placeholder="${ph}">`;
+  return`<div${f.t==='area'?' class="w"':''}><label class="mut">${f.l}</label>${inp}</div>`;
+}
+function docList(){
+  const d=D(),q=(S.hq||'').toLowerCase(),t=S.ht||'';
+  const list=d.docs.filter(x=>(!t||x.type===t)&&(!q||((x.no||'')+' '+(x.party||'')+' '+x.sum+' '+x.date).toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+  return`<h2>Hujjatlar (${list.length}/${d.docs.length})</h2>`+(list.slice(0,200).map(x=>`<div class="item"><div><b>${esc(x.no||'—')}</b> <span class="tag">${x.type}</span><br><span class="mut">${x.date} · ${esc(x.party)}${x.vat?' · QQS '+fmt(vatOf(x)):''}</span></div>
+    <div style="text-align:right"><b>${fmt(x.sum)}</b><br><button class="s" data-a="editdoc" data-id="${x.id}">✎</button> <button class="s" data-a="deldoc" data-id="${x.id}">✕</button></div></div>`).join('')||'<span class="mut">Boʻsh</span>')+(list.length>200?'<div class="note">Dastlabki 200 tasi koʻrsatilgan. Qidiruvdan foydalaning.</div>':'');
+}
+function reportData(){
+  const d=D(),s=stats(d,S.month),r=reconcile(d),tx=taxOf(d);
+  const ms=d.docs.filter(x=>x.date.startsWith(S.month));
+  const sum=[['Korxona',S.co],['Oy',S.month],['Sotuv',s.sales],['Xarid',s.buys],['Farq (sotuv-xarid)',s.profit]].concat(tx.mode==='qqs'
+    ?[['Sotuvdan QQS',Math.round(s.outVat)],['Xariddan QQS',Math.round(s.inVat)],['Toʻlanadigan QQS',Math.round(s.pay)]]
+    :[['Aylanma soliq stavkasi %',tx.rate],['Aylanma soliq',Math.round(s.turn)]]);
+  return{
+    Xulosa:sum,
+    Hujjatlar:[['Sana','Turi','Raqam','Kontragent','Summa','QQS']].concat(ms.map(x=>[x.date,x.type,x.no,x.party,x.sum,x.vat?Math.round(vatOf(x)):0])),
+    Bank:[['Sana','Yoʻnalish','Izoh','Summa']].concat(d.bank.filter(b=>b.date.startsWith(S.month)).map(b=>[b.date,b.dir==='in'?'kirim':'chiqim',b.desc,b.sum])),
+    Solishtirish:[['Hujjat','Turi','Summa','Holat','Bank izohi','Bank summasi','Farq']].concat(r.rows.filter(x=>x.doc.date.startsWith(S.month)).map(x=>[x.doc.no,x.doc.type,x.doc.sum,x.st==='ok'?'mos':x.st==='diff'?'farq':'bankda yoʻq',x.b?x.b.desc:'',x.b?x.b.sum:'',x.diff]))
+  };
+}
+
+const MN=['Yan','Fev','Mar','Apr','May','Iyn','Iyl','Avg','Sen','Okt','Noy','Dek'];
+function shiftMonth(m,k){const q=m.split('-').map(Number);const d=new Date(q[0],q[1]-1+k,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function short(n){n=Math.abs(n);return n>=1e9?(n/1e9).toFixed(1)+' mlrd':n>=1e6?(n/1e6).toFixed(1).replace('.0','')+' mln':n>=1e3?Math.round(n/1e3)+' ming':String(Math.round(n))}
+function barChart(data){
+  const W=640,H=230,L=70,B=28,T=14,R=10,pw=W-L-R,ph=H-T-B,mx=Math.max(1,...data.map(x=>Math.max(x.a,x.b)));
+  const mag=Math.pow(10,Math.floor(Math.log10(mx))),top=[1,1.5,2,2.5,3,4,5,6,8,10].map(x=>x*mag).find(x=>x>=mx)||mx;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Sotuv va xarid diagrammasi">`;
+  if(!data.some(x=>x.a||x.b))return s+`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="14" fill="var(--mut)">Hali maʼlumot yoʻq. Hujjat qoʻshilgach diagramma shu yerda chiqadi.</text></svg>`;
+  for(let i=0;i<=4;i++){const y=T+ph-ph*i/4;s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${L-8}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mut)">${short(top*i/4)}</text>`}
+  const gw=pw/data.length,bw=Math.min(26,gw*.28);
+  data.forEach((d,i)=>{const cx=L+gw*i+gw/2,ha=ph*d.a/top,hb=ph*d.b/top;
+    s+=`<rect x="${cx-bw-2}" y="${T+ph-ha}" width="${bw}" height="${Math.max(ha,d.a?2:0)}" rx="4" fill="var(--acc)"/><rect x="${cx+2}" y="${T+ph-hb}" width="${bw}" height="${Math.max(hb,d.b?2:0)}" rx="4" fill="#f59e0b"/>`+
+       `<text x="${cx}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--mut)">${d.l}</text>`});
+  return s+'</svg>';
+}
+function donut(rows){
+  const c={ok:0,diff:0,none:0};rows.forEach(x=>c[x.st]++);const tot=rows.length,C=2*Math.PI*38;
+  const col={ok:'var(--ok)',diff:'var(--warn)',none:'var(--bad)'},lb={ok:'Mos',diff:'Summa farqi',none:'Bankda yoʻq'};
+  let acc=0,seg='';
+  if(tot)['ok','diff','none'].forEach(k=>{if(!c[k])return;const len=C*c[k]/tot;seg+=`<circle cx="50" cy="50" r="38" fill="none" stroke="${col[k]}" stroke-width="12" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-acc}"/>`;acc+=len});
+  const pct=tot?Math.round(c.ok/tot*100):0;
+  return`<div class="don"><svg viewBox="0 0 100 100" width="130" height="130"><g transform="rotate(-90 50 50)"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--line)" stroke-width="12"/>${seg}</g><text x="50" y="${tot?55:53}" text-anchor="middle" font-size="${tot?18:9}" font-weight="700" fill="var(--tx)">${tot?pct+'%':'Hujjat yoʻq'}</text></svg>
+  <div>${['ok','diff','none'].map(k=>`<div class="item" style="border:0;padding:4px 0;gap:14px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${col[k]};margin-right:8px"></i>${lb[k]}</span><b>${c[k]}</b></div>`).join('')}</div></div>`;
+}
+const cloudCard=()=>`<div class="card"><h2>Bulut (Supabase)</h2><div class="mut">${cloudStatus()}</div>
+   <div class="f" style="margin-top:10px"><input id="c_url" class="w" placeholder="Project URL (https://xxxx.supabase.co)" value="${esc(S.cfg.url||'')}">
+   <input id="c_key" class="w" placeholder="Publishable (anon) key" value="${esc(S.cfg.key||'')}">
+   <input id="c_em" placeholder="Email" value="${esc(S.cfg.email||'')}"><input id="c_pw" type="password" placeholder="Parol">
+   <button class="p" data-a="cloudin">Kirish va ulash</button><button data-a="cloudsync">Hozir sinxronlash</button>${S.sess?'<button class="s" data-a="cloudout">Chiqish</button>':''}</div>
+   <div class="note">Maʼlumot bulutga avtomatik yuboriladi va boshqa qurilmalardan olinadi.</div></div>`;
+const dataCard=()=>`<div class="card"><h2>Maʼlumot</h2><div class="row">
+    <button class="s" data-a="demo">Namuna maʼlumot</button><button class="s" data-a="exp">Zaxira (JSON)</button><button class="s" data-a="imp">Tiklash</button><button class="s" data-a="clr">Shu korxonani tozalash</button></div>
+    <input id="file" type="file" accept=".json" hidden>
+    <div class="note">Namuna maʼlumotni sinov uchun Drive Upgrade korxonasida bosing, keyin “Shu korxonani tozalash”.</div></div>`;
+
+/* ---- lotlar tahlili (yopilgan bitimlar) ---- */
+const DKEY='buxgalter_deals_v1';
+let DEALS=[],LOTPEND=null;
+try{DEALS=JSON.parse(localStorage.getItem(DKEY)||'[]')}catch(e){DEALS=[]}
+const normH=s=>String(s==null?'':s).toLowerCase().replace(/[^a-z0-9а-яё]/g,'');
+const LFIELDS=[['start','Boshlangʻich narx',['startcost','boshlangichnarx','boshlangichsumma','startprice','начальнаяцена','начальнаясумма']],
+ ['deal','Yakuniy (bitim) narx',['dealcost','yakuniynarx','bitimsummasi','dealprice','winprice','итоговаяцена','ценасделки','суммасделки']],
+ ['part','Ishtirokchilar soni',['participantscount','ishtirokchilarsoni','ishtirokchilar','participants','количествоучастников']],
+ ['date','Bitim sanasi',['dealat','bitimsanasi','dealdate','sana','date','дата']],
+ ['win','Gʻolib',['providername','goliblar','gholib','winner','provider','победитель','поставщик']],
+ ['cust','Buyurtmachi',['customername','buyurtmachi','customer','заказчик']],
+ ['title','Lot nomi',['title','nomi','lotnomi','mahsulot','name','наименование','предмет']],
+ ['no','Lot raqami',['displayno','lotraqami','lotnumber','tradeid','id']],
+ ['cur','Valyuta',['currency','valyuta','валюта']]];
+function detectLot(head){
+  const hn=head.map(normH),used={},map={};
+  LFIELDS.forEach(f=>{let k=-1;
+    for(let i=0;i<hn.length&&k<0;i++)if(!used[i]&&f[2].indexOf(hn[i])>=0)k=i;
+    for(let i=0;i<hn.length&&k<0;i++)if(!used[i]&&f[2].some(a=>a.length>=6&&hn[i].indexOf(a)>=0))k=i;
+    map[f[0]]=k;if(k>=0)used[k]=1});
+  return map;
+}
+function pct(a,p){const s=a.slice().sort((x,y)=>x-y);if(!s.length)return 0;const i=(s.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return s[lo]+(s[hi]-s[lo])*(i-lo)}
+function lotRows(f){
+  const kws=(f.kw||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean),cu=(f.cu||'').toLowerCase();let from=null;
+  if(f.per&&f.per!=='all'){const d=new Date();d.setMonth(d.getMonth()-(+f.per));from=d.toISOString().slice(0,10)}
+  return DEALS.filter(x=>(!kws.length||kws.some(k=>x.t.toLowerCase().indexOf(k)>=0))&&(!cu||(x.c||'').toLowerCase().indexOf(cu)>=0)&&(!from||!x.dt||x.dt>=from));
+}
+const discOf=x=>Math.max(-50,Math.min(100,(x.s-x.d)/x.s*100));
+function topBy(rows,key){const m={};rows.forEach(x=>{const k=(x[key]||'').trim();if(!k)return;m[k]=m[k]||{k,n:0,sum:0};m[k].n++;m[k].sum+=x.d});return Object.values(m).sort((a,b)=>b.n-a.n||b.sum-a.sum).slice(0,5)}
+function histo(rows){
+  const edges=[-1e9,0,5,10,15,20,25,30,40,1e9],lab=['<0','0–5','5–10','10–15','15–20','20–25','25–30','30–40','40+'],c=lab.map(()=>0);
+  rows.forEach(x=>{const d=discOf(x);for(let i=0;i<c.length;i++)if(d>=edges[i]&&d<edges[i+1]){c[i]++;break}});
+  const mx=Math.max(1,...c),W=640,H=210,L=34,B=28,T=18,pw=W-L-8,ph=H-T-B,gw=pw/c.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Chegirma taqsimoti">`;
+  c.forEach((v,i)=>{const hh=ph*v/mx,x=L+gw*i+gw*.15;s+=`<rect x="${x}" y="${T+ph-hh}" width="${gw*.7}" height="${Math.max(hh,v?2:0)}" rx="4" fill="var(--acc)"/><text x="${x+gw*.35}" y="${T+ph-hh-5}" text-anchor="middle" font-size="12" fill="var(--tx)">${v||''}</text><text x="${x+gw*.35}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mut)">${lab[i]}%</text>`});
+  return s+'</svg>';
+}
+const V={
+bosh(){
+  const d=D(),s=stats(d,S.month),ps=stats(d,shiftMonth(S.month,-1)),r=reconcile(d);
+  const dl=d.dl.filter(x=>!x.done).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  const delta=(c,p)=>p>0?`<span class="${c>=p?'ok':'bad'}">${c>=p?'▲':'▼'} ${Math.abs(Math.round((c-p)/p*100))}%</span> <span class="mut">oʻtgan oyga nisbatan</span>`:'<span class="mut">oʻtgan oyda maʼlumot yoʻq</span>';
+  const kp=(ic,cls,lab,val,dt)=>`<div class="kpi"><div class="ic ${cls}">${ico(ic)}</div><div><small>${lab}</small><b>${fmt(val)}</b><div class="dl">${dt}</div></div></div>`;
+  const ms=[-5,-4,-3,-2,-1,0].map(k=>{const m=shiftMonth(S.month,k),x=stats(d,m);return{l:MN[+m.split('-')[1]-1],a:x.sales,b:x.buys}});
+  const empty=!d.docs.length&&!d.bank.length;
+  return`${empty?`<div class="card hero"><div style="flex:1;min-width:220px"><h2>Boshlash</h2><p><b>${esc(S.co)}</b> uchun maʼlumot hali yoʻq.</p><p style="opacity:.9">1) Hujjat va bank faylini yuklang. 2) Panel ularni oʻzi solishtiradi. 3) Natijani shu yerda koʻring.</p></div><div class="qa"><button data-t="hujjat">Hujjat yuklash</button><button data-t="bank">Bank fayli</button></div></div>`:''}
+  <div class="kpis">${kp('up','ok','Sotuv',s.sales,delta(s.sales,ps.sales))}${kp('cart','warn','Xarid',s.buys,delta(s.buys,ps.buys))}
+   ${kp('money',s.profit>=0?'ok':'bad','Farq (sotuv − xarid)',s.profit,delta(s.profit,ps.profit))}
+   ${kp('qqs','',s.mode==='qqs'?'Toʻlanadigan QQS':'Aylanma soliq ('+s.rate+'%)',s.tax,delta(s.tax,ps.tax))}</div>
+  <div class="g2"><div class="card"><h2>Sotuv va xarid · soʻnggi 6 oy</h2>${barChart(ms)}<div class="leg"><span><i style="background:var(--acc)"></i>Sotuv</span><span><i style="background:#f59e0b"></i>Xarid</span></div></div>
+   <div class="card"><h2>Bank bilan mosligi</h2>${donut(r.rows)}<div class="note">Hujjatsiz bank harakatlari: ${r.extra.length}</div></div></div>
+  <div class="g2e"><div class="card"><h2>Aqlli tekshiruv</h2>${ckHtml(d)}</div>${debtsHtml(d)}</div>
+  <div class="g2e"><div class="card"><h2>Yaqin muddatlar</h2>${dl.length?dl.map(x=>dlRow(x,false)).join(''):'<span class="mut">Muddat yoʻq. “Muddat” boʻlimida qoʻshing.</span>'}</div>
+   <div class="card"><h2>Tezkor amallar</h2><div class="qa"><button class="p" data-t="hujjat">+ Hujjat</button><button data-t="bank">Bank fayli</button><button data-t="namuna">Namuna yaratish</button><button data-a="xlsx">Excel hisobot</button></div></div></div>`;
+},
+sozlama(){return cloudCard()+dataCard()},
+hujjat(){
+  const d=D(),ed=S.editId&&d.docs.find(x=>x.id===S.editId);
+  const v=ed||{date:today(),type:'sotuv',no:'',party:'',sum:'',vat:true};
+  return`${importCard('doc')}<div class="card"><h2>${ed?'Hujjatni tahrirlash':'Yangi hujjat'}</h2><div class="f">
+   <input id="d_date" type="date" value="${v.date}"><select id="d_type"><option value="sotuv" ${v.type==='sotuv'?'selected':''}>Sotuv (chiqish)</option><option value="xarid" ${v.type==='xarid'?'selected':''}>Xarid (kirish)</option></select>
+   <input id="d_no" placeholder="Hujjat raqami (SF-147)" value="${esc(v.no)}"><input id="d_party" placeholder="Kontragent" value="${esc(v.party)}">
+   <input id="d_sum" type="number" inputmode="numeric" placeholder="Summa (soʻm)" value="${v.sum}"><select id="d_vat"><option value="1" ${v.vat?'selected':''}>QQS bilan (12%)</option><option value="0" ${v.vat?'':'selected'}>QQS yoʻq</option></select>
+   <button class="p w" data-a="adddoc">${ed?'Saqlash':'Qoʻshish'}</button>${ed?'<button class="w" data-a="canceledit">Bekor</button>':''}</div></div>
+   <div class="card"><div class="f"><input id="h_q" placeholder="Qidirish: raqam, kontragent, summa" value="${esc(S.hq||'')}"><select id="h_t"><option value="">Hammasi</option><option value="sotuv" ${S.ht==='sotuv'?'selected':''}>Sotuv</option><option value="xarid" ${S.ht==='xarid'?'selected':''}>Xarid</option></select></div></div>
+   <div class="card" id="hlist">${docList()}</div>`;
+},
+bank(){
+  const d=D(),r=reconcile(d);
+  const st={ok:['mos','ok'],diff:['farq','warn'],none:['bankda yoʻq','bad']};
+  return`${importCard('bank')}<div class="card"><h2>Bank koʻchirmasi</h2>
+   <textarea id="b_txt" rows="4" placeholder="Har qatorga: sana;izoh;summa&#10;2026-10-03;SF-147 uchun toʻlov;12450000&#10;Chiqim uchun summa oldiga minus qoʻying"></textarea>
+   <div class="row" style="margin-top:8px"><button class="p" data-a="addbank">Yuklash</button></div>
+   <div class="note">Excel’dan nusxalab joylashtirsangiz ham boʻladi (tab yoki ; bilan ajratilgan).</div></div>
+   <div class="card"><h2>Hujjat ↔ bank</h2>${r.rows.map(x=>{const cand=x.st!=='ok'?r.extra.filter(b=>b.dir===(x.doc.type==='sotuv'?'in':'out')):[];
+    return`<div class="item" style="flex-wrap:wrap"><div><b>${esc(x.doc.no||'—')}</b> ${fmt(x.doc.sum)} <span class="mut">${esc(x.doc.party||'')}</span><br>
+    <span class="mut">${x.b?esc(x.b.desc)+' · '+fmt(x.b.sum):'mos toʻlov topilmadi'}</span></div>
+    <div style="text-align:right" class="${st[x.st][1]}">${st[x.st][0]}${x.st==='diff'?'<br>'+(x.diff>0?'+':'')+fmt(x.diff):''}${x.linked?'<br><button class="s" data-a="unlink" data-id="'+x.doc.id+'">ajratish</button>':''}</div>
+    ${cand.length?`<div class="row" style="width:100%;margin-top:6px"><select id="lk_${x.doc.id}" style="flex:1">${cand.map(b=>`<option value="${b.id}">${b.date} · ${fmt(b.sum)} · ${esc(b.desc.slice(0,22))}</option>`).join('')}</select><button class="s" data-a="link" data-id="${x.doc.id}">Bogʻlash</button></div>`:''}</div>`}).join('')||'<span class="mut">Hujjat yoʻq</span>'}</div>
+   <div class="card"><h2>Hujjatsiz bank harakatlari (${r.extra.length})</h2>${r.extra.map(b=>`<div class="item"><div>${b.date}<br><span class="mut">${esc(b.desc)}</span></div>
+    <div style="text-align:right" class="${b.dir==='in'?'ok':''}">${b.dir==='in'?'+':'−'}${fmt(b.sum)}<br><button class="s" data-a="delbank" data-id="${b.id}">✕</button></div></div>`).join('')||'<span class="mut">Yoʻq</span>'}</div>`;
+},
+qqs(){
+  const d=D(),s=stats(d,S.month),tx=taxOf(d),due=nextMonthDay(S.month,20),q=tx.mode==='qqs';
+  return`<div class="card"><h2>Soliq rejimi · ${esc(S.co)}</h2><div class="f">
+   <select id="t_mode"><option value="qqs" ${q?'selected':''}>QQS toʻlovchi</option><option value="aylanma" ${q?'':'selected'}>Aylanma soliq toʻlovchi</option></select>
+   <input id="t_rate" type="number" step="0.01" value="${tx.rate}" placeholder="Aylanma soliq stavkasi %"><button class="p w" data-a="settax">Saqlash</button></div>
+   <div class="note">Stavka faqat aylanma soliq uchun ishlatiladi. QQS stavkasi ${VAT}%.</div></div>
+   <div class="card"><h2>${q?'QQS hisobi':'Aylanma soliq'} · ${S.month}</h2>${q?`
+   <div class="item"><span>Sotuvdan QQS (chiqish)</span><b>${fmt(s.outVat)}</b></div>
+   <div class="item"><span>Xariddan QQS (hisobga olinadi)</span><b>${fmt(s.inVat)}</b></div>
+   <div class="item"><span><b>Toʻlanadigan QQS</b></span><b class="${s.pay>0?'warn':'ok'}">${fmt(s.pay)}</b></div>`:`
+   <div class="item"><span>Aylanma (sotuv)</span><b>${fmt(s.sales)}</b></div>
+   <div class="item"><span>Stavka</span><b>${s.rate}%</b></div>
+   <div class="item"><span><b>Aylanma soliq</b></span><b class="warn">${fmt(s.turn)}</b></div>`}</div>
+   <div class="card"><div class="note">Bu taxminiy hisob. Hisob bazasi va stavkani topshirishdan oldin buxgalter bilan tekshiring.</div>
+   <div class="row" style="margin-top:10px"><button class="p" data-a="qdl" data-date="${due}">Muddat qoʻshish: ${due}</button><button data-a="xlsx">Excelga yuklash</button></div></div>`;
+},
+muddat(){
+  const l=D().dl.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  return`<div class="card"><h2>Yangi muddat</h2><div class="f"><input id="l_t" class="w" placeholder="Nomi (QQS hisoboti, ijara…)"><input id="l_d" type="date" value="${today()}"><button class="p" data-a="adddl">Qoʻshish</button></div></div>
+   <div class="card"><h2>Muddatlar</h2>${l.map(x=>dlRow(x,true)).join('')||'<span class="mut">Boʻsh</span>'}</div>`;
+},
+bot(){
+  const c=D().chat;
+  return`<div class="card"><h2>Yordamchi</h2><div class="chat" id="chat">${c.map(m=>`<div class="m ${m.r}">${esc(m.t)}</div>`).join('')||'<div class="m a">Salom! Raqamlarni soʻrang yoki “nega?”, “oʻrgat” deb yozing, tushuntirib beraman.</div>'}</div>
+   <div class="row"><input id="q" placeholder="Savol…" style="flex:1"><button class="p" data-a="ask">→</button></div>
+   <div class="chips">${['Bu oy qancha ishladik?','Nega muammo bor?','QQS nima?','1C dan hisobot qanday olaman?','Bank faylini qanday yuklayman?','Kim qarz?','Soliq qancha?','Muddatlar'].map(x=>`<button class="s" data-a="chip" data-q="${x}">${x}</button>`).join('')}</div>
+   <div class="note">Bu pulsiz variant: tayyor qoidalar va sizning maʼlumotlaringiz asosida javob beradi. Haqiqiy AI emas.</div></div>`;
+}};
+
+
+V.arxiv=function(){
+  return`${S.sess?'':'<div class="card bad">Fayl yuklash uchun Bosh sahifada bulutga kiring.</div>'}
+  <div class="card"><h2>Yangi fayl</h2><div class="f"><select id="ar_cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select><input id="ar_title" placeholder="Nomi (bitta fayl uchun)">
+  <input id="ar_file" class="w" type="file" multiple><input id="ar_note" class="w" placeholder="Izoh (ixtiyoriy)"><button class="p w" data-a="upload">Yuklash</button></div>
+  <div class="note">PDF, Word, Excel, rasm. Fayl bulutda shaxsiy saqlanadi, faqat login bilan ochiladi. Korxona: ${esc(S.co)}.</div></div>
+  <div class="card"><select id="ar_f"><option value="">Hamma turlar</option>${CATS.map(c=>`<option ${S.fc===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  <div class="card" id="arlist">${arList()}</div>`;
+};
+V.namuna=function(){
+  const c=REK(),t=TPL.find(x=>x.id===S.tpl),vals=(S.tv&&t&&S.tv[t.id])||{};
+  let h=`<div class="card"><details><summary><b>Korxona rekvizitlari</b> <span class="mut">${esc(c.nom)}</span></summary><div class="f" style="margin-top:8px">`
+   +[['nom','Nomi'],['turi','Turi (MChJ / YaTT)'],['stir','STIR'],['rahbar','Rahbar F.I.O.'],['lav','Rahbar lavozimi'],['manzil','Manzil'],['tel','Telefon']].map(([k,l])=>`<div><label class="mut">${l}</label><input id="r_${k}" value="${esc(c[k]||'')}"></div>`).join('')
+   +`<button class="p w" data-a="setrek">Saqlash</button></div></details></div>
+   <div class="card"><h2>Shablon tanlang</h2><div class="chips">${TPL.map(x=>`<button class="s ${t&&t.id===x.id?'p':''}" data-a="pick" data-id="${x.id}">${x.name}</button>`).join('')}</div></div>`;
+  if(t)h+=`<div class="card"><h2>${t.name}</h2><div class="f">${t.f.map(f=>fieldHtml(f,vals[f.k]!==undefined?vals[f.k]:(f.def==='today'?today():f.defc?(c[f.defc]||''):(f.def||'')))).join('')}<button class="p w" data-a="gen">Hosil qilish</button></div></div>`;
+  if(OUT&&t&&OUT.tid===t.id&&OUT.co===S.co)h+=`<div class="card"><h2>Natija</h2><div class="paper">${OUT.html}</div>
+   <div class="row" style="margin-top:10px"><button class="p" data-a="pdf">Chop etish / PDF</button><button data-a="word">Word (.doc)</button><button data-a="copy">Nusxa</button><button data-a="tosave">Arxivga saqlash</button></div>
+   <div class="note">Bu namuna. Rasmiylashtirishdan oldin buxgalter yoki yurist bilan tekshiring. Word faylda matnni oʻzgartirishingiz mumkin.</div></div>`;
+  return h;
+};
+
+V.lot=function(){
+  const f=S.lf||{kw:'',per:'12',cu:'',st:'',co:''},rows=lotRows(f),n=rows.length;
+  let h='';
+  h+=`<div class="card"><h2>Yopilgan bitimlarni yuklash</h2><input id="f_lot" type="file" accept=".xlsx,.xls,.csv,.json,.txt">
+   <div class="note">Excel, CSV yoki JSON. Ustunlar: lot nomi, buyurtmachi, boshlangʻich narx, yakuniy narx, ishtirokchilar soni, sana, gʻolib. Hozir yuklangan: <b>${DEALS.length}</b> ta bitim (faqat shu brauzerda saqlanadi).</div>
+   ${DEALS.length?'<div style="margin-top:8px"><button class="s" data-a="lotclear">Hammasini tozalash</button></div>':''}</div>`;
+  if(LOTPEND){const hd=LOTPEND.head;
+    h+=`<div class="card"><h2>Ustunlarni tekshiring · ${LOTPEND.rows.length} qator</h2><div class="f">`+LFIELDS.map(fl=>`<div><label class="mut">${fl[1]}</label><select id="lm_${fl[0]}"><option value="-1">— yoʻq —</option>${hd.map((x,i)=>`<option value="${i}" ${LOTPEND.map[fl[0]]===i?'selected':''}>${i+1}: ${esc(String(x).slice(0,22))}</option>`).join('')}</select></div>`).join('')
+     +`<button class="p w" data-a="lotload">Yuklash</button><button class="w" data-a="lotcancel">Bekor</button></div></div>`}
+  if(!DEALS.length)return h+'<div class="card"><span class="mut">Hali bitim yuklanmagan. Yakunlangan lotlar roʻyxatini (boshlangʻich va yakuniy narxi bilan) yuklang, panel narx chegirmalari, raqobat va gʻoliblarni tahlil qiladi.</span></div>';
+  h+=`<div class="card"><h2>Qidirish</h2><div class="f"><input id="l_kw" placeholder="Mahsulot (vergul bilan: profnastil, armatura)" value="${esc(f.kw)}">
+   <select id="l_per">${[['all','Hamma vaqt'],['12','Soʻnggi 12 oy'],['6','Soʻnggi 6 oy'],['3','Soʻnggi 3 oy']].map(o=>`<option value="${o[0]}" ${f.per===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>
+   <input id="l_cu" placeholder="Buyurtmachi (ixtiyoriy)" value="${esc(f.cu)}"><button class="p" data-a="lotfind">Hisoblash</button></div></div>`;
+  if(n<1)return h+'<div class="card"><span class="mut">Bu shartlarga mos bitim topilmadi.</span></div>';
+  const ds=rows.map(discOf),ps=rows.filter(x=>x.p!=null).map(x=>x.p),solo=rows.filter(x=>x.p!=null&&x.p<=1).length;
+  const p25=pct(ds,.25),p50=pct(ds,.5),p75=pct(ds,.75),mp=ps.length?ps.reduce((a,b)=>a+b,0)/ps.length:0;
+  h+=`${n<10?'<div class="card warn">Faqat '+n+' ta bitim topildi, xulosa ishonchsiz. Koʻproq maʼlumot yuklang.</div>':''}
+  <div class="kpis"><div class="kpi"><div class="ic">${ico('lot')}</div><div><small>Topilgan bitimlar</small><b>${n}</b></div></div>
+   <div class="kpi"><div class="ic ok">${ico('money')}</div><div><small>Oʻrtacha chegirma (median)</small><b>${p50.toFixed(1)}%</b><div class="dl mut">boshlangʻich narxdan</div></div></div>
+   <div class="kpi"><div class="ic warn">${ico('cart')}</div><div><small>Oʻrtacha ishtirokchilar</small><b>${ps.length?mp.toFixed(1):'—'}</b></div></div>
+   <div class="kpi"><div class="ic ${ps.length&&solo/ps.length>.4?'bad':''}">${ico('qqs')}</div><div><small>Raqobatsiz bitimlar</small><b>${ps.length?Math.round(solo/ps.length*100)+'%':'—'}</b><div class="dl mut">1 ishtirokchi</div></div></div></div>
+  <div class="g2"><div class="card"><h2>Chegirma taqsimoti</h2>${histo(rows)}<div class="note">Gʻolib narx boshlangʻich narxdan necha foiz past boʻlgani.</div></div>
+   <div class="card"><h2>Narx maslahati</h2><div class="f"><input id="l_st" type="number" placeholder="Boshlangʻich narx (soʻm)" value="${esc(f.st)}"><input id="l_co" type="number" placeholder="Tan narxingiz (soʻm)" value="${esc(f.co)}"><button class="p w" data-a="lotfind">Hisoblash</button></div>
+   ${num(f.st)>0?[['Xavfsiz',p25,'kam chegirma, yutish qiyinroq'],['Oʻrtacha',p50,'odatdagi gʻolib narx'],['Agressiv',p75,'yutish ehtimoli yuqoriroq']].map(o=>{const bid=f.st*(1-o[1]/100),mg=num(f.co)>0?(bid-f.co)/bid*100:null;return`<div class="item"><div style="min-width:0"><b>${o[0]}</b><br><span class="mut">${o[1].toFixed(1)}% chegirma · ${o[2]}</span></div><div style="text-align:right;white-space:nowrap"><b>${fmt(bid)}</b>${mg!=null?`<br><span class="${mg>=10?'ok':mg>=0?'warn':'bad'}">foyda ${mg.toFixed(1)}%</span>`:''}</div></div>`}).join(''):'<div class="note">Boshlangʻich narxni kiriting, panel oldingi shunga oʻxshash lotlar boʻyicha narx oraligʻini koʻrsatadi.</div>'}
+   <div class="note">Bu tarixiy statistika, gʻalaba kafolati emas. Qaror sizda.</div></div></div>
+  <div class="g2e"><div class="card"><h2>Koʻp yutganlar</h2>${topBy(rows,'w').map(x=>`<div class="item"><span>${esc(x.k)} <span class="mut">(${x.n} ta)</span></span><b>${fmt(x.sum)}</b></div>`).join('')||'<span class="mut">—</span>'}</div>
+   <div class="card"><h2>Koʻp xarid qilganlar</h2>${topBy(rows,'c').map(x=>`<div class="item"><span>${esc(x.k)} <span class="mut">(${x.n} ta)</span></span><b>${fmt(x.sum)}</b></div>`).join('')||'<span class="mut">—</span>'}</div></div>
+  <div class="card"><h2>Soʻnggi bitimlar</h2>${rows.slice().sort((a,b)=>(b.dt||'').localeCompare(a.dt||'')).slice(0,15).map(x=>`<div class="item" style="align-items:flex-start"><div style="min-width:0"><b style="word-break:break-word">${esc(x.t.slice(0,90))}</b><br><span class="mut">${x.dt||''} · ${esc((x.c||'').slice(0,40))}${x.p!=null?' · '+x.p+' ishtirokchi':''}</span></div><div style="text-align:right;white-space:nowrap"><b>${fmt(x.d)}</b><br><span class="${discOf(x)>=0?'ok':'bad'}">${discOf(x).toFixed(1)}%</span></div></div>`).join('')}</div>`;
+  return h;
+};
+function dlRow(x,ctl){
+  const n=daysLeft(x.date),cls=x.done?'mut':n<0?'bad':n<=5?'warn':'ok';
+  const txt=x.done?'bajarildi':n<0?(-n)+' kun oʻtgan':n===0?'bugun':n+' kun qoldi';
+  return`<div class="item"><div>${x.done?'<s>':''}<b>${esc(x.title)}</b>${x.done?'</s>':''}<br><span class="mut">${x.date}</span></div>
+  <div style="text-align:right" class="${cls}">${txt}${ctl?`<br><button class="s" data-a="donedl" data-id="${x.id}">✓</button> <button class="s" data-a="deldl" data-id="${x.id}">✕</button>`:''}</div></div>`;
+}
+
+/* ---- yordamchi ---- */
+function answer(q){
+  q=q.toLowerCase().replace(/[ʻʼ’`']/g,'');const d=D(),s=stats(d,S.month),r=reconcile(d);
+  const has=(...w)=>w.some(x=>q.includes(x));
+  if(has('nega','sabab','tushuntir','muammo')){const ck=checks(d);return ck.length?ck.slice(0,4).map(x=>`• ${x.t.replace(/<[^>]+>/g,'')}\n  Nega: ${x.w}\n  Nima qilish: ${x.f}`).join('\n\n'):'Hozir tekshiruvda muammo topilmadi.'}
+  if(has('namuna','shablon','dalolatnoma','ustav','bayonnoma','buyruq','ishonchnoma','shartnoma'))return'“Namuna” boʻlimida shablonni tanlang, maydonlarni toʻldiring va “Hosil qilish”ni bosing. Natijani chop etish/PDF, Word yoki arxivga saqlash mumkin. Tayyor fayllaringizni “Arxiv” boʻlimiga yuklang.';
+  if(has('orgat','qanday','nima','1c','didox','osv')){
+    if(has('1c','osv'))return TEACH.osv;if(has('didox'))return TEACH.didox;if(has('bank','fayl','yukla'))return TEACH.bank;if(has('aylanma'))return TEACH.aylanma;if(has('qqs','soliq'))return taxOf(d).mode==='qqs'?TEACH.qqs:TEACH.aylanma;
+    return'Nimani oʻrgatay? Yozing: “qqs”, “aylanma soliq”, “bank fayli”, “1c hisobot”, “didox”.';}
+  if(has('qqs','soliq','aylanma'))return s.mode==='qqs'?`${S.month} uchun: sotuvdan QQS ${fmt(s.outVat)}, xariddan ${fmt(s.inVat)}. Toʻlanadigan QQS: ${fmt(s.pay)} soʻm.`:`${S.month} uchun aylanma ${fmt(s.sales)} soʻm, stavka ${s.rate}%. Aylanma soliq: ${fmt(s.turn)} soʻm (taxminiy).`;
+  if(has('farq','bank','solishtir')){const b=r.rows.filter(x=>x.st!=='ok');return b.length||r.extra.length?`${b.length} ta hujjatda muammo, ${r.extra.length} ta bank harakati hujjatsiz.\n`+b.slice(0,5).map(x=>`• ${x.doc.no||'—'}: ${x.st==='diff'?'farq '+fmt(x.diff):'toʻlov topilmadi'}`).join('\n'):'Hammasi mos.'}
+  if(has('muddat','eslat','qachon')){const l=d.dl.filter(x=>!x.done).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);return l.length?l.map(x=>`• ${x.title}: ${x.date} (${daysLeft(x.date)} kun)`).join('\n'):'Muddat qoʻyilmagan.'}
+  if(has('qarz','tolanmagan','kim')){const db=debts(d),f=a=>a.slice(0,5).map(x=>`• ${x.party}: ${fmt(x.sum)}`).join('\n')||'—';return`Mijozlar sizga qarz (bank tasdiqlamagan):\n${f(db.rec)}\n\nSiz taʼminotchilarga:\n${f(db.pay)}`}
+  if(has('xarid','xarajat','chiqim'))return`${S.month} xarid: ${fmt(s.buys)} soʻm.`;
+  if(has('ishla','foyda','daromad','sotuv','savdo'))return`${S.month} sotuv: ${fmt(s.sales)}, xarid: ${fmt(s.buys)}. Farq: ${fmt(s.profit)} soʻm (${s.n} ta hujjat).`;
+  return'Tushunmadim. Soʻrang: sotuv, xarid, QQS, bank bilan farq, qarz yoki muddatlar.';
+}
+
+/* ---- amallar ---- */
+function parseBank(t){
+  let n=0;
+  t.split('\n').forEach(line=>{
+    const p=line.split(/[;\t]/).map(x=>x.trim());if(p.length<3)return;
+    const raw=parseFloat(p[p.length-1].replace(/\s/g,'').replace(',','.'));
+    if(!/^\d{4}-\d{2}-\d{2}/.test(p[0])||isNaN(raw))return;
+    D().bank.push({id:uid(),date:p[0].slice(0,10),desc:p.slice(1,-1).join(' '),sum:Math.abs(raw),dir:raw<0?'out':'in'});n++;
+  });
+  return n;
+}
+function demo(){
+  const m=S.month,d=D();
+  d.docs.push(
+   {id:uid(),date:m+'-01',no:'AKT-118',party:'Mijoz A',type:'sotuv',sum:4250000,vat:true},
+   {id:uid(),date:m+'-03',no:'SF-147',party:'Mijoz B',type:'sotuv',sum:12450000,vat:true},
+   {id:uid(),date:m+'-07',no:'NAK-77',party:'Taʼminotchi X',type:'xarid',sum:7300000,vat:true});
+  d.bank.push(
+   {id:uid(),date:m+'-02',desc:'AKT-118 uchun',sum:4250000,dir:'in'},
+   {id:uid(),date:m+'-05',desc:'SF-147 toʻlov',sum:12450000,dir:'in'},
+   {id:uid(),date:m+'-09',desc:'NAK-77 toʻlov',sum:7150000,dir:'out'});
+  d.dl.push({id:uid(),title:'QQS hisoboti',date:nextMonthDay(m,20),done:false});
+}
+const A={
+  adddoc(){const sum=parseFloat($('d_sum').value);if(!sum||!$('d_date').value)return alert('Sana va summani kiriting');
+    const o={date:$('d_date').value,no:$('d_no').value.trim(),party:$('d_party').value.trim(),type:$('d_type').value,sum,vat:$('d_vat').value==='1'};
+    const ed=S.editId&&D().docs.find(x=>x.id===S.editId);
+    if(ed)Object.assign(ed,o);else D().docs.push(Object.assign({id:uid()},o));S.editId=null;},
+  editdoc(e){S.editId=e.dataset.id;window.scrollTo(0,0)},
+  canceledit(){S.editId=null},
+  link(e){const id=e.dataset.id,sel=$('lk_'+id);if(!sel||!sel.value)return;D().docs.find(x=>x.id===id).link=sel.value},
+  unlink(e){delete D().docs.find(x=>x.id===e.dataset.id).link},
+  settax(){const m=$('t_mode').value,r=parseFloat($('t_rate').value);D().tax={mode:m,rate:isNaN(r)?4:r}},
+  xlsx(){
+    if(!window.XLSX){alert('Excel kutubxonasi yuklanmadi (internet kerak)');return 'norender'}
+    const wb=XLSX.utils.book_new(),R=reportData();
+    Object.keys(R).forEach(k=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(R[k]),k));
+    XLSX.writeFile(wb,'hisobot_'+S.co.replace(/\s+/g,'_')+'_'+S.month+'.xlsx');return 'norender';
+  },
+  deldoc(e){D().docs=D().docs.filter(x=>x.id!==e.dataset.id)},
+  addbank(){const n=parseBank($('b_txt').value);if(!n)return alert('Qator topilmadi. Format: sana;izoh;summa (sana 2026-10-03 koʻrinishida)')},
+  delbank(e){D().bank=D().bank.filter(x=>x.id!==e.dataset.id)},
+  adddl(){if(!$('l_t').value.trim())return;D().dl.push({id:uid(),title:$('l_t').value.trim(),date:$('l_d').value,done:false})},
+  qdl(e){D().dl.push({id:uid(),title:'QQS hisoboti ('+S.month+')',date:e.dataset.date,done:false});S.tab='muddat'},
+  donedl(e){const x=D().dl.find(y=>y.id===e.dataset.id);x.done=!x.done},
+  deldl(e){D().dl=D().dl.filter(x=>x.id!==e.dataset.id)},
+  ask(){const q=$('q').value.trim();if(!q)return;D().chat.push({r:'u',t:q},{r:'a',t:answer(q)})},
+  demo,
+  exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(Object.assign({},S,{sess:null,hash:{},lastPull:0}))],{type:'application/json'}));a.download='buxgalter-zaxira.json';a.click();return 'norender'},
+  imp(){$('file').click();return 'norender'},
+  clr(){if(confirm(S.co+' maʼlumotini oʻchirasizmi? (arxiv fayllari bulutda qoladi)')){const t=D().tax,r=D().rek;S.cos[S.co]=blank();D().tax=t;if(r)D().rek=r}},
+  chip(e){const q=e.dataset.q;D().chat.push({r:'u',t:q},{r:'a',t:answer(q)})},
+  mapcancel(){PEND=null},
+  lotclear(){if(confirm('Yuklangan hamma bitim oʻchirilsinmi?')){DEALS=[];try{localStorage.setItem(DKEY,'[]')}catch(e){}}},
+  lotcancel(){LOTPEND=null},
+  lotfind(){S.lf={kw:$('l_kw')?$('l_kw').value:'',per:$('l_per')?$('l_per').value:'12',cu:$('l_cu')?$('l_cu').value:'',st:$('l_st')?$('l_st').value:(S.lf&&S.lf.st)||'',co:$('l_co')?$('l_co').value:(S.lf&&S.lf.co)||''}},
+  lotload(){
+    const m={};LFIELDS.forEach(fl=>{m[fl[0]]=+$('lm_'+fl[0]).value});
+    if(m.start<0||m.deal<0){alert('Boshlangʻich va yakuniy narx ustunlarini tanlang');return 'norender'}
+    const seen={};DEALS.forEach(x=>{seen[x.n+'|'+x.s+'|'+x.d]=1});let add=0,skip=0,bad=0;
+    LOTPEND.rows.forEach(r=>{
+      const s=num(r[m.start]),d=num(r[m.deal]);if(!(s>0&&d>0)){bad++;return}
+      if(m.cur>=0){const c=String(r[m.cur]||'').trim();if(c&&!/^(uzs|sum|soʻm|som|сум)/i.test(c)){bad++;return}}
+      const o={n:m.no>=0?String(r[m.no]):'',t:m.title>=0?String(r[m.title]||''):'',c:m.cust>=0?String(r[m.cust]||''):'',s,d,
+        p:m.part>=0&&r[m.part]!==''&&!isNaN(num(r[m.part]))?num(r[m.part]):null,dt:m.date>=0?normDate(r[m.date]):null,w:m.win>=0?String(r[m.win]||''):''};
+      const k=o.n+'|'+o.s+'|'+o.d;if(seen[k]){skip++;return}seen[k]=1;DEALS.push(o);add++;
+    });
+    if(DEALS.length>15000){DEALS=DEALS.slice(-15000);alert('Faqat soʻnggi 15 000 ta bitim saqlandi')}
+    try{localStorage.setItem(DKEY,JSON.stringify(DEALS))}catch(e){alert('Brauzer xotirasi toʻldi. Kamroq bitim yuklang.')}
+    LOTPEND=null;alert(add+' ta bitim qoʻshildi'+(skip?', '+skip+' ta takror oʻtkazildi':'')+(bad?', '+bad+' ta qator yaroqsiz (narx yoʻq yoki boshqa valyuta)':''));
+  },
+
+  upload(){
+    if(!S.sess){alert('Avval Bosh sahifada bulutga kiring');return 'norender'}
+    const fs=Array.from($('ar_file').files||[]);if(!fs.length){alert('Fayl tanlang');return 'norender'}
+    const meta={cat:$('ar_cat').value,title:fs.length===1?$('ar_title').value.trim():'',note:$('ar_note').value.trim()};
+    setSyn('⇪');
+    (async()=>{let n=0;for(const f of fs){try{await uploadFile(f,meta);n++}catch(e){alert(e.message)}}save();render();alert(n+' ta fayl yuklandi')})();
+    return 'norender';
+  },
+  openf(e){const w=window.open('','_blank');openFile(e.dataset.id,w).catch(er=>{if(w)w.close();alert(er.message)});return 'norender'},
+  delf(e){if(!confirm('Fayl oʻchirilsinmi?'))return 'norender';const f=D().files.find(x=>x.id===e.dataset.id);if(!f)return 'norender';
+    D().files=D().files.filter(x=>x.id!==f.id);stoReq('DELETE','object/hujjatlar/'+f.path).catch(()=>{})},
+  pick(e){S.tpl=e.dataset.id;OUT=null},
+  setrek(){const c=REK();['nom','turi','stir','rahbar','lav','manzil','tel'].forEach(k=>{c[k]=$('r_'+k).value.trim()});D().rek=c},
+  gen(){const t=TPL.find(x=>x.id===S.tpl);if(!t)return;const v={};t.f.forEach(f=>{v[f.k]=$('f_'+f.k).value});
+    S.tv=S.tv||{};S.tv[t.id]=v;OUT={tid:t.id,co:S.co,title:t.name,cat:t.cat,html:t.gen(v,REK())}},
+  pdf(){if(!OUT)return 'norender';const w=window.open('','_blank');if(!w){alert('Oyna ochilmadi. Brauzerda oynalarga ruxsat bering');return 'norender'}
+    w.document.write(fullHtml(OUT.title,OUT.html));w.document.close();setTimeout(()=>w.print(),400);return 'norender'},
+  word(){if(!OUT)return 'norender';const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\ufeff'+fullHtml(OUT.title,OUT.html)],{type:'application/msword'}));a.download=fname()+'.doc';a.click();return 'norender'},
+  copy(){if(!OUT)return 'norender';const t=document.createElement('div');t.innerHTML=OUT.html;
+    navigator.clipboard.writeText(t.innerText||t.textContent).then(()=>alert('Nusxa olindi')).catch(()=>alert('Nusxa olinmadi'));return 'norender'},
+  tosave(){if(!OUT)return 'norender';if(!S.sess){alert('Avval Bosh sahifada bulutga kiring');return 'norender'}
+    const f=new File(['\ufeff'+fullHtml(OUT.title,OUT.html)],fname()+'.doc',{type:'application/msword'});
+    uploadFile(f,{cat:OUT.cat,title:OUT.title+' · '+today()}).then(()=>{save();alert('Arxivga saqlandi')}).catch(e=>alert(e.message));return 'norender'},
+
+  cloudin(){
+    const url=$('c_url').value.trim().replace(/\/+$/,''),key=$('c_key').value.replace(/\s+/g,''),em=$('c_em').value.trim(),pw=$('c_pw').value;
+    if(S.sess&&!pw&&url===S.cfg.url&&key===S.cfg.key&&em===S.cfg.email){syncAll(true);return 'norender'}
+    if(!/^https:\/\//.test(url)||!key||!em||!pw){alert('URL, kalit, email va parolni toʻldiring');return 'norender'}
+    S.cfg={url,key,email:em};
+    cloudLogin(em,pw).then(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}return syncAll(true)}).catch(e=>{alert(e.message);render()});
+    return 'norender';
+  },
+  cloudsync(){if(!S.sess){alert('Avval kiring');return 'norender'}syncAll(true);return 'norender'},
+  cloudout(){S.sess=null;setSyn('')},
+  clrbank(){if(confirm('Bank harakatlari oʻchirilsinmi?'))D().bank=[]},
+  mapbank(){
+    const rows=PEND.rows,dc=+$('m_date').value,sc=+$('m_desc').value,ic=+$('m_in').value,oc=+$('m_out').value;
+    if(ic<0&&oc<0)return alert('Kirim yoki summa ustunini tanlang');
+    let n=0,skip=0;const d=D();
+    rows.forEach(r=>{
+      const dt=normDate(r[dc]);if(!dt)return;
+      const iv=ic>=0?num(r[ic]):NaN,ov=oc>=0?num(r[oc]):NaN;let dir,sum;
+      if(oc>=0){if(iv>0){dir='in';sum=iv}else if(ov>0){dir='out';sum=ov}else if(ov<0){dir='out';sum=-ov}else return}
+      else{if(isNaN(iv)||iv===0)return;dir=iv<0?'out':'in';sum=Math.abs(iv)}
+      const desc=String(r[sc]??'').slice(0,160);
+      if(d.bank.some(b=>b.date===dt&&b.sum===sum&&b.dir===dir&&b.desc===desc)){skip++;return}
+      d.bank.push({id:uid(),date:dt,desc,sum,dir});n++;
+    });
+    PEND=null;alert(n+' ta harakat qoʻshildi'+(skip?', '+skip+' ta takror oʻtkazildi':''));
+  },
+  mapdoc(){
+    const rows=PEND.rows,dc=+$('m_date').value,nc=+$('m_no').value,pc=+$('m_party').value,sc=+$('m_sum').value,tc=+$('m_type').value;
+    if(sc<0)return alert('Summa ustunini tanlang');
+    let n=0,skip=0;const d=D();
+    rows.forEach(r=>{
+      const dt=normDate(r[dc]);if(!dt)return;
+      const sum=Math.abs(num(r[sc]));if(!sum)return;
+      let type=$('m_dtype').value;
+      if(tc>=0){const t=String(r[tc]??'');if(/sot|chiq|реал|realiz|исход/i.test(t))type='sotuv';else if(/xar|kir|пост|вход/i.test(t))type='xarid'}
+      const no=nc>=0?String(r[nc]??'').trim():'',party=pc>=0?String(r[pc]??'').trim():'';
+      if(d.docs.some(x=>x.date===dt&&x.sum===sum&&x.no===no&&x.type===type)){skip++;return}
+      d.docs.push({id:uid(),date:dt,no,party,type,sum,vat:$('m_dvat').value==='1'});n++;
+    });
+    PEND=null;alert(n+' ta hujjat qoʻshildi'+(skip?', '+skip+' ta takror oʻtkazildi':''));
+  }
+};
+
+function render(){
+  $('co').innerHTML=Object.keys(S.cos).map(c=>`<option ${c===S.co?'selected':''}>${c}</option>`).join('');
+  $('mo').value=S.month;
+  applyTheme();
+  const tt=TABS.find(t=>t[0]===S.tab)||TABS[0];
+  $('ttl').textContent=tt[2];
+  $('thm').textContent=S.theme==='dark'?'☀':'☾';
+  $('nav').innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${S.tab===t[0]?'on':''}">${ico(t[0],22)}<span>${t[1]}</span></button>`).join('');
+  $('side').innerHTML='<div class="logo"><span class="dot">B</span>Buxgalter</div>'+TABS.map(t=>`<button class="si ${S.tab===t[0]?'on':''}" data-t="${t[0]}">${ico(t[0])}<span>${t[1]}</span></button>`).join('')+`<div class="sfoot">${S.sess?'☁ Bulutga ulangan':'Oflayn rejim'}</div>`;
+  $('v').innerHTML=V[S.tab]();
+  const c=$('chat');if(c)c.scrollTop=c.scrollHeight;
+  const hq=$('h_q'),ht=$('h_t');if(hq&&ht){const hl=()=>{S.hq=hq.value;S.ht=ht.value;$('hlist').innerHTML=docList()};hq.oninput=hl;ht.onchange=hl}
+  const fl=$('f_lot');if(fl)fl.onchange=()=>{const f=fl.files[0];if(!f)return;readRows(f).then(rows=>{const head=rows[0].map(x=>String(x));LOTPEND={rows:rows.slice(1),head,map:detectLot(head)};render()}).catch(e=>alert(e.message))};
+  const arf=$('ar_f');if(arf)arf.onchange=()=>{S.fc=arf.value;$('arlist').innerHTML=arList()};
+  const sy=$('syn');if(sy)sy.textContent=S.sess?(busy?'⟳':'☁'):'';
+  ['bank','doc'].forEach(k=>{const fi=$('f_'+k);if(fi)fi.onchange=()=>{const f=fi.files[0];if(!f)return;readRows(f).then(rows=>{PEND={kind:k,rows};render()}).catch(e=>alert(e.message))}});
+  const f=$('file');if(f)f.onchange=()=>{const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.cos)throw 0;const oc=S.cfg,os=S.sess;S=j;S.cfg=oc||{};S.sess=os;S.hash={};S.lastPull=0;Object.keys(S.cos).forEach(c=>{S.cos[c].tax=S.cos[c].tax||Object.assign({},TAXDEF[c]||{mode:'qqs',rate:12});S.cos[c].files=S.cos[c].files||[]});save();render()}catch(e){alert('Fayl notoʻgʻri')}};r.readAsText(f.files[0])};
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('#thm')){S.theme=S.theme==='dark'?'light':'dark';save();render();return}
+  const t=e.target.closest('[data-t]');if(t){S.tab=t.dataset.t;save();render();return}
+  const a=e.target.closest('[data-a]');if(!a)return;
+  const res=A[a.dataset.a](a);if(res==='norender')return;save();render();
+});
+$('co').onchange=e=>{S.co=e.target.value;save();render()};
+$('mo').onchange=e=>{if(e.target.value){S.month=e.target.value;save();render()}};
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='q'){A.ask();save();render();$('q').focus()}});
+applyTheme();render();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncAll(false)});
+if(S.sess)syncAll(false);
+</script>
+</body>
+</html>
