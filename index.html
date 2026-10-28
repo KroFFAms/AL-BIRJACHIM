@@ -31,6 +31,8 @@ main{max-width:1200px;margin:-40px auto 0;padding:0 16px 40px}
 .chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);padding:5px 10px;border-radius:999px;cursor:pointer;font-size:12.5px}
 .chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .chip small{opacity:.75}
+.chipsel{appearance:auto;padding:5px 8px;max-width:280px;font:inherit;font-size:12.5px}
+.chips{align-items:center}
 label.tg{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
 .tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
 table{border-collapse:collapse;width:100%;min-width:760px}
@@ -150,7 +152,7 @@ a{color:var(--pri)}
       <option value="sum">Tartib: jami summa ↓</option>
       <option value="price">Tartib: dona narxi ↓</option>
     </select>
-    <label class="tg" id="mosWrap"><input type="checkbox" id="mos" checked> Faqat bizga mos</label>
+    <label class="tg" id="mosWrap" hidden><input type="checkbox" id="mos"> </label>
     <label class="tg"><input type="checkbox" id="tugagan"> Tugaganlarni ham</label>
   </div>
   <div class="chips" id="chips"></div>
@@ -169,6 +171,9 @@ const dstr=d=>pad(d.getDate())+'.'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // Korxona nomini qisqartirish
 const qisqa=n=>/ANVARJON|AMS/i.test(n)?'AMS':/KROFF/i.test(n)?'KROFF':/DRIVE/i.test(n)?'Drive':String(n).replace(/["«»]/g,'').split(/\s+/).slice(0,2).join(' ');
+// Auksion toifalari uchun qisqa o'zbekcha nomlar
+const TOIFA=[[/компьютер|электронн.*оптическ/i,'Kompyuter va elektronika'],[/Машины и оборудование/i,'Mashina va uskunalar'],[/металлическ.*готов/i,'Tayyor metall buyumlar'],[/резинов|пластмасс/i,'Rezina va plastmassa'],[/Оборудование электрическ/i,'Elektr jihozlari'],[/химическ/i,'Kimyo mahsulotlari'],[/минеральн.*неметалл/i,'Qurilish materiallari (mineral)'],[/лекарствен|медицинск/i,'Dori va tibbiyot'],[/издательск/i,'Nashriyot xizmatlari'],[/Металлы основные/i,'Asosiy metallar'],[/сельского хозяйства/i,'Qishloq xoʻjaligi'],[/пищев/i,'Oziq-ovqat'],[/горнодобыва/i,'Kon mahsulotlari'],[/готовые прочие/i,'Boshqa tayyor buyumlar'],[/автотранспорт|прицеп/i,'Avtotransport'],[/Одежда/i,'Kiyim'],[/Кокс|нефтепродукт/i,'Neft mahsulotlari'],[/Бумага/i,'Qogʻoz mahsulotlari'],[/транспортные и оборудование/i,'Transport vositalari'],[/Текстил/i,'Toʻqimachilik'],[/Мебель/i,'Mebel'],[/лесоводства|лесозаготов/i,'Oʻrmon mahsulotlari'],[/строительные работы|Сооружения/i,'Qurilish ishlari'],[/Древесина/i,'Yogʻoch buyumlar'],[/Уголь/i,'Koʻmir'],[/Вода|водоснабжен/i,'Suv taʼminoti'],[/Электроэнерги|газ, пар/i,'Energiya'],[/Услуги/i,'Xizmatlar'],[/Кож/i,'Teri buyumlari'],[/Табак|Напитк/i,'Ichimlik/tamaki']];
+const toifa=k=>{for(const [re,n] of TOIFA)if(re.test(k))return n;return String(k).split(/[,(]/)[0].slice(0,26);};
 const MOS=['Elektr','Santexnika','Sement/beton/blok','Metall prokat','Asbob/mayda','Yogoch/plita','Boyoq/kimyo','Tom/devor qoplama','Eshik/deraza'];
 let D={e:[],a:[]},tab='d',guruh='',limit=100,sortKey='end';
 
@@ -250,8 +255,15 @@ function chips(){
   });
   const arr=Object.entries(c).sort((a,b)=>b[1].n-a[1].n);
   if(guruh&&!c[guruh])guruh='';
+  const nom=k=>tab==='a'?toifa(k):k;
+  const TOP=tab==='a'?6:12;
+  const ko=arr.slice(0,TOP), qol=arr.slice(TOP);
+  const tanlanganQol=qol.some(([k])=>k===guruh);
   $('chips').innerHTML='<button class="chip'+(guruh?'':' on')+'" data-g="">Hammasi</button>'+
-    arr.map(([k,v])=>'<button class="chip'+(k===guruh?' on':'')+'" data-g="'+esc(k)+'">'+esc(tab==='a'?k.slice(0,38):k)+' <small>'+v.n+' · '+mln(v.s)+'</small></button>').join('');
+    ko.map(([k,v])=>'<button class="chip'+(k===guruh?' on':'')+'" data-g="'+esc(k)+'" title="'+esc(k)+'">'+esc(nom(k))+' <small>'+v.n+' · '+mln(v.s)+'</small></button>').join('')+
+    (qol.length?'<select class="chip chipsel'+(tanlanganQol?' on':'')+'" id="qolSel"><option value="">Boshqa toifalar ('+qol.length+') ▾</option>'+
+      qol.map(([k,v])=>'<option value="'+esc(k)+'"'+(k===guruh?' selected':'')+'>'+esc(nom(k))+' — '+v.n+' ta · '+mln(v.s)+'</option>').join('')+'</select>':'');
+  const qs=$('qolSel');if(qs)qs.onchange=()=>{guruh=qs.value;limit=100;render();};
 }
 
 const HOLAT={yutdi:'✅ Bizga chiqdi',yutqazdi:'❌ Chiqmadi',bitim_yoq:"⚪ Bitim bo'lmadi",kutilmoqda:'⏳ Kutilmoqda'};
@@ -293,7 +305,7 @@ function renderN(){
   $('note').textContent='Narx bergan lotlarimiz natijasi "Amalga oshgan bitimlar" ochiq ma\'lumotidan olinadi. Farq — g\'olib narxi bizning narxdan necha foiz past.';
 }
 // ---------- Bosh sahifa (dashboard) ----------
-function qiziqmi(x){return MOS.includes(x.g)&&x.qty>=3&&x.sum>=10e6;}
+function qiziqmi(x){return x.qty>=3&&x.sum>=10e6;}
 function ochish(t,o){
   o=o||{};
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
@@ -301,13 +313,13 @@ function ochish(t,o){
   if(t==='e'){
     $('korx').value=o.korx||'';$('vaqt').value=o.vaqt||'';$('q').value='';
     if(o.hammasi){$('minSoni').value='0';$('minSum').value='0';$('mos').checked=false;}
-    else{$('mos').checked=true;if(o.qiziq){$('minSoni').value='3';$('minSum').value='10';}}
+    else{if(o.qiziq){$('minSoni').value='3';$('minSum').value='10';}}
   }
   if(t==='a'){$('vaqt').value=o.vaqt||'';}
   if(t==='n'){$('nHolat').value=o.holat||'';$('nKorx').value=o.korx||'';}
   render();window.scrollTo({top:0,behavior:'smooth'});
 }
-const GC={'Elektr':'--c1','Sement/beton/blok':'--c9','Metall prokat':'--c3','Santexnika':'--c8','Asbob/mayda':'--c4','Yogoch/plita':'--c6','Boyoq/kimyo':'--c7','Tom/devor qoplama':'--c2','Eshik/deraza':'--c5'};
+const GC={'Kompyuter/ofis':'--c8','Maishiy texnika':'--c3','Kanselyariya':'--c4','Video/xavfsizlik':'--c5',"Xo'jalik/tozalash":'--c6','Xizmatlar':'--c9','Mebel':'--c7','Tibbiyot':'--c2','Kiyim/maxsus':'--c1','Avto/texnika qismlari':'--c9','Oziq-ovqat':'--c6','Elektr':'--c1','Sement/beton/blok':'--c9','Metall prokat':'--c3','Santexnika':'--c8','Asbob/mayda':'--c4','Yogoch/plita':'--c6','Boyoq/kimyo':'--c7','Tom/devor qoplama':'--c2','Eshik/deraza':'--c5'};
 const gcol=g=>'var('+(GC[g]||'--c9')+')';
 const KC={AMS:'#c2255c',KROFF:'#1d5fa8',Drive:'#0e8a7a'};
 const go=o=>"data-go='"+JSON.stringify(o).replace(/'/g,'&#39;')+"'";
@@ -360,7 +372,7 @@ function render(){
   $('dash').hidden=true;$('dash').innerHTML='';$('tw').hidden=false;
   if(tab==='n'){renderN();return;}
   $('ebar').hidden=false;$('nbar').hidden=true;
-  $('mosWrap').style.display=tab==='e'?'':'none';
+  $('mosWrap').style.display='none';
   $('minSoni').style.display=tab==='e'?'':'none';
   $('korx').disabled=tab!=='e';
   $('sort').querySelector('[value=price]').hidden=tab!=='e';
@@ -383,7 +395,7 @@ function render(){
   $('tb').innerHTML=view.map(x=>{
     const cls=x.end<=now?' class="end"':'';
     if(tab==='e')return '<tr'+cls+'><td>'+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
-    return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+esc(x.tur)+'</div></td><td>'+esc(x.cust)+'<div class="g">'+esc(x.cat)+'</div></td><td class="prods">'+esc(x.name)+(x.n>1?' <span class="g">('+x.n+' xil)</span>':'')+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+    return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+esc(x.tur)+'</div></td><td>'+esc(x.cust)+'<div class="g" title="'+esc(x.cat)+'">'+esc(toifa(x.cat))+'</div></td><td class="prods">'+esc(x.name)+(x.n>1?' <span class="g">('+x.n+' xil)</span>':'')+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
   }).join('')||'<tr><td colspan="7" class="note">Hech narsa topilmadi.</td></tr>';
   $('more').hidden=L.length<=limit;
   $('more').textContent='Yana ko\'rsatish ('+(L.length-limit)+' ta qoldi)';
@@ -396,7 +408,7 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
   tab=b.dataset.t;guruh='';limit=100;render();
 });
-$('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;guruh=b.dataset.g;limit=100;render();};
+$('chips').onclick=e=>{const b=e.target.closest('button.chip');if(!b)return;guruh=b.dataset.g;limit=100;render();};
 $('th').onclick=e=>{const t=e.target.closest('th[data-s]');if(!t)return;sortKey=t.dataset.s;render();};
 ['q','vaqt','mos','tugagan','korx'].forEach(id=>$(id).addEventListener('input',()=>{limit=100;render();}));
 // Min soni / Min summa: standart 3 dona va 10 mln, tanlov shu brauzerda eslab qolinadi
