@@ -42,6 +42,21 @@ a{color:var(--pri)}
 .note{color:var(--mut);font-size:12px;margin:10px 2px}
 .err{background:#fde8e6;color:#8a1c12;padding:12px;border-radius:8px}
 .kb{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-top:3px;font-size:10.5px;color:var(--ink)}
+.hl{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.hl.yutdi{background:#e3f6ec;color:#1a7f4b}.hl.yutqazdi{background:#fde8e6;color:#b42318}.hl.bitim_yoq{background:var(--chip);color:var(--mut)}.hl.kutilmoqda{background:#fff4e0;color:#a15c00}
+.bar[hidden],.more[hidden],.tw[hidden]{display:none}
+#dash h3{font-size:14px;margin:18px 2px 8px;color:var(--mut);font-weight:600}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.dc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;transition:border-color .15s,transform .15s}
+.dc:hover{border-color:var(--pri);transform:translateY(-1px)}
+.dc .t{font-size:12.5px;color:var(--mut);margin-bottom:6px}
+.dc .v{font-size:22px;font-weight:700}
+.dc .s{font-size:12px;color:var(--mut);margin-top:4px}
+.dc.big{border-left:4px solid var(--pri)}
+.dl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dl a{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.dl a:last-child{border-bottom:0}
+.dl a:hover{background:var(--chip)}
 .prods{font-size:12px;color:var(--mut);max-width:420px}
 </style>
 </head>
@@ -52,11 +67,24 @@ a{color:var(--pri)}
 </header>
 <main>
   <div class="tabs">
-    <button class="tab on" data-t="e">Elektron do'kon</button>
+    <button class="tab on" data-t="d">Bosh sahifa</button>
+    <button class="tab" data-t="e">Elektron do'kon</button>
     <button class="tab" data-t="a">Auksion</button>
+    <button class="tab" data-t="n">Natijalar</button>
   </div>
   <div class="stats" id="stats"></div>
-  <div class="bar">
+  <div class="bar" id="nbar" hidden>
+    <select id="nHolat">
+      <option value="">Holat: hammasi</option>
+      <option value="yutdi">✅ Bizga chiqdi</option>
+      <option value="yutqazdi">❌ Chiqmadi</option>
+      <option value="bitim_yoq">⚪ Bitim bo'lmadi</option>
+      <option value="kutilmoqda">⏳ Kutilmoqda</option>
+    </select>
+    <select id="nKorx"><option value="">Korxona: hammasi</option></select>
+    <input type="search" id="nq" placeholder="Qidirish: mahsulot, lot №, g'olib…">
+  </div>
+  <div class="bar" id="ebar">
     <input type="search" id="q" placeholder="Qidirish: mahsulot, lot №, buyurtmachi…">
     <select id="korx" title="Qaysi korxona kabinetida chiqqan">
       <option value="">Korxona: hammasi</option>
@@ -89,7 +117,8 @@ a{color:var(--pri)}
     <label class="tg"><input type="checkbox" id="tugagan"> Tugaganlarni ham</label>
   </div>
   <div class="chips" id="chips"></div>
-  <div class="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
+  <div id="dash"></div>
+  <div class="tw" id="tw"><table><thead id="th"></thead><tbody id="tb"></tbody></table></div>
   <button class="more" id="more" hidden>Yana ko'rsatish</button>
   <p class="note" id="note"></p>
 </main>
@@ -104,7 +133,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 // Korxona nomini qisqartirish
 const qisqa=n=>/ANVARJON|AMS/i.test(n)?'AMS':/KROFF/i.test(n)?'KROFF':/DRIVE/i.test(n)?'Drive':String(n).replace(/["«»]/g,'').split(/\s+/).slice(0,2).join(' ');
 const MOS=['Elektr','Santexnika','Sement/beton/blok','Metall prokat','Asbob/mayda','Yogoch/plita','Boyoq/kimyo','Tom/devor qoplama','Eshik/deraza'];
-let D={e:[],a:[]},tab='e',guruh='',limit=100,sortKey='end';
+let D={e:[],a:[]},tab='d',guruh='',limit=100,sortKey='end';
 
 function left(end){
   const h=(end-Date.now())/36e5;
@@ -130,7 +159,7 @@ async function load(){
     const j=await olish();
     D.e=j.edokon.map(x=>({lot:x[0],g:x[1],name:x[2],qty:x[3],price:x[4],sum:x[3]*x[4],end:new Date(x[5]),k:Array.isArray(x[6])?x[6]:[],url:'https://xarid.uzex.uz/shop/lot-details/'+String(x[0]).slice(-7)}));
     D.a=j.auksion.map(x=>({id:x[0],lot:x[1],tur:x[2],cust:x[3],cat:x[4],sum:x[5],price:0,end:new Date(x[6]),n:x[7],name:x[8],url:'https://xarid.uzex.uz/auction/detail/'+x[0]}));
-    const K=j.korxonalar||[];
+    const K=j.korxonalar||[];D.korxonalar=K;
     $('sub').textContent=K.length
       ?'Korxonalar: '+K.map(k=>qisqa(k.nom)+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
       :'Yangilangan: '+dstr(new Date(j.yangilangan))+' · '+j.manba;
@@ -188,7 +217,101 @@ function chips(){
     arr.map(([k,v])=>'<button class="chip'+(k===guruh?' on':'')+'" data-g="'+esc(k)+'">'+esc(tab==='a'?k.slice(0,38):k)+' <small>'+v.n+' · '+mln(v.s)+'</small></button>').join('');
 }
 
+const HOLAT={yutdi:'✅ Bizga chiqdi',yutqazdi:'❌ Chiqmadi',bitim_yoq:"⚪ Bitim bo'lmadi",kutilmoqda:'⏳ Kutilmoqda'};
+let N=null,nYuk=false;
+async function loadN(){
+  if(nYuk)return;nYuk=true;
+  try{const r=await fetch(API+'?natijalar=1',{cache:'no-store'});N=r.ok?await r.json():[];}catch(e){N=[];}
+  nYuk=false;
+  const ks=[...new Set(N.map(x=>x.korxona))];
+  $('nKorx').innerHTML='<option value="">Korxona: hammasi</option>'+ks.map(k=>'<option value="'+esc(k)+'">'+esc(qisqa(k))+'</option>').join('');
+  if(tab==='n')renderN();
+  if(tab==='d')renderD();
+}
+function renderN(){
+  $('ebar').hidden=true;$('nbar').hidden=false;$('chips').innerHTML='';$('more').hidden=true;
+  if(!N){$('stats').innerHTML='';$('th').innerHTML='';$('tb').innerHTML='<tr><td class="note">Yuklanmoqda…</td></tr>';loadN();return;}
+  const h=$('nHolat').value,k=$('nKorx').value,q=$('nq').value.trim().toLowerCase();
+  const all=N.filter(x=>!k||x.korxona===k);
+  const L=all.filter(x=>(!h||x.holat===h)&&(!q||(x.lot+' '+(x.nomi||'')+' '+(x.golib||'')).toLowerCase().includes(q)));
+  const c=s=>all.filter(x=>x.holat===s).length, yut=c('yutdi'), yq=c('yutqazdi');
+  $('stats').innerHTML=
+    '<div class="stat"><b>'+all.length+'</b><span>narx bergan lotlar</span></div>'+
+    '<div class="stat"><b style="color:var(--ok)">'+yut+'</b><span>bizga chiqdi</span></div>'+
+    '<div class="stat"><b style="color:var(--bad)">'+yq+'</b><span>chiqmadi</span></div>'+
+    '<div class="stat"><b>'+((yut+yq)?Math.round(yut/(yut+yq)*100)+'%':'—')+'</b><span>yutish ulushi · ⏳ '+c('kutilmoqda')+' kutilmoqda</span></div>';
+  $('th').innerHTML='<tr><th>Tugash</th><th>Korxona</th><th>Mahsulot / lot</th><th class="num">Soni</th><th class="num">Bizning narx</th><th>Natija</th><th>G\'olib</th><th class="num">G\'olib narxi</th><th class="num">Farq</th><th class="num">Ishtirokchi</th><th></th></tr>';
+  $('tb').innerHTML=L.map(x=>{
+    const farq=x.bizning_narx&&x.dona_narx?Math.round((x.bizning_narx-x.dona_narx)/x.bizning_narx*100):null;
+    return '<tr><td>'+(x.tugash?dstr(new Date(x.tugash)):'')+'</td><td><span class="kb">'+esc(qisqa(x.korxona))+'</span></td>'+
+      '<td>'+esc(x.nomi||'')+'<div class="g">'+esc(x.lot)+(x.buyurtmachi?' · '+esc(x.buyurtmachi):'')+'</div></td>'+
+      '<td class="num">'+fmt(x.soni||0)+'</td><td class="num">'+(x.bizning_narx?fmt(x.bizning_narx):'')+'</td>'+
+      '<td><span class="hl '+x.holat+'">'+(HOLAT[x.holat]||x.holat)+'</span></td>'+
+      '<td>'+(x.golib?esc(x.golib)+'<div class="g">STIR '+esc(x.golib_stir||'')+'</div>':'')+'</td>'+
+      '<td class="num">'+(x.dona_narx?'<b>'+fmt(x.dona_narx)+'</b><div class="g">jami '+fmt(x.shartnoma_summa||0)+'</div>':'')+'</td>'+
+      '<td class="num">'+(farq!==null&&x.holat==='yutqazdi'?farq+'%':'')+'</td>'+
+      '<td class="num">'+(x.ishtirokchilar??'')+'</td>'+
+      '<td><a href="https://xarid.uzex.uz/shop/lot-details/'+String(x.lot).slice(-7)+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+  }).join('')||'<tr><td colspan="11" class="note">Hali natija yo\'q. Narx bergan lotlar tugagach, keyingi yangilashda shu yerda chiqadi.</td></tr>';
+  $('note').textContent='Narx bergan lotlarimiz natijasi "Amalga oshgan bitimlar" ochiq ma\'lumotidan olinadi. Farq — g\'olib narxi bizning narxdan necha foiz past.';
+}
+// ---------- Bosh sahifa (dashboard) ----------
+function qiziqmi(x){return MOS.includes(x.g)&&x.qty>=3&&x.sum>=10e6;}
+function ochish(t,o){
+  o=o||{};
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  tab=t;guruh=o.guruh||'';limit=100;
+  if(t==='e'){
+    $('korx').value=o.korx||'';$('vaqt').value=o.vaqt||'';$('q').value='';
+    if(o.hammasi){$('minSoni').value='0';$('minSum').value='0';$('mos').checked=false;}
+    else{$('mos').checked=true;if(o.qiziq){$('minSoni').value='3';$('minSum').value='10';}}
+  }
+  if(t==='a'){$('vaqt').value=o.vaqt||'';}
+  if(t==='n'){$('nHolat').value=o.holat||'';$('nKorx').value=o.korx||'';}
+  render();window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderD(){
+  $('ebar').hidden=true;$('nbar').hidden=true;$('tw').hidden=true;$('more').hidden=true;$('chips').innerHTML='';$('stats').innerHTML='';
+  $('note').textContent='Kartochkani bossangiz, tegishli bo\'lim shu filtr bilan ochiladi.';
+  if(!N)loadN();
+  const now=Date.now(),day=864e5;
+  const E=D.e.filter(x=>x.end>now), Q=E.filter(qiziqmi), A=D.a.filter(x=>x.end>now);
+  const s=L=>L.reduce((a,x)=>a+x.sum,0);
+  const Q24=Q.filter(x=>x.end-now<=day);
+  const nn=N||[], c=h=>nn.filter(x=>x.holat===h).length;
+  const card=(t,v,sub,on,big)=>'<button class="dc'+(big?' big':'')+'" data-go=\''+JSON.stringify(on).replace(/'/g,'&#39;')+'\'><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></button>';
+  let h='<h3>Umumiy holat</h3><div class="dg">'+
+    card('Qo\'lga ilinadigan lotlar',Q.length,'soni ≥ 3 · summa ≥ 10 mln · jami '+mln(s(Q)),{t:'e',qiziq:1},1)+
+    card('24 soatda tugaydi',Q24.length,'qo\'lga ilinadiganlardan · '+mln(s(Q24)),{t:'e',qiziq:1,vaqt:'24'},1)+
+    card('Elektron do\'kon — hammasi',E.length,'aktiv lotlar · '+mln(s(E)),{t:'e',hammasi:1})+
+    card('Auksion',A.length,'aktiv lotlar · '+mln(s(A)),{t:'a'})+
+    '</div>';
+  h+='<h3>Narx bergan lotlarimiz</h3><div class="dg">'+
+    card('✅ Bizga chiqdi',N?c('yutdi'):'…','natijani ko\'rish',{t:'n',holat:'yutdi'})+
+    card('❌ Chiqmadi',N?c('yutqazdi'):'…','kimga, qancha narxga chiqqan',{t:'n',holat:'yutqazdi'})+
+    card('⏳ Natija kutilmoqda',N?c('kutilmoqda'):'…','narx berilgan, savdo davom etyapti',{t:'n',holat:'kutilmoqda'})+
+    '</div>';
+  const K=[...new Set(D.e.flatMap(x=>x.k))];
+  if(K.length){
+    h+='<h3>Korxonalar</h3><div class="dg">'+K.map(k=>{
+      const L=Q.filter(x=>x.k.includes(k));const kk=(D.korxonalar||[]).find(z=>z.nom===k);
+      return card('🏢 '+esc(qisqa(k)),L.length,'qo\'lga ilinadigan · '+mln(s(L))+(kk?' · yangilangan '+dstr(new Date(kk.yangilangan)):''),{t:'e',qiziq:1,korx:k});
+    }).join('')+'</div>';
+  }
+  const G={};Q.forEach(x=>{G[x.g]=G[x.g]||[];G[x.g].push(x)});
+  const GL=Object.entries(G).sort((a,b)=>s(b[1])-s(a[1]));
+  if(GL.length)h+='<h3>Guruhlar bo\'yicha (qo\'lga ilinadigan)</h3><div class="dg">'+GL.map(([g,L])=>card(esc(g),L.length,mln(s(L)),{t:'e',qiziq:1,guruh:g})).join('')+'</div>';
+  const top=Q.slice().sort((a,b)=>b.sum-a.sum).slice(0,8);
+  if(top.length)h+='<h3>Eng katta lotlar</h3><div class="dl">'+top.map(x=>'<a href="'+x.url+'" target="_blank" rel="noopener"><span>'+esc(x.name)+' <span class="g">· '+fmt(x.qty)+' × '+fmt(x.price)+'</span></span><span><b>'+mln(x.sum)+'</b> <span class="g">'+dstr(x.end)+'</span></span></a>').join('')+'</div>';
+  $('dash').innerHTML=h;
+}
+$('dash').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;const o=JSON.parse(b.dataset.go);ochish(o.t,o);};
+
 function render(){
+  if(tab==='d'){$('dash').hidden=false;renderD();return;}
+  $('dash').hidden=true;$('dash').innerHTML='';$('tw').hidden=false;
+  if(tab==='n'){renderN();return;}
+  $('ebar').hidden=false;$('nbar').hidden=true;
   $('mosWrap').style.display=tab==='e'?'':'none';
   $('minSoni').style.display=tab==='e'?'':'none';
   $('korx').disabled=tab!=='e';
@@ -239,6 +362,7 @@ catch(e){$('minSoni').value='3';$('minSum').value='10';}
 $('sort').onchange=()=>{sortKey=$('sort').value;render();};
 $('more').onclick=()=>{limit+=100;render();};
 setInterval(()=>{if(!document.hidden)render();},60000);
+['nHolat','nKorx','nq'].forEach(id=>$(id).addEventListener('input',renderN));
 load();
 </script>
 </body>
