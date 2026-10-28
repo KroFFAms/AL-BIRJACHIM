@@ -5,19 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AL-BIRJACHIM — aktiv lotlar</title>
 <style>
-:root{--bg:#f4f6f9;--card:#fff;--ink:#1b2430;--mut:#6b7684;--line:#e3e7ec;--pri:#1f4e78;--ok:#1a7f4b;--warn:#c25e00;--bad:#b42318;--chip:#eef2f7}
-@media (prefers-color-scheme:dark){:root{--bg:#0f141a;--card:#18202a;--ink:#e6ebf0;--mut:#93a0ae;--line:#2a3542;--pri:#6aa5dc;--ok:#4cc38a;--warn:#f0a050;--bad:#f07a70;--chip:#222c38}}
+:root{--bg:#f2f5f9;--card:#fff;--ink:#16202c;--mut:#677487;--line:#e2e8ef;--pri:#1d5fa8;--pri2:#0e8a7a;--ok:#16a06a;--warn:#e08a00;--bad:#d64545;--chip:#eef3f8;--sh:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.06);
+  --c1:#1d5fa8;--c2:#0e8a7a;--c3:#7c4dce;--c4:#e08a00;--c5:#d64545;--c6:#2f9e44;--c7:#c2255c;--c8:#1098ad;--c9:#5f6b7a}
+@media (prefers-color-scheme:dark){:root{--bg:#0d131a;--card:#151d27;--ink:#e7edf3;--mut:#93a1b2;--line:#253141;--pri:#5aa2ef;--pri2:#33c2ad;--ok:#3fcf8e;--warn:#f5a524;--bad:#f07070;--chip:#1e2834;--sh:0 1px 2px rgba(0,0,0,.3),0 6px 18px rgba(0,0,0,.25)}}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
-header{background:var(--pri);color:#fff;padding:14px 16px}
-header h1{margin:0;font-size:19px}
-header .sub{opacity:.85;font-size:12px;margin-top:3px}
-main{max-width:1200px;margin:0 auto;padding:12px 16px 40px}
-.tabs{display:flex;gap:6px;margin:4px 0 12px}
-.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:600}
-.tab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+header{background:linear-gradient(120deg,#123a66 0%,#1d5fa8 55%,#0e8a7a 100%);color:#fff;padding:18px 16px 54px}
+header>div{max-width:1200px;margin:0 auto}
+header h1{margin:0;font-size:22px;letter-spacing:.3px;display:flex;align-items:center;gap:10px}
+header h1 .lg{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.16);font-size:18px}
+header .sub{opacity:.85;font-size:12.5px;margin-top:6px}
+main{max-width:1200px;margin:-40px auto 0;padding:0 16px 40px}
+.tabs{display:flex;gap:4px;margin:0 0 14px;background:var(--card);padding:5px;border-radius:12px;box-shadow:var(--sh);overflow-x:auto}
+.tab{border:0;background:transparent;color:var(--mut);padding:9px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap}
+.tab:hover{color:var(--ink);background:var(--chip)}
+.tab.on{background:var(--pri);color:#fff}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--sh)}
 .stat b{display:block;font-size:18px}
 .stat span{color:var(--mut);font-size:12px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
@@ -45,25 +49,58 @@ a{color:var(--pri)}
 .hl{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:600;white-space:nowrap}
 .hl.yutdi{background:#e3f6ec;color:#1a7f4b}.hl.yutqazdi{background:#fde8e6;color:#b42318}.hl.bitim_yoq{background:var(--chip);color:var(--mut)}.hl.kutilmoqda{background:#fff4e0;color:#a15c00}
 .bar[hidden],.more[hidden],.tw[hidden]{display:none}
-#dash h3{font-size:14px;margin:18px 2px 8px;color:var(--mut);font-weight:600}
-.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.dc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;transition:border-color .15s,transform .15s}
-.dc:hover{border-color:var(--pri);transform:translateY(-1px)}
-.dc .t{font-size:12.5px;color:var(--mut);margin-bottom:6px}
-.dc .v{font-size:22px;font-weight:700}
-.dc .s{font-size:12px;color:var(--mut);margin-top:4px}
-.dc.big{border-left:4px solid var(--pri)}
-.dl{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.dl a{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
-.dl a:last-child{border-bottom:0}
-.dl a:hover{background:var(--chip)}
+#dash h3{font-size:13px;margin:22px 2px 10px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.k{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s,border-color .15s}
+.k:hover{transform:translateY(-2px);border-color:var(--ac,var(--pri));box-shadow:0 8px 24px rgba(16,24,40,.12)}
+.k::after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--ac,var(--pri));opacity:.08}
+.k .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:color-mix(in srgb,var(--ac,var(--pri)) 14%,transparent);margin-bottom:10px}
+.k .t{font-size:12.5px;color:var(--mut);font-weight:600}
+.k .v{font-size:30px;font-weight:800;line-height:1.15;margin-top:2px;color:var(--ac,var(--ink))}
+.k .s{font-size:12px;color:var(--mut);margin-top:4px}
+.k .go{position:absolute;right:14px;bottom:12px;font-size:12px;color:var(--ac,var(--pri));font-weight:700;opacity:0;transition:opacity .15s}
+.k:hover .go{opacity:1}
+@media(max-width:600px){.kp{grid-template-columns:1fr 1fr;gap:10px}.k{padding:13px}.k .v{font-size:24px}.k .s{font-size:11px}.br{grid-template-columns:110px 1fr 80px}}
+.row2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+@media(max-width:860px){.row2{grid-template-columns:1fr}}
+.pn{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--sh)}
+.pn h4{margin:0 0 12px;font-size:15px}
+.br{display:grid;grid-template-columns:150px 1fr 92px;align-items:center;gap:10px;padding:7px 6px;border-radius:9px;cursor:pointer}
+.br:hover{background:var(--chip)}
+.br .n{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br .tr{height:12px;background:var(--chip);border-radius:6px;overflow:hidden}
+.br .fl{height:100%;border-radius:6px;background:var(--ac)}
+.br .m{font-size:12.5px;text-align:right;color:var(--mut)}.br .m b{color:var(--ink)}
+.dn{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.dn .ring{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;flex:none}
+.dn .ring>div{width:104px;height:104px;border-radius:50%;background:var(--card);display:grid;place-items:center;text-align:center}
+.dn .ring b{font-size:26px;display:block}.dn .ring span{font-size:11px;color:var(--mut)}
+.lg2{display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px}
+.lg2 button{display:flex;align-items:center;gap:8px;border:0;background:transparent;color:var(--ink);font:inherit;padding:6px 8px;border-radius:8px;cursor:pointer;text-align:left}
+.lg2 button:hover{background:var(--chip)}
+.lg2 i{width:10px;height:10px;border-radius:3px;flex:none}
+.lg2 b{margin-left:auto}
+.kx{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.kc{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;box-shadow:var(--sh);transition:transform .15s,border-color .15s}
+.kc:hover{transform:translateY(-2px);border-color:var(--ac)}
+.kc .av{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;background:var(--ac);flex:none}
+.kc .v{font-size:20px;font-weight:800}.kc .s{font-size:12px;color:var(--mut)}
+.kc .pb{height:6px;background:var(--chip);border-radius:3px;margin-top:6px;overflow:hidden}.kc .pb i{display:block;height:100%;background:var(--ac)}
+.tl{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--sh)}
+.tl a{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.tl a:last-child{border-bottom:0}.tl a:hover{background:var(--chip)}
+.tl .no{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--chip);font-weight:700;font-size:12px;color:var(--mut)}
+.tl .nm{font-weight:600;font-size:13.5px}.tl .gp{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;color:#fff;background:var(--ac);margin-left:6px;vertical-align:1px}
+.tl .rt{text-align:right}.tl .rt b{font-size:15px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-top:3px}
+.pill.s{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}.pill.m{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}.pill.l{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
 .prods{font-size:12px;color:var(--mut);max-width:420px}
 </style>
 </head>
 <body>
 <header>
-  <h1>AL-BIRJACHIM</h1>
-  <div class="sub" id="sub">Yuklanmoqda…</div>
+  <div><h1><span class="lg">📊</span>AL-BIRJACHIM</h1>
+  <div class="sub" id="sub">Yuklanmoqda…</div></div>
 </header>
 <main>
   <div class="tabs">
@@ -270,39 +307,50 @@ function ochish(t,o){
   if(t==='n'){$('nHolat').value=o.holat||'';$('nKorx').value=o.korx||'';}
   render();window.scrollTo({top:0,behavior:'smooth'});
 }
+const GC={'Elektr':'--c1','Sement/beton/blok':'--c9','Metall prokat':'--c3','Santexnika':'--c8','Asbob/mayda':'--c4','Yogoch/plita':'--c6','Boyoq/kimyo':'--c7','Tom/devor qoplama':'--c2','Eshik/deraza':'--c5'};
+const gcol=g=>'var('+(GC[g]||'--c9')+')';
+const KC={AMS:'#c2255c',KROFF:'#1d5fa8',Drive:'#0e8a7a'};
+const go=o=>"data-go='"+JSON.stringify(o).replace(/'/g,'&#39;')+"'";
+function qoldi(end){const h=(end-Date.now())/36e5;if(h<=0)return '<span class="pill">tugagan</span>';const c=h<6?'s':h<24?'m':'l';return '<span class="pill '+c+'">'+(h<1?Math.round(h*60)+' daq':h<48?Math.floor(h)+' soat':Math.floor(h/24)+' kun')+'</span>';}
 function renderD(){
   $('ebar').hidden=true;$('nbar').hidden=true;$('tw').hidden=true;$('more').hidden=true;$('chips').innerHTML='';$('stats').innerHTML='';
-  $('note').textContent='Kartochkani bossangiz, tegishli bo\'lim shu filtr bilan ochiladi.';
+  $('note').textContent='Istalgan kartochka yoki qatorni bossangiz, tegishli bo\'lim shu filtr bilan ochiladi.';
   if(!N)loadN();
   const now=Date.now(),day=864e5;
   const E=D.e.filter(x=>x.end>now), Q=E.filter(qiziqmi), A=D.a.filter(x=>x.end>now);
   const s=L=>L.reduce((a,x)=>a+x.sum,0);
   const Q24=Q.filter(x=>x.end-now<=day);
   const nn=N||[], c=h=>nn.filter(x=>x.holat===h).length;
-  const card=(t,v,sub,on,big)=>'<button class="dc'+(big?' big':'')+'" data-go=\''+JSON.stringify(on).replace(/'/g,'&#39;')+'\'><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div></button>';
-  let h='<h3>Umumiy holat</h3><div class="dg">'+
-    card('Qo\'lga ilinadigan lotlar',Q.length,'soni ≥ 3 · summa ≥ 10 mln · jami '+mln(s(Q)),{t:'e',qiziq:1},1)+
-    card('24 soatda tugaydi',Q24.length,'qo\'lga ilinadiganlardan · '+mln(s(Q24)),{t:'e',qiziq:1,vaqt:'24'},1)+
-    card('Elektron do\'kon — hammasi',E.length,'aktiv lotlar · '+mln(s(E)),{t:'e',hammasi:1})+
-    card('Auksion',A.length,'aktiv lotlar · '+mln(s(A)),{t:'a'})+
-    '</div>';
-  h+='<h3>Narx bergan lotlarimiz</h3><div class="dg">'+
-    card('✅ Bizga chiqdi',N?c('yutdi'):'…','natijani ko\'rish',{t:'n',holat:'yutdi'})+
-    card('❌ Chiqmadi',N?c('yutqazdi'):'…','kimga, qancha narxga chiqqan',{t:'n',holat:'yutqazdi'})+
-    card('⏳ Natija kutilmoqda',N?c('kutilmoqda'):'…','narx berilgan, savdo davom etyapti',{t:'n',holat:'kutilmoqda'})+
-    '</div>';
+  const kpi=(ic,t,v,sub,o,ac)=>'<button class="k" style="--ac:var('+ac+')" '+go(o)+'><div class="ic">'+ic+'</div><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div><span class="go">Ochish →</span></button>';
+  let h='<div class="kp">'+
+    kpi('🎯','Qo\'lga ilinadigan lotlar',Q.length,'jami <b>'+mln(s(Q))+'</b> · soni ≥ 3, summa ≥ 10 mln',{t:'e',qiziq:1},'--c1')+
+    kpi('⏰','24 soatda tugaydi',Q24.length,'<b>'+mln(s(Q24))+'</b> — shoshilish kerak',{t:'e',qiziq:1,vaqt:'24'},'--c5')+
+    kpi('🛒','Elektron do\'kon',E.length,'aktiv lotlar · '+mln(s(E)),{t:'e',hammasi:1},'--c2')+
+    kpi('🔨','Auksion',A.length,'aktiv lotlar · '+mln(s(A)),{t:'a'},'--c3')+
+  '</div>';
+  // Guruhlar diagrammasi + Natijalar doirasi
+  const G={};Q.forEach(x=>{(G[x.g]=G[x.g]||[]).push(x)});
+  const GL=Object.entries(G).sort((a,b)=>s(b[1])-s(a[1]));const gmax=Math.max(1,...GL.map(([,L])=>s(L)));
+  const bars=GL.map(([g,L])=>'<div class="br" style="--ac:'+gcol(g)+'" '+go({t:'e',qiziq:1,guruh:g})+'><div class="n">'+esc(g)+'</div><div class="tr"><div class="fl" style="width:'+Math.max(3,s(L)/gmax*100)+'%"></div></div><div class="m"><b>'+L.length+'</b> · '+mln(s(L))+'</div></div>').join('')||'<div class="note">Ma\'lumot yo\'q</div>';
+  const y=c('yutdi'),yq=c('yutqazdi'),kt=c('kutilmoqda'),bt=c('bitim_yoq'),tot=y+yq+kt+bt;
+  const p1=tot?y/tot*100:0,p2=tot?(y+yq)/tot*100:0,p3=tot?(y+yq+kt)/tot*100:0;
+  const ring=tot?'conic-gradient(var(--ok) 0 '+p1+'%,var(--bad) '+p1+'% '+p2+'%,var(--warn) '+p2+'% '+p3+'%,var(--mut) '+p3+'% 100%)':'conic-gradient(var(--chip) 0 100%)';
+  const leg=(col,t,n,hol)=>'<button '+go({t:'n',holat:hol})+'><i style="background:'+col+'"></i>'+t+'<b>'+(N?n:'…')+'</b></button>';
+  h+='<div class="row2" style="margin-top:12px"><div class="pn"><h4>📦 Guruhlar bo\'yicha — qo\'lga ilinadigan lotlar</h4>'+bars+'</div>'+
+    '<div class="pn"><h4>🏁 Narx bergan lotlarimiz</h4><div class="dn"><div class="ring" style="background:'+ring+'"><div><div><b>'+((y+yq)?Math.round(y/(y+yq)*100)+'%':'—')+'</b><span>yutish ulushi</span></div></div></div>'+
+    '<div class="lg2">'+leg('var(--ok)','✅ Bizga chiqdi',y,'yutdi')+leg('var(--bad)','❌ Chiqmadi',yq,'yutqazdi')+leg('var(--warn)','⏳ Kutilmoqda',kt,'kutilmoqda')+leg('var(--mut)','⚪ Bitim bo\'lmadi',bt,'bitim_yoq')+'</div></div></div></div>';
+  // Korxonalar
   const K=[...new Set(D.e.flatMap(x=>x.k))];
   if(K.length){
-    h+='<h3>Korxonalar</h3><div class="dg">'+K.map(k=>{
-      const L=Q.filter(x=>x.k.includes(k));const kk=(D.korxonalar||[]).find(z=>z.nom===k);
-      return card('🏢 '+esc(qisqa(k)),L.length,'qo\'lga ilinadigan · '+mln(s(L))+(kk?' · yangilangan '+dstr(new Date(kk.yangilangan)):''),{t:'e',qiziq:1,korx:k});
+    const kmax=Math.max(1,...K.map(k=>Q.filter(x=>x.k.includes(k)).length));
+    h+='<h3>Korxonalar</h3><div class="kx">'+K.map(k=>{
+      const L=Q.filter(x=>x.k.includes(k)),kk=(D.korxonalar||[]).find(z=>z.nom===k),q=qisqa(k),ac=KC[q]||'#5f6b7a';
+      return '<button class="kc" style="--ac:'+ac+'" '+go({t:'e',qiziq:1,korx:k})+'><div class="av">'+esc(q.slice(0,5))+'</div><div style="flex:1;min-width:0"><div class="v">'+L.length+' <span class="s">qo\'lga ilinadigan</span></div><div class="s">'+mln(s(L))+(kk?' · 🕒 '+dstr(new Date(kk.yangilangan)):'')+'</div><div class="pb"><i style="width:'+(L.length/kmax*100)+'%"></i></div></div></button>';
     }).join('')+'</div>';
   }
-  const G={};Q.forEach(x=>{G[x.g]=G[x.g]||[];G[x.g].push(x)});
-  const GL=Object.entries(G).sort((a,b)=>s(b[1])-s(a[1]));
-  if(GL.length)h+='<h3>Guruhlar bo\'yicha (qo\'lga ilinadigan)</h3><div class="dg">'+GL.map(([g,L])=>card(esc(g),L.length,mln(s(L)),{t:'e',qiziq:1,guruh:g})).join('')+'</div>';
+  // Eng katta lotlar
   const top=Q.slice().sort((a,b)=>b.sum-a.sum).slice(0,8);
-  if(top.length)h+='<h3>Eng katta lotlar</h3><div class="dl">'+top.map(x=>'<a href="'+x.url+'" target="_blank" rel="noopener"><span>'+esc(x.name)+' <span class="g">· '+fmt(x.qty)+' × '+fmt(x.price)+'</span></span><span><b>'+mln(x.sum)+'</b> <span class="g">'+dstr(x.end)+'</span></span></a>').join('')+'</div>';
+  if(top.length)h+='<h3>Eng katta lotlar</h3><div class="tl">'+top.map((x,i)=>'<a href="'+x.url+'" target="_blank" rel="noopener" style="--ac:'+gcol(x.g)+'"><span class="no">'+(i+1)+'</span><span><span class="nm">'+esc(x.name)+'</span><span class="gp">'+esc(x.g)+'</span><div class="g">'+fmt(x.qty)+' × '+fmt(x.price)+' so\'m'+(x.k.length?' · '+x.k.map(qisqa).join(', '):'')+'</div></span><span class="rt"><b>'+mln(x.sum)+'</b><br>'+qoldi(x.end)+'</span></a>').join('')+'</div>';
   $('dash').innerHTML=h;
 }
 $('dash').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;const o=JSON.parse(b.dataset.go);ochish(o.t,o);};
