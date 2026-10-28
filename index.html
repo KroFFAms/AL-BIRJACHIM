@@ -41,6 +41,7 @@ a{color:var(--pri)}
 .more{display:block;margin:12px auto;padding:9px 18px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
 .note{color:var(--mut);font-size:12px;margin:10px 2px}
 .err{background:#fde8e6;color:#8a1c12;padding:12px;border-radius:8px}
+.kb{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-top:3px;font-size:10.5px;color:var(--ink)}
 .prods{font-size:12px;color:var(--mut);max-width:420px}
 </style>
 </head>
@@ -57,10 +58,27 @@ a{color:var(--pri)}
   <div class="stats" id="stats"></div>
   <div class="bar">
     <input type="search" id="q" placeholder="Qidirish: mahsulot, lot №, buyurtmachi…">
+    <select id="korx" title="Qaysi korxona kabinetida chiqqan">
+      <option value="">Korxona: hammasi</option>
+    </select>
     <select id="vaqt">
       <option value="">Tugash: hammasi</option>
       <option value="24">24 soat ichida</option>
       <option value="48">48 soat ichida</option>
+    </select>
+    <select id="minSoni" title="Kam donali lotlarni yashirish">
+      <option value="0">Soni: hammasi</option>
+      <option value="3">Soni ≥ 3</option>
+      <option value="5">Soni ≥ 5</option>
+      <option value="10">Soni ≥ 10</option>
+    </select>
+    <select id="minSum" title="Kichik summali lotlarni yashirish">
+      <option value="0">Summa: hammasi</option>
+      <option value="5">Summa ≥ 5 mln</option>
+      <option value="10">Summa ≥ 10 mln</option>
+      <option value="20">Summa ≥ 20 mln</option>
+      <option value="50">Summa ≥ 50 mln</option>
+      <option value="100">Summa ≥ 100 mln</option>
     </select>
     <select id="sort">
       <option value="end">Tartib: tugash vaqti</option>
@@ -83,6 +101,8 @@ const mln=n=>(n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' mln';
 const pad=n=>String(n).padStart(2,'0');
 const dstr=d=>pad(d.getDate())+'.'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Korxona nomini qisqartirish
+const qisqa=n=>/ANVARJON|AMS/i.test(n)?'AMS':/KROFF/i.test(n)?'KROFF':/DRIVE/i.test(n)?'Drive':String(n).replace(/["«»]/g,'').split(/\s+/).slice(0,2).join(' ');
 const MOS=['Elektr','Santexnika','Sement/beton/blok','Metall prokat','Asbob/mayda','Yogoch/plita','Boyoq/kimyo','Tom/devor qoplama','Eshik/deraza'];
 let D={e:[],a:[]},tab='e',guruh='',limit=100,sortKey='end';
 
@@ -94,14 +114,28 @@ function left(end){
   return '<span class="left '+cls+'">'+t+' qoldi</span>';
 }
 
+// Ma'lumot manbai: avval Supabase Edge Function, ishlamasa — yonidagi lotlar.json
+const API='https://wfmwxwdawiectcusjnkz.supabase.co/functions/v1/birja';
+async function olish(){
+  try{
+    const r=await fetch(API,{cache:'no-store'});
+    if(r.ok)return await r.json();
+  }catch(e){}
+  const r=await fetch('lotlar.json?v='+Date.now());
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return await r.json();
+}
 async function load(){
   try{
-    const r=await fetch('lotlar.json?v='+Date.now());
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    D.e=j.edokon.map(x=>({lot:x[0],g:x[1],name:x[2],qty:x[3],price:x[4],sum:x[3]*x[4],end:new Date(x[5]),url:'https://xarid.uzex.uz/shop/lot-details/'+String(x[0]).slice(-7)}));
+    const j=await olish();
+    D.e=j.edokon.map(x=>({lot:x[0],g:x[1],name:x[2],qty:x[3],price:x[4],sum:x[3]*x[4],end:new Date(x[5]),k:Array.isArray(x[6])?x[6]:[],url:'https://xarid.uzex.uz/shop/lot-details/'+String(x[0]).slice(-7)}));
     D.a=j.auksion.map(x=>({id:x[0],lot:x[1],tur:x[2],cust:x[3],cat:x[4],sum:x[5],price:0,end:new Date(x[6]),n:x[7],name:x[8],url:'https://xarid.uzex.uz/auction/detail/'+x[0]}));
-    $('sub').textContent='Yangilangan: '+dstr(new Date(j.yangilangan))+' · '+j.manba;
+    const K=j.korxonalar||[];
+    $('sub').textContent=K.length
+      ?'Korxonalar: '+K.map(k=>qisqa(k.nom)+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
+      :'Yangilangan: '+dstr(new Date(j.yangilangan))+' · '+j.manba;
+    $('korx').innerHTML='<option value="">Korxona: hammasi</option>'+K.map(k=>'<option value="'+esc(k.nom)+'">'+esc(qisqa(k.nom))+'</option>').join('');
+    $('korx').style.display=K.length>0?'':'none';
     render();
   }catch(e){
     $('tb').innerHTML='';
@@ -113,8 +147,12 @@ function rows(){
   const q=$('q').value.trim().toLowerCase();
   const v=+$('vaqt').value, now=Date.now();
   const showEnd=$('tugagan').checked, mos=$('mos').checked;
+  const minSoni=+$('minSoni').value, minSum=+$('minSum').value*1e6, korx=$('korx').value;
   let L=D[tab].filter(x=>{
     if(!showEnd&&x.end<=now)return false;
+    if(x.sum<minSum)return false;
+    if(tab==='e'&&x.qty<minSoni)return false;
+    if(tab==='e'&&korx&&!x.k.includes(korx))return false;
     if(v&&(x.end-now)>v*36e5)return false;
     if(tab==='e'){
       if(mos&&!MOS.includes(x.g))return false;
@@ -134,8 +172,12 @@ function rows(){
 function chips(){
   const now=Date.now(),c={};
   const showEnd=$('tugagan').checked;
+  const minSoni=+$('minSoni').value, minSum=+$('minSum').value*1e6;
   D[tab].forEach(x=>{
     if(!showEnd&&x.end<=now)return;
+    if(x.sum<minSum)return;
+    if(tab==='e'&&x.qty<minSoni)return;
+    if(tab==='e'&&$('korx').value&&!x.k.includes($('korx').value))return;
     const k=tab==='e'?x.g:x.cat;
     if(tab==='e'&&$('mos').checked&&!MOS.includes(k))return;
     c[k]=c[k]||{n:0,s:0};c[k].n++;c[k].s+=x.sum;
@@ -148,6 +190,8 @@ function chips(){
 
 function render(){
   $('mosWrap').style.display=tab==='e'?'':'none';
+  $('minSoni').style.display=tab==='e'?'':'none';
+  $('korx').disabled=tab!=='e';
   $('sort').querySelector('[value=price]').hidden=tab!=='e';
   if(tab!=='e'&&sortKey==='price')sortKey='end';
   $('sort').value=sortKey;
@@ -167,7 +211,7 @@ function render(){
   const view=L.slice(0,limit);
   $('tb').innerHTML=view.map(x=>{
     const cls=x.end<=now?' class="end"':'';
-    if(tab==='e')return '<tr'+cls+'><td>'+esc(x.lot)+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+    if(tab==='e')return '<tr'+cls+'><td>'+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
     return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+esc(x.tur)+'</div></td><td>'+esc(x.cust)+'<div class="g">'+esc(x.cat)+'</div></td><td class="prods">'+esc(x.name)+(x.n>1?' <span class="g">('+x.n+' xil)</span>':'')+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
   }).join('')||'<tr><td colspan="7" class="note">Hech narsa topilmadi.</td></tr>';
   $('more').hidden=L.length<=limit;
@@ -183,7 +227,15 @@ document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
 });
 $('chips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;guruh=b.dataset.g;limit=100;render();};
 $('th').onclick=e=>{const t=e.target.closest('th[data-s]');if(!t)return;sortKey=t.dataset.s;render();};
-['q','vaqt','mos','tugagan'].forEach(id=>$(id).addEventListener('input',()=>{limit=100;render();}));
+['q','vaqt','mos','tugagan','korx'].forEach(id=>$(id).addEventListener('input',()=>{limit=100;render();}));
+// Min soni / Min summa: standart 3 dona va 10 mln, tanlov shu brauzerda eslab qolinadi
+const SAQ='birjachim_filtr';
+try{const s=JSON.parse(localStorage.getItem(SAQ)||'null');if(s){$('minSoni').value=s.soni;$('minSum').value=s.sum;}else{$('minSoni').value='3';$('minSum').value='10';}}
+catch(e){$('minSoni').value='3';$('minSum').value='10';}
+['minSoni','minSum'].forEach(id=>$(id).addEventListener('change',()=>{
+  try{localStorage.setItem(SAQ,JSON.stringify({soni:$('minSoni').value,sum:$('minSum').value}));}catch(e){}
+  limit=100;render();
+}));
 $('sort').onchange=()=>{sortKey=$('sort').value;render();};
 $('more').onclick=()=>{limit+=100;render();};
 setInterval(()=>{if(!document.hidden)render();},60000);
