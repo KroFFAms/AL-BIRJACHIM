@@ -333,11 +333,13 @@ function renderN(){
   const all=N.filter(x=>!k||x.korxona===k);
   const L=all.filter(x=>(!h||x.holat===h)&&(!q||(x.lot+' '+(x.nomi||'')+' '+(x.golib||'')).toLowerCase().includes(q)));
   const c=s=>all.filter(x=>x.holat===s).length, yut=c('yutdi'), yq=c('yutqazdi');
+  const TX=all.filter(x=>x.taxmin_orni!=null), tx1=TX.filter(x=>x.taxmin_orni===1).length, tx3=TX.filter(x=>x.taxmin_orni>0).length;
   $('stats').innerHTML=
     '<div class="stat"><b>'+all.length+'</b><span>narx bergan lotlar</span></div>'+
     '<div class="stat"><b style="color:var(--ok)">'+yut+'</b><span>bizga chiqdi</span></div>'+
     '<div class="stat"><b style="color:var(--bad)">'+yq+'</b><span>chiqmadi</span></div>'+
-    '<div class="stat"><b>'+((yut+yq)?Math.round(yut/(yut+yq)*100)+'%':'—')+'</b><span>yutish ulushi · ⏳ '+c('kutilmoqda')+' kutilmoqda</span></div>';
+    '<div class="stat"><b>'+((yut+yq)?Math.round(yut/(yut+yq)*100)+'%':'—')+'</b><span>yutish ulushi · ⏳ '+c('kutilmoqda')+' kutilmoqda</span></div>'+
+    '<div class="stat"><b>'+(TX.length?Math.round(tx3/TX.length*100)+'%':'—')+'</b><span>buyurtmachi taxmini to\'g\'ri'+(TX.length?' (1-o\'rinda '+Math.round(tx1/TX.length*100)+'%, '+TX.length+' ta)':'')+'</span></div>';
   $('th').innerHTML='<tr><th>Tugash</th><th>Korxona</th><th>Mahsulot / lot</th><th class="num">Soni</th><th class="num">Bizning narx</th><th>Natija</th><th>G\'olib</th><th class="num">G\'olib narxi</th><th class="num">Farq</th><th class="num">Ishtirokchi</th><th></th></tr>';
   $('tb').innerHTML=L.map(x=>{
     const farq=x.bizning_narx&&x.dona_narx?Math.round((x.bizning_narx-x.dona_narx)/x.bizning_narx*100):null;
@@ -345,7 +347,7 @@ function renderN(){
       '<td>'+esc(x.nomi||'')+'<div class="g">'+esc(x.lot)+(x.buyurtmachi?' · '+esc(x.buyurtmachi):'')+'</div></td>'+
       '<td class="num">'+fmt(x.soni||0)+'</td><td class="num">'+(x.bizning_narx?fmt(x.bizning_narx):'')+'</td>'+
       '<td><span class="hl '+x.holat+'">'+(HOLAT[x.holat]||x.holat)+'</span></td>'+
-      '<td>'+(x.golib?esc(x.golib)+'<div class="g">STIR '+esc(x.golib_stir||'')+'</div>':'')+'</td>'+
+      '<td>'+(x.golib?esc(x.golib)+'<div class="g">STIR '+esc(x.golib_stir||'')+'</div>':'')+(x.buyurtmachi?'<div class="g">🏢 '+esc(String(x.buyurtmachi).slice(0,50))+(x.taxmin_orni==null?'':x.taxmin_orni>0?' · 🎯 taxmin '+x.taxmin_orni+'-o\'rinda':' · taxmin chiqmadi')+'</div>':'')+'</td>'+
       '<td class="num">'+(x.dona_narx?'<b>'+fmt(x.dona_narx)+'</b><div class="g">jami '+fmt(x.shartnoma_summa||0)+'</div>':'')+'</td>'+
       '<td class="num">'+(farq!==null&&x.holat==='yutqazdi'?farq+'%':'')+'</td>'+
       '<td class="num">'+(x.ishtirokchilar??'')+'</td>'+
@@ -377,7 +379,7 @@ function xaridorHtml(x){
   if(!t)return '<span class="g" title="Tahlil faqat qo\'lga ilinadigan lotlar uchun (soni ≥ 3, summa ≥ 10 mln)">—</span>';
   let h='<div class="xr">';
   if(t.h)h+='<div class="hd">📍 '+esc(t.h)+(t.t?', '+esc(t.t):'')+(t.k?' · <b>byudjet</b>':'')+'</div>';
-  h+=(t.x||[]).map((z,i)=>'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+'</i></span>').join('')||'<span class="g">3 oyda bitim topilmadi</span>';
+  h+=(t.x||[]).map((z,i)=>'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'📍 tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>').join('')||'<span class="g">3 oyda bitim topilmadi</span>';
   if(t.p)h+='<div class="pr">💰 3 oy: <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
   return h+'</div>';
 }

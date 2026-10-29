@@ -85,51 +85,82 @@
         return (await DIS[rid])[did] || '';
       };
       const chegara = Date.now() - 90 * 864e5;
-      const BIT = {};
-      const bitimlar = code => BIT[code] || (BIT[code] = (async () => {
-        const out = [], y = new Date().getFullYear();
-        for (const yil of (new Date().getMonth() < 3 ? [y, y - 1] : [y])) {
-          for (let f = 1; f <= 48; f += 12) {
-            let a; try { a = await POST(SHOP + '/GetCompletedDeals', { from: f, to: f + 11, display_on_shop: 1, display_on_national: 0, year_id: yil, product_code: code }); } catch (e) { break; }
+      const y0 = new Date().getFullYear(), YILLAR = new Date().getMonth() < 3 ? [y0, y0 - 1] : [y0];
+      // Bitimlar API sahifalari barqaror tartiblanmaydi — ustma-ust oyna (11 qadam) + deal_id bo'yicha takrorsiz
+      async function bitimOl(filtr, maxSahifa, toxta) {
+        const out = new Map();
+        for (const yil of YILLAR) {
+          for (let f = 1, k = 0; k < maxSahifa; f += 11, k++) {
+            let a; try { a = await POST(SHOP + '/GetCompletedDeals', { from: f, to: f + 12, display_on_shop: 1, display_on_national: 0, year_id: yil, ...filtr }); } catch (e) { break; }
             if (!Array.isArray(a) || !a.length) break;
-            out.push(...a);
-            if (a.length < 12 || new Date(a[a.length - 1].deal_date) < chegara) break;
+            for (const x of a) out.set(x.deal_id, x);
+            if (out.size >= (a[0].total_count || 0)) break;
+            if (toxta && new Date(a[a.length - 1].deal_date) < toxta) break;
           }
         }
-        return out.filter(x => new Date(x.deal_date) >= chegara);
-      })());
-      const ildiz = t => String(t || '').toLowerCase().replace(/[^а-яёa-zʻ']/g, '').slice(0, 4);
+        return [...out.values()];
+      }
+      const KESH = {};
+      const keshla = (k, f) => KESH[k] || (KESH[k] = f());
+      // Tuman nomini solishtirish: kirill/lotin, o'zbekcha/ruscha — undosh "skelet" (Алмалык = Olmaliq = Олмалик → lmlk)
+      const TR = { а: 'a', б: 'b', в: 'v', г: 'g', ғ: 'g', д: 'd', е: 'e', ё: 'e', ж: 'j', з: 'z', и: 'i', й: 'y', к: 'k', қ: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ў: 'u', ф: 'f', х: 'h', ҳ: 'h', ц: 's', ч: 'ch', ш: 'sh', щ: 'sh', ъ: '', ы: 'i', ь: '', э: 'e', ю: 'yu', я: 'ya' };
+      const lat = t => String(t || '').toLowerCase().replace(/[а-яёғқўҳ]/g, c => TR[c] ?? '').replace(/dj/g, 'j').replace(/q/g, 'k').replace(/x/g, 'h').replace(/w/g, 'v');
+      const skelet = t => lat(t).replace(/[^a-z]/g, '').replace(/[aeiouy]/g, '').replace(/(.)\1+/g, '$1');
+      const TUMAN_SOZ = /^(район|р-он|р-н|tumani|tuman|туман\S*|shahri|shahar|шахар\S*|sh\.?|г\.?|город|city)$/i;
+      const tumanIldiz = t => { const w = String(t || '').replace(/(^|\s)(г|sh|ш)\.\s*/gi, ' ').split(/\s+/).filter(x => x && !TUMAN_SOZ.test(x))[0] || ''; const k = skelet(w.replace(/(ский|ская|ское|ий)$/i, '')); return k.length >= 3 ? k.slice(0, 4) : ''; };
+      const nomdaTuman = (nom, il) => !!il && String(nom || '').split(/[\s"«».,()-]+/).some(w => skelet(w).startsWith(il));
       const tq = edokon.filter(e => e[3] >= 3 && e[3] * e[4] >= 10e6 && new Date(e[5] + ':00+05:00') > Date.now())
-        .sort((a, b) => b[3] * b[4] - a[3] * a[4]).slice(0, 250);
-      S.tahlilJami = tq.length; S.tahlil = 0;
+        .sort((a, b) => b[3] * b[4] - a[3] * a[4]).slice(0, 150);
+      // Narx bergan lotlarimiz ham (taxmin to'g'ri chiqqanini keyin tekshirish uchun)
+      const tqIds = new Set(tq.map(e => e[0]));
+      for (const t of takliflar) if (!tqIds.has(t[0])) { const e = edokon.find(z => z[0] === t[0]); if (e) tq.push(e); }
+      // Boshqa korxona yig'ishida (3 kun ichida) tahlil qilingan lotlar qayta tahlil qilinmaydi — tezlik uchun
+      const eski = {};
+      try { const jj = await (await fetch(API, { cache: 'no-store' })).json(); for (const r of (jj.edokon || [])) if (r[7] && r[7].x) eski[r[0]] = r[7]; } catch (x) { }
+      const yangi = tq.filter(e => { if (eski[e[0]]) { e[6] = eski[e[0]]; return false; } return true; });
+      S.tahlilJami = yangi.length; S.tahlilTayyor = tq.length - yangi.length; S.tahlil = 0;
       let ti = 0;
       const tahlilchi = async () => {
-        while (ti < tq.length) {
-          const e = tq[ti++];
+        while (ti < yangi.length) {
+          const e = yangi[ti++];
           try {
             const g = await (await fetch(SHOP + '/GetLot/' + String(e[0]).slice(-7))).json();
             const code = g && g.product_code;
             let joy = []; try { joy = JSON.parse(g.js_lot_delivery_district || '[]'); } catch (x) { }
-            const hudud = joy[0] ? (REG[joy[0].Region_Id] || '') : '';
-            const tuman = joy[0] ? await tumanNomi(joy[0].Region_Id, joy[0].District_Id) : '';
-            const B = code ? await bitimlar(code) : [];
+            const regs = [...new Set(joy.map(z => z.Region_Id))];
+            const R = regs.length === 1 ? regs[0] : null;            // bir nechta viloyat bo'lsa — hudud bo'yicha taxmin qilinmaydi
+            const Dd = R && joy.length <= 2 ? joy[0].District_Id : null;
+            const hudud = R ? (REG[R] || '') : (regs.length > 1 ? regs.length + ' ta viloyat' : '');
+            const tuman = Dd ? await tumanNomi(R, Dd) : '';
+            const il = tumanIldiz(tuman);
+            // 1) Narx: shu tovar, butun respublika, oxirgi 3 oy
+            const B = code ? (await keshla('n|' + code, () => bitimOl({ product_code: code }, 3, chegara))).filter(x => new Date(x.deal_date) >= chegara) : [];
             const np = B.filter(x => x.amount > 0 && x.deal_cost > 0).map(x => x.deal_cost / x.amount).sort((a, b) => a - b);
+            // 2) Nomzodlar: shu tovarni SHU VILOYATDA olganlar (butun yil), kam bo'lsa — respublika bo'yicha
+            let H = code && R ? await keshla('h|' + code + '|' + R, () => bitimOl({ product_code: code, region_id: R }, 3)) : [];
             const xar = {};
-            for (const x of B) {
+            const qosh = (x, viloyatda) => {
               const k = x.customer_inn || x.customer_name;
-              const o = xar[k] || (xar[k] = { i: x.customer_inn, n: String(x.customer_name || '').replace(/\s+/g, ' ').slice(0, 90), h: x.customer_region_name || '', c: 0, b: 0 });
-              o.c++;
+              const o = xar[k] || (xar[k] = { i: x.customer_inn, n: String(x.customer_name || '').replace(/\s+/g, ' ').slice(0, 90), h: x.customer_region_name || '', c: 0, v: viloyatda, t: 0, oxirgi: '' });
+              o.c++; if (x.deal_date > o.oxirgi) o.oxirgi = x.deal_date;
+            };
+            H.forEach(x => qosh(x, 1));
+            if (Object.keys(xar).length < 3) B.forEach(x => qosh(x, hudud && x.customer_region_name === hudud ? 1 : 0));
+            // Ball (0–10): tuman mos +4, viloyat mos +3, xaridlar soni +0..2, yaqinda (3 oy) +1
+            for (const o of Object.values(xar)) {
+              o.t = nomdaTuman(o.n, il) ? 1 : 0;
+              o.b = Math.min(10, (o.t ? 4 : 0) + (o.v ? 3 : 0) + Math.min(2, o.c - 1 + 1) + (new Date(o.oxirgi) >= chegara ? 1 : 0));
             }
-            const tIl = ildiz(String(tuman).replace(/\s*(район|р-он|tumani|туман\w*)/i, ''));
-            for (const o of Object.values(xar)) o.b = o.c + (hudud && o.h === hudud ? 10 : 0) + (tIl.length >= 4 && ildiz(o.n.split(/\s+/).find(w => ildiz(w) === tIl) || '') === tIl ? 20 : 0);
-            const top = Object.values(xar).sort((a, b) => b.b - a.b).slice(0, 3).map(o => [o.i, o.n, o.h, o.c]);
+            const top = Object.values(xar).sort((a, b) => b.b - a.b || b.c - a.c).slice(0, 3).map(o => [o.i, o.n, o.h, o.c, o.b, o.t]);
             e[6] = { h: hudud, t: tuman, k: /казн/i.test(g.lot_note || '') ? 1 : 0, n: np.length,
               p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top };
           } catch (x) { }
           S.tahlil++;
         }
       };
-      await Promise.all(Array.from({ length: 6 }, tahlilchi));
+      await Promise.all(Array.from({ length: 8 }, tahlilchi));
+      // Narx bergan lotlarimiz uchun taxminni saqlaymiz: savdo tugagach to'g'ri chiqqani tekshiriladi
+      for (const t of takliflar) { const e = edokon.find(z => z[0] === t[0]); if (e && e[6] && e[6].x) t[6] = e[6].x.map(z => [z[0], z[1], z[4]]); }
 
       // 2) Auksion: ochiq ro'yxat + har lot tafsiloti
       S.bosqich = 'auksion';
@@ -175,8 +206,8 @@
             const code = g && g.product_code;
             let found = null;
             if (code) {
-              for (let f = 1; f <= 12 * 25 && !found; f += 12) {
-                const a = await (await fetch(SHOP + '/GetCompletedDeals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 11, display_on_shop: 1, display_on_national: 0, year_id: new Date(t.tugash).getFullYear(), product_code: code }) })).json();
+              for (let f = 1; f <= 11 * 25 && !found; f += 11) {
+                const a = await (await fetch(SHOP + '/GetCompletedDeals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 12, display_on_shop: 1, display_on_national: 0, year_id: new Date(t.tugash).getFullYear(), product_code: code }) })).json();
                 if (!Array.isArray(a) || !a.length) break;
                 found = a.find(x => String(x.lot_display_no) === String(t.lot));
                 if (!found && new Date(a[a.length - 1].deal_date) < new Date(new Date(t.tugash).getTime() - 864e5)) break;
@@ -185,7 +216,7 @@
             if (found) {
               natijalar.push({ korxona, lot: t.lot, holat: biz(found.provider_name) ? 'yutdi' : 'yutqazdi', golib: found.provider_name, golib_stir: found.provider_inn,
                 shartnoma_summa: found.deal_cost, dona_narx: found.amount ? found.deal_cost / found.amount : found.deal_cost, ishtirokchilar: found.pcp_count,
-                buyurtmachi: found.customer_name, bitim_sana: found.deal_date });
+                buyurtmachi: found.customer_name, buyurtmachi_stir: found.customer_inn, bitim_sana: found.deal_date });
             } else natijalar.push({ korxona, lot: t.lot, holat: 'kutilmoqda' });
           } catch (e) { }
           S.tekshirildi = natijalar.length;
