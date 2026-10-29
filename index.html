@@ -63,8 +63,8 @@ a{color:var(--pri)}
 .k .go{position:absolute;right:14px;bottom:12px;font-size:12px;color:var(--ac,var(--pri));font-weight:700;opacity:0;transition:opacity .15s}
 .k:hover .go{opacity:1}
 @media(max-width:600px){.kp{grid-template-columns:1fr 1fr;gap:10px}.k{padding:13px}.k .v{font-size:24px}.k .s{font-size:11px}.br{grid-template-columns:110px 1fr 80px}}
-.row2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
-@media(max-width:860px){.row2{grid-template-columns:1fr}}
+.row2{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}.row2>*{min-width:0}.row2.eq{grid-template-columns:1fr 1.2fr}
+@media(max-width:860px){.row2,.row2.eq{grid-template-columns:1fr}}
 .pn{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--sh)}
 .pn h4{margin:0 0 12px;font-size:15px}
 .br{display:grid;grid-template-columns:150px 1fr 92px;align-items:center;gap:10px;padding:7px 6px;border-radius:9px;cursor:pointer}
@@ -82,6 +82,17 @@ a{color:var(--pri)}
 .lg2 button:hover{background:var(--chip)}
 .lg2 i{width:10px;height:10px;border-radius:3px;flex:none}
 .lg2 b{margin-left:auto}
+.ksw{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:center}
+.ksw span{font-size:12.5px;color:var(--mut);margin-right:4px}
+.ksw button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer;box-shadow:var(--sh)}
+.ksw button.on{background:var(--ac,var(--pri));border-color:var(--ac,var(--pri));color:#fff}
+.cl{display:flex;align-items:flex-end;gap:6px;height:150px;padding-top:18px;overflow-x:auto}
+.cl .c{flex:1 0 22px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:22px}
+.cl .c i{display:block;width:100%;max-width:34px;background:var(--pri);border-radius:6px 6px 2px 2px;min-height:2px}
+.cl .c b{font-size:11px;margin-bottom:3px}.cl .c small{font-size:10.5px;color:var(--mut);margin-top:4px;white-space:nowrap}
+.nt{width:100%;min-width:0;border-collapse:collapse;font-size:13px}.nt th{position:static;cursor:default}.nt th,.nt td{padding:7px 5px;white-space:nowrap;border-bottom:1px solid var(--line);text-align:right}
+.nt th:first-child,.nt td:first-child{text-align:left}.nt th{font-size:11.5px;color:var(--mut);font-weight:600}
+.nt tr[data-kx]{cursor:pointer}.nt tr[data-kx]:hover td{background:var(--chip)}
 .kx{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
 .kc{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;box-shadow:var(--sh);transition:transform .15s,border-color .15s}
 .kc:hover{transform:translateY(-2px);border-color:var(--ac)}
@@ -182,7 +193,7 @@ header{display:flex;align-items:flex-start;gap:12px;padding-left:max(16px,calc(5
       <option value="price">Tartib: dona narxi ↓</option>
     </select>
     <label class="tg" id="mosWrap" hidden><input type="checkbox" id="mos"> </label>
-    <label class="tg"><input type="checkbox" id="tugagan"> Tugaganlarni ham</label>
+    <input type="checkbox" id="tugagan" hidden>
   </div>
   <div class="chips" id="chips"></div>
   <div id="dash"></div>
@@ -338,6 +349,24 @@ function renderN(){
   }).join('')||'<tr><td colspan="11" class="note">Hali natija yo\'q. Narx bergan lotlar tugagach, keyingi yangilashda shu yerda chiqadi.</td></tr>';
   $('note').textContent='Narx bergan lotlarimiz natijasi "Amalga oshgan bitimlar" ochiq ma\'lumotidan olinadi. Farq — g\'olib narxi bizning narxdan necha foiz past.';
 }
+// ---------- Korxona tanlovi va tarix ----------
+let KX='';try{KX=localStorage.getItem('birjachim_kx')||'';}catch(e){}
+let T=null,tYuk=false;
+async function loadT(){
+  if(tYuk)return;tYuk=true;
+  try{const r=await fetch(API+'?tarix=1',{cache:'no-store'});T=r.ok?await r.json():[];}catch(e){T=[];}
+  tYuk=false;if(tab==='d')renderD();
+}
+// Har kun uchun: har korxona+platformaning shu kundagi oxirgi yangilanishi qo'shiladi
+function kunlik(kx){
+  const by={};
+  for(const r of (T||[])){
+    if(kx&&qisqa(r.korxona)!==kx)continue;
+    const d=new Date(r.vaqt),kun=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    (by[kun]=by[kun]||{})[r.korxona+'|'+r.platforma]=r;
+  }
+  return Object.keys(by).sort().slice(-30).map(k=>{const v=Object.values(by[k]);return {kun:k,soni:v.reduce((a,r)=>a+(r.qiziq_soni||0),0),sum:v.reduce((a,r)=>a+(+r.qiziq_summa||0),0)};});
+}
 // ---------- Bosh sahifa (dashboard) ----------
 function qiziqmi(x){return x.qty>=3&&x.sum>=10e6;}
 function ochish(t,o){
@@ -350,7 +379,6 @@ function ochish(t,o){
     else{if(o.qiziq){$('minSoni').value='3';$('minSum').value='10';}}
   }
   if(t==='a'){$('vaqt').value=o.vaqt||'';}
-  if(t==='k'){$('tugagan').checked=!!o.tugagan;}
   if(t==='n'){$('nHolat').value=o.holat||'';$('nKorx').value=o.korx||'';}
   render();window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -363,32 +391,53 @@ function renderD(){
   $('ebar').hidden=true;$('nbar').hidden=true;$('tw').hidden=true;$('more').hidden=true;$('chips').innerHTML='';$('stats').innerHTML='';
   $('note').textContent='Istalgan kartochka yoki qatorni bossangiz, tegishli bo\'lim shu filtr bilan ochiladi.';
   if(!N)loadN();
+  if(!T)loadT();
   const now=Date.now(),day=864e5;
-  const E=D.e.filter(x=>x.end>now), Q=E.filter(qiziqmi), A=D.a.filter(x=>x.end>now), KO=D.k.filter(x=>x.end>now&&/faol/i.test(x.holat));
+  const KL=[...new Set([...D.e.flatMap(x=>x.k),...D.k.flatMap(x=>x.k),...(N||[]).map(x=>x.korxona)].map(qisqa))].sort();
+  if(KX&&!KL.includes(KX))KX='';
+  const fk=x=>!KX||x.k.map(qisqa).includes(KX);
+  const E=D.e.filter(x=>x.end>now&&fk(x)), Q=E.filter(qiziqmi), A=D.a.filter(x=>x.end>now), KO=D.k.filter(x=>x.end>now&&/faol/i.test(x.holat)&&fk(x));
   const s=L=>L.reduce((a,x)=>a+x.sum,0);
   const Q24=Q.filter(x=>x.end-now<=day);
-  const nn=N||[], c=h=>nn.filter(x=>x.holat===h).length;
+  const nn=(N||[]).filter(x=>!KX||qisqa(x.korxona)===KX), c=h=>nn.filter(x=>x.holat===h).length;
+  const kxo=KX?{korx:KX}:{};
   const kpi=(ic,t,v,sub,o,ac)=>'<button class="k" style="--ac:var('+ac+')" '+go(o)+'><div class="ic">'+ic+'</div><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div><span class="go">Ochish →</span></button>';
-  let h='<div class="kp">'+
-    kpi('🎯','Qo\'lga ilinadigan lotlar',Q.length,'jami <b>'+mln(s(Q))+'</b> · soni ≥ 3, summa ≥ 10 mln',{t:'e',qiziq:1},'--c1')+
-    kpi('⏰','24 soatda tugaydi',Q24.length,'<b>'+mln(s(Q24))+'</b> — shoshilish kerak',{t:'e',qiziq:1,vaqt:'24'},'--c5')+
-    kpi('🛒','Elektron do\'kon',E.length,'aktiv lotlar · '+mln(s(E)),{t:'e',hammasi:1},'--c2')+
+  let h='<div class="ksw"><span>Korxona:</span><button data-kx=""'+(KX?'':' class="on"')+'>Hammasi</button>'+
+    KL.map(k=>'<button data-kx="'+esc(k)+'" style="--ac:'+(KC[k]||'#5f6b7a')+'"'+(KX===k?' class="on"':'')+'>'+esc(k)+'</button>').join('')+'</div>';
+  h+='<div class="kp">'+
+    kpi('🎯','Qo\'lga ilinadigan lotlar',Q.length,'jami <b>'+mln(s(Q))+'</b> · soni ≥ 3, summa ≥ 10 mln',{t:'e',qiziq:1,...kxo},'--c1')+
+    kpi('⏰','24 soatda tugaydi',Q24.length,'<b>'+mln(s(Q24))+'</b> — shoshilish kerak',{t:'e',qiziq:1,vaqt:'24',...kxo},'--c5')+
+    kpi('🛒','Elektron do\'kon',E.length,'aktiv lotlar · '+mln(s(E)),{t:'e',hammasi:1,...kxo},'--c2')+
     kpi('🔨','Auksion',A.length,'aktiv lotlar · '+mln(s(A)),{t:'a'},'--c3')+
-    (D.k.length?kpi('🤝','Kooperatsiya',KO.length,'faol so\'rovlar · '+mln(s(KO))+' · jami '+D.k.length,{t:'k',hammasi:1},'--c4'):'')+
+    (D.k.length?kpi('🤝','Kooperatsiya',KO.length,'faol so\'rovlar · '+mln(s(KO)),{t:'k',hammasi:1,...kxo},'--c4'):'')+
   '</div>';
   // Guruhlar diagrammasi + Natijalar doirasi
   const G={};Q.forEach(x=>{(G[x.g]=G[x.g]||[]).push(x)});
   const GL=Object.entries(G).sort((a,b)=>s(b[1])-s(a[1]));const gmax=Math.max(1,...GL.map(([,L])=>s(L)));
-  const bars=GL.map(([g,L])=>'<div class="br" style="--ac:'+gcol(g)+'" '+go({t:'e',qiziq:1,guruh:g})+'><div class="n">'+esc(g)+'</div><div class="tr"><div class="fl" style="width:'+Math.max(3,s(L)/gmax*100)+'%"></div></div><div class="m"><b>'+L.length+'</b> · '+mln(s(L))+'</div></div>').join('')||'<div class="note">Ma\'lumot yo\'q</div>';
+  const bars=GL.map(([g,L])=>'<div class="br" style="--ac:'+gcol(g)+'" '+go({t:'e',qiziq:1,guruh:g,...kxo})+'><div class="n">'+esc(g)+'</div><div class="tr"><div class="fl" style="width:'+Math.max(3,s(L)/gmax*100)+'%"></div></div><div class="m"><b>'+L.length+'</b> · '+mln(s(L))+'</div></div>').join('')||'<div class="note">Ma\'lumot yo\'q</div>';
   const y=c('yutdi'),yq=c('yutqazdi'),kt=c('kutilmoqda'),bt=c('bitim_yoq'),tot=y+yq+kt+bt;
   const p1=tot?y/tot*100:0,p2=tot?(y+yq)/tot*100:0,p3=tot?(y+yq+kt)/tot*100:0;
   const ring=tot?'conic-gradient(var(--ok) 0 '+p1+'%,var(--bad) '+p1+'% '+p2+'%,var(--warn) '+p2+'% '+p3+'%,var(--mut) '+p3+'% 100%)':'conic-gradient(var(--chip) 0 100%)';
   const leg=(col,t,n,hol)=>'<button '+go({t:'n',holat:hol})+'><i style="background:'+col+'"></i>'+t+'<b>'+(N?n:'…')+'</b></button>';
   h+='<div class="row2" style="margin-top:12px"><div class="pn"><h4>📦 Guruhlar bo\'yicha — qo\'lga ilinadigan lotlar</h4>'+bars+'</div>'+
-    '<div class="pn"><h4>🏁 Narx bergan lotlarimiz</h4><div class="dn"><div class="ring" style="background:'+ring+'"><div><div><b>'+((y+yq)?Math.round(y/(y+yq)*100)+'%':'—')+'</b><span>yutish ulushi</span></div></div></div>'+
+    '<div class="pn"><h4>🏁 Narx bergan lotlarimiz'+(KX?' — '+esc(KX):'')+'</h4><div class="dn"><div class="ring" style="background:'+ring+'"><div><div><b>'+((y+yq)?Math.round(y/(y+yq)*100)+'%':'—')+'</b><span>yutish ulushi</span></div></div></div>'+
     '<div class="lg2">'+leg('var(--ok)','✅ Bizga chiqdi',y,'yutdi')+leg('var(--bad)','❌ Chiqmadi',yq,'yutqazdi')+leg('var(--warn)','⏳ Kutilmoqda',kt,'kutilmoqda')+leg('var(--mut)','⚪ Bitim bo\'lmadi',bt,'bitim_yoq')+'</div></div></div></div>';
+  // Tarix grafigi + korxonalar natijasi
+  const kd=T?kunlik(KX):[], cmax=Math.max(1,...kd.map(x=>x.soni));
+  const chart=!T?'<div class="note">Yuklanmoqda…</div>':kd.length<2
+    ?'<div class="note">Tarix har yangilanishda saqlanib boradi. Bir necha kun yangilangach, shu yerda kunlar bo\'yicha grafik chiqadi.'+(kd.length?' Hozircha: '+kd[0].soni+' ta ('+kd[0].kun.slice(8)+'.'+kd[0].kun.slice(5,7)+').':'')+'</div>'
+    :'<div class="cl">'+kd.map(x=>'<div class="c" title="'+esc(x.kun)+' — '+x.soni+' ta · '+mln(x.sum)+'"><b>'+x.soni+'</b><i style="height:'+Math.max(2,x.soni/cmax*100)+'%;background:'+(KX&&KC[KX]?KC[KX]:'var(--pri)')+'"></i><small>'+x.kun.slice(8)+'.'+x.kun.slice(5,7)+'</small></div>').join('')+'</div>';
+  const NG={};(N||[]).forEach(x=>{const k=qisqa(x.korxona);(NG[k]=NG[k]||[]).push(x);});
+  const nrow=Object.entries(NG).sort((a,b)=>b[1].length-a[1].length).map(([k,L])=>{
+    const y=L.filter(x=>x.holat==='yutdi').length,q=L.filter(x=>x.holat==='yutqazdi').length,kt=L.filter(x=>x.holat==='kutilmoqda').length;
+    const F=L.filter(x=>x.holat==='yutqazdi'&&x.bizning_narx&&x.dona_narx).map(x=>(x.bizning_narx-x.dona_narx)/x.bizning_narx*100);
+    const sumY=L.filter(x=>x.holat==='yutdi').reduce((a,x)=>a+(+x.shartnoma_summa||0),0);
+    return '<tr data-kx="'+esc(k)+'"'+(KX===k?' style="font-weight:700"':'')+'><td><span class="kb" style="border-color:'+(KC[k]||'var(--line)')+'">'+esc(k)+'</span></td><td>'+L.length+'</td><td style="color:var(--ok)">'+y+'</td><td style="color:var(--bad)">'+q+'</td><td><b>'+((y+q)?Math.round(y/(y+q)*100)+'%':'—')+'</b></td><td>'+(F.length?Math.round(F.reduce((a,b)=>a+b,0)/F.length)+'%':'—')+'</td><td>'+(sumY?mln(sumY):'—')+'</td></tr>';
+  }).join('');
+  h+='<div class="row2 eq" style="margin-top:12px"><div class="pn"><h4>📈 Qo\'lga ilinadigan lotlar — kunlar bo\'yicha'+(KX?' · '+esc(KX):'')+'</h4>'+chart+'</div>'+
+    '<div class="pn"><h4>🏆 Korxonalar natijasi</h4>'+(N?(nrow?'<div style="overflow-x:auto"><table class="nt"><thead><tr><th>Korxona</th><th title="Narx bergan lotlar">Jami</th><th>✅</th><th>❌</th><th>Ulush</th><th title="Yutqazganda g\'olib narxi biznikidan o\'rtacha necha % past">Farq</th><th>Yutgan</th></tr></thead><tbody>'+nrow+'</tbody></table></div><div class="note" style="margin-top:6px">Qatorni bossangiz, sahifa shu korxonaga o\'tadi.</div>':'<div class="note">Hali narx bergan lot yo\'q.</div>'):'<div class="note">Yuklanmoqda…</div>')+'</div></div>';
   // Korxonalar
-  const K=[...new Set(D.e.flatMap(x=>x.k))];
+  const K=KX?[]:[...new Set(D.e.flatMap(x=>x.k))];
   if(K.length){
     const kmax=Math.max(1,...K.map(k=>Q.filter(x=>x.k.includes(k)).length));
     h+='<h3>Korxonalar</h3><div class="kx">'+K.map(k=>{
@@ -401,7 +450,10 @@ function renderD(){
   if(top.length)h+='<h3>Eng katta lotlar</h3><div class="tl">'+top.map((x,i)=>'<a href="'+x.url+'" target="_blank" rel="noopener" style="--ac:'+gcol(x.g)+'"><span class="no">'+(i+1)+'</span><span><span class="nm">'+esc(x.name)+'</span><span class="gp">'+esc(x.g)+'</span><div class="g">'+fmt(x.qty)+' × '+fmt(x.price)+' so\'m'+(x.k.length?' · '+x.k.map(qisqa).join(', '):'')+'</div></span><span class="rt"><b>'+mln(x.sum)+'</b><br>'+qoldi(x.end)+'</span></a>').join('')+'</div>';
   $('dash').innerHTML=h;
 }
-$('dash').onclick=e=>{const b=e.target.closest('[data-go]');if(!b)return;const o=JSON.parse(b.dataset.go);ochish(o.t,o);};
+$('dash').onclick=e=>{
+  const kb=e.target.closest('[data-kx]');
+  if(kb){KX=kb.dataset.kx;try{localStorage.setItem('birjachim_kx',KX);}catch(_){}renderD();return;}
+  const b=e.target.closest('[data-go]');if(!b)return;const o=JSON.parse(b.dataset.go);ochish(o.t,o);};
 
 function render(){
   if(tab==='d'){$('dash').hidden=false;renderD();return;}
@@ -439,7 +491,7 @@ function render(){
   $('more').hidden=L.length<=limit;
   $('more').textContent='Yana ko\'rsatish ('+(L.length-limit)+' ta qoldi)';
   $('note').textContent=tab==='k'
-    ?'Kooperatsiya — cooperation.uz kabinetidagi "So\'rovlar" (korporativ xaridlar). Tugagan so\'rovlar g\'olibi bilan ko\'rinadi — "Tugaganlarni ham" ni yoqing. Lotni ochish uchun kabinetga o\'zingiz kirgan bo\'lishingiz kerak.'
+    ?'Kooperatsiya — cooperation.uz kabinetidagi faol "So\'rovlar". Muddati o\'tganlari ro\'yxatdan o\'zi chiqib ketadi; qatnashganlarimiz natijasi "Natijalar" bo\'limida qoladi. Lotni ochish uchun kabinetga kirgan bo\'lishingiz kerak.'
     :tab==='e'
     ?'Dona narxi — saytdagi boshlang\'ich narx (1 birlik uchun). Jami summa = soni × dona narxi. Guruhlar mahsulot nomi bo\'yicha avtomatik ajratilgan.'
     :'Auksionda summa butun lot uchun; bitta lotda bir nechta tovar bo\'lishi mumkin.';
@@ -465,7 +517,7 @@ $('more').onclick=()=>{limit+=100;render();};
 setInterval(()=>{if(!document.hidden)render();},60000);
 ['nHolat','nKorx','nq'].forEach(id=>$(id).addEventListener('input',renderN));
 // ---------- Yangilash oynasi (bookmarklet) ----------
-const BM="javascript:(function(){var s=document.createElement('script');s.src='https://kroffams.github.io/AL-BIRJACHIM/birjachi.js?v='+Date.now();document.body.appendChild(s);})();";
+const BM="javascript:(function(){var s=document.createElement('script');s.charset='utf-8';s.src='https://kroffams.github.io/AL-BIRJACHIM/birjachi.js?v='+Date.now();document.body.appendChild(s);})();";
 $('bmLink').setAttribute('href',BM);
 $('bmLink').onclick=e=>{e.preventDefault();$('mdHolat').textContent="Bu tugma shu saytda emas, kabinet sahifasida ishlaydi. Avval uni xatcho'plar paneliga torting.";};
 $('bmCopy').onclick=async()=>{try{await navigator.clipboard.writeText(BM);$('mdHolat').textContent='✅ Kod nusxalandi.';}catch(e){prompt('Kodni nusxalang:',BM);}};

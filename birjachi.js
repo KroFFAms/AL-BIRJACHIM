@@ -42,7 +42,15 @@
     const a = document.querySelector('.pagination .active, .pagination [aria-current]');
     return !a || /^\s*1\s*$/.test(a.textContent);
   };
-  const joyida = location.pathname.replace(/\/$/, '') === p.sahifa && (p !== P.xarid || birinchi());
+  const yolda = location.pathname.replace(/\/$/, '') === p.sahifa;
+  let kutBor = false; try { kutBor = sessionStorage.getItem('birjachi_kut') === '1'; } catch (e) { }
+  // Sahifa allaqachon bir marta ochilgan bo'lsa, qayta-qayta ochmaymiz
+  const joyida = yolda && (p !== P.xarid || birinchi() || kutBor);
+  if (!joyida && kutBor) {
+    try { sessionStorage.removeItem('birjachi_kut'); } catch (e) { }
+    show('Kerakli sahifa ochilmadi', 'Menyudan <a href="' + location.origin + p.sahifa + '">ro\'yxat sahifasini</a> o\'zingiz oching, keyin tugmani yana bosing.', '#a15c00');
+    return;
+  }
   if (!joyida) {
     try { sessionStorage.setItem('birjachi_kut', '1'); } catch (e) { }
     show('Sahifa ochilmoqda…', 'Kerakli ro\'yxat ochilyapti. Sahifa yuklangach, <b>🔄 Birjachi</b> tugmasini <b>yana bir marta</b> bosing.');
@@ -56,6 +64,7 @@
     delete window[p.st];
     window.__KOOP_DRY = false;
     const s = document.createElement('script');
+    s.charset = 'utf-8';
     s.src = BASE + p.js + '?v=' + Date.now();
     s.onerror = () => show('Skript yuklanmadi', esc(p.js) + ' faylini GitHub\'dagi AL-BIRJACHIM papkasiga yuklang.', '#b42318');
     document.head.appendChild(s);

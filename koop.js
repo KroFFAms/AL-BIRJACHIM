@@ -116,7 +116,7 @@
       const aktiv = all.filter(x => /faol/i.test(x.holat) && x.tugash);
       const tugagan = all.filter(x => !/faol/i.test(x.holat));
       // Supabase: e-do'kon formatiga mos qatorlar + qo'shimcha maydonlar
-      const kooperatsiya = all.filter(x => x.tugash).map(x => [x.lot, guruh(x.nom), x.nom, x.soni, x.narx, x.tugash, x.oferta, x.kod, x.holat, x.golib]);
+      const kooperatsiya = aktiv.map(x => [x.lot, guruh(x.nom), x.nom, x.soni, x.narx, x.tugash, x.oferta, x.kod, x.holat, x.golib]);
       const takliflar = qat.map(x => [x.lot, x.nom, x.soni, x.narx, x.narx, x.tugash]);
       const natijalar = qat.filter(x => !/faol/i.test(x.holat)).map(x => ({
         korxona, lot: x.lot,
