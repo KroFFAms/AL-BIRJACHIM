@@ -113,6 +113,11 @@ a{color:var(--pri)}
 .pill.s{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}.pill.m{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}.pill.l{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
 .prods{font-size:12px;color:var(--mut);max-width:420px}
 header{display:flex;align-items:flex-start;gap:12px;padding-left:max(16px,calc(50% - 584px));padding-right:max(16px,calc(50% - 584px))}header>div:first-child{flex:1;min-width:0}
+.hb{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;justify-content:flex-end}
+.kir{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kir a{display:flex;flex-direction:column;line-height:1.15;text-decoration:none;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:6px 11px;font-size:13px}
+.kir a:hover{background:rgba(255,255,255,.26)}.kir a small{opacity:.75;font-size:10.5px;margin-top:2px}
+@media(max-width:700px){header{flex-direction:column}.hb{width:100%;justify-content:flex-start}.kir{justify-content:flex-start}.kir a{padding:5px 9px;font-size:12px}}
 .yb{flex:none;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;backdrop-filter:blur(4px)}
 .yb:hover{background:rgba(255,255,255,.28)}
 .md{position:fixed;inset:0;background:rgba(10,20,35,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
@@ -131,7 +136,15 @@ header{display:flex;align-items:flex-start;gap:12px;padding-left:max(16px,calc(5
 <header>
   <div><h1><span class="lg">📊</span>AL-BIRJACHIM</h1>
   <div class="sub" id="sub">Yuklanmoqda…</div></div>
-  <button class="yb" id="yBtn">🔄 Yangilash</button>
+  <div class="hb">
+    <nav class="kir" aria-label="Kabinetlarga kirish">
+      <a href="https://xarid.uzex.uz/provider/shop/rival-lots/0" target="birja_xarid" rel="noopener" title="Davlat xaridlari — kabinet (E-IMZO bilan kirasiz)"><b>🏛 Xarid</b><small>xarid.uzex.uz</small></a>
+      <a href="https://cabinet.cooperation.uz/corporate/provider/e-shop/requests?pageIndex=1" target="birja_koop" rel="noopener" title="Kooperatsiya — kabinet"><b>🤝 Kooperatsiya</b><small>cooperation.uz</small></a>
+      <a href="https://xarid.uzex.uz/auction" target="birja_auksion" rel="noopener" title="Ochiq auksionlar"><b>🔨 Auksion</b><small>ochiq ro'yxat</small></a>
+      <a href="https://autopilot.uz/app/main" target="birja_autopilot" rel="noopener" title="Avtopilot"><b>🛫 Avtopilot</b><small>autopilot.uz</small></a>
+    </nav>
+    <button class="yb" id="yBtn">🔄 Yangilash</button>
+  </div>
 </header>
 <div class="md" id="md" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="mdT">
   <button class="mdx" id="mdX" aria-label="Yopish">×</button>
@@ -320,6 +333,7 @@ let N=null,nYuk=false;
 async function loadN(){
   if(nYuk)return;nYuk=true;
   try{const r=await fetch(API+'?natijalar=1',{cache:'no-store'});N=r.ok?await r.json():[];}catch(e){N=[];}
+  if(!Array.isArray(N))N=[];
   nYuk=false;
   const ks=[...new Set(N.map(x=>x.korxona))];
   $('nKorx').innerHTML='<option value="">Korxona: hammasi</option>'+ks.map(k=>'<option value="'+esc(k)+'">'+esc(qisqa(k))+'</option>').join('');
@@ -361,6 +375,7 @@ let T=null,tYuk=false;
 async function loadT(){
   if(tYuk)return;tYuk=true;
   try{const r=await fetch(API+'?tarix=1',{cache:'no-store'});T=r.ok?await r.json():[];}catch(e){T=[];}
+  if(!Array.isArray(T))T=[];
   tYuk=false;if(tab==='d')renderD();
 }
 // Har kun uchun: har korxona+platformaning shu kundagi oxirgi yangilanishi qo'shiladi
