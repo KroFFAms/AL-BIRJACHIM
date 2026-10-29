@@ -49,7 +49,9 @@
       S.bosqich = "e-do'kon";
       const all = {};
       const first = () => { const r = document.querySelector('table tbody tr'); return r ? r.cells[0].innerText.trim() : ''; };
-      for (let w = 0; w < 40 && !first(); w++) await sleep(250);
+      // Jadval sekin yuklanishi mumkin (1000+ lot) — 45 soniyagacha kutamiz
+      for (let w = 0; w < 180 && !first(); w++) { await sleep(250); S.kutish = Math.round(w / 4); }
+      if (!first()) throw new Error("E-do'kon jadvali yuklanmadi — sahifani yangilab (F5) qayta urining");
       let stuck = 0;
       for (let p = 0; p < 400; p++) {
         for (const tr of document.querySelectorAll('table tbody tr')) {
@@ -66,6 +68,7 @@
         for (let i = 0; i < 40; i++) { await sleep(250); if (first() && first() !== f) { ok = true; break; } }
         if (!ok && ++stuck > 2) break;
       }
+      if (!Object.keys(all).length) throw new Error("E-do'kon lotlari o'qilmadi — eski ma'lumot saqlanib qoldi");
       const edokon = Object.values(all).map(c => [c[0], guruh(c[2]), c[2].replace(/\s+/g, ' '), num(c[6]), num(c[7]), iso(c[4])]).filter(r => r[5]);
       // Biz narx bergan lotlar: "Men taklif etgan narx" ustunida narx bor (masalan "72 000,00 UZS Narxni yangilash")
       const takliflar = Object.values(all).filter(c => c[8] && !/Taklif berish/i.test(c[8]) && /\d/.test(c[8]))
