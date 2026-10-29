@@ -63,14 +63,20 @@
   if (!(st() && st().holat === 'ISHLAYAPTI')) {
     delete window[p.st];
     window.__KOOP_DRY = false;
-    const s = document.createElement('script');
-    s.charset = 'utf-8';
-    s.src = BASE + p.js + '?v=' + Date.now();
-    s.onerror = () => show('Skript yuklanmadi', esc(p.js) + ' faylini GitHub\'dagi AL-BIRJACHIM papkasiga yuklang.', '#b42318');
-    document.head.appendChild(s);
+    (async () => {
+      for (let i = 1; i <= 5; i++) {
+        try {
+          const r = await fetch(BASE + p.js + '?v=' + Date.now(), { cache: 'no-store' });
+          if (r.ok) { const s = document.createElement('script'); s.textContent = await r.text(); document.head.appendChild(s); return; }
+        } catch (e) { }
+        await new Promise(r => setTimeout(r, i * 2500));
+      }
+      clearInterval(window.__BJ_T);
+      show('Skript yuklanmadi', esc(p.js) + ' olinmadi (internet yoki GitHub). Birozdan keyin sahifani yangilab, qayta bosing.', '#b42318');
+    })();
   }
 
-  const qadam = { boshlandi: 'Boshlandi', "e-do'kon": "E-do'kon o'qilmoqda", auksion: 'Auksion o\'qilmoqda', yozish: 'Bazaga yozilmoqda', natijalar: 'Natijalar tekshirilmoqda', barchasi: "So'rovlar o'qilmoqda", qatnashayotgan: 'Qatnashgan so\'rovlar o\'qilmoqda' };
+  const qadam = { boshlandi: 'Boshlandi', "e-do'kon": "E-do'kon o'qilmoqda", auksion: 'Auksion o\'qilmoqda', tahlil: 'Tahlil: ehtimoliy xaridorlar', yozish: 'Bazaga yozilmoqda', natijalar: 'Natijalar tekshirilmoqda', barchasi: "So'rovlar o'qilmoqda", qatnashayotgan: 'Qatnashgan so\'rovlar o\'qilmoqda' };
   const t0 = Date.now();
   clearInterval(window.__BJ_T);
   const tik = () => {
@@ -81,6 +87,7 @@
       const son = S.yigildi ?? S.barchasi ?? S.qatnashayotgan ?? '';
       show('⏳ ' + esc(qadam[S.bosqich] || S.bosqich), (S.korxona ? '🏢 ' + esc(S.korxona) + '<br>' : '') +
         (son !== '' ? 'Yig\'ildi: <b>' + son + '</b>' + (S.jami ? ' / ' + S.jami : '') + (S.sahifa ? ' · sahifa ' + S.sahifa : '') + '<br>' : '') +
+        (S.tahlilJami ? 'Tahlil: ' + (S.tahlil || 0) + ' / ' + S.tahlilJami + '<br>' : '') +
         (S.auksionTafsilot ? 'Auksion tafsiloti: ' + S.auksionTafsilot + '<br>' : '') +
         (S.tekshiriladi ? 'Natija tekshiruvi: ' + (S.tekshirildi || 0) + ' / ' + S.tekshiriladi + '<br>' : '') +
         '<span style="color:#5f6b7a;font-size:12px">' + sek + ' s · sahifani yopmang, hech narsani bosmang</span>');

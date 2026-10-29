@@ -72,6 +72,65 @@
         .map(c => [c[0], c[2].replace(/\s+/g, ' '), num(c[6]), num(c[8].split(/narx/i)[0]), num(c[7]), iso(c[4])]);
       S.takliflar = takliflar.length;
 
+      // 1b) Tahlil (Avtopilot kabi): qo'lga ilinadigan lotlar uchun hudud, ehtimoliy xaridor, 3 oylik yutilgan narx
+      S.bosqich = 'tahlil';
+      const SHOP = 'https://xarid-api-shop.uzex.uz/Common';
+      const TRADE = 'https://xarid-api-trade.uzex.uz';
+      const POST = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+      const REG = {};
+      try { (await (await fetch(TRADE + '/Lib/GetRegions')).json()).forEach(r => REG[r.id] = r.name); } catch (e) { }
+      const DIS = {};
+      const tumanNomi = async (rid, did) => {
+        if (!DIS[rid]) DIS[rid] = fetch(TRADE + '/Lib/GetDistricts/' + rid).then(r => r.json()).then(a => Object.fromEntries(a.map(d => [d.id, d.name]))).catch(() => ({}));
+        return (await DIS[rid])[did] || '';
+      };
+      const chegara = Date.now() - 90 * 864e5;
+      const BIT = {};
+      const bitimlar = code => BIT[code] || (BIT[code] = (async () => {
+        const out = [], y = new Date().getFullYear();
+        for (const yil of (new Date().getMonth() < 3 ? [y, y - 1] : [y])) {
+          for (let f = 1; f <= 48; f += 12) {
+            let a; try { a = await POST(SHOP + '/GetCompletedDeals', { from: f, to: f + 11, display_on_shop: 1, display_on_national: 0, year_id: yil, product_code: code }); } catch (e) { break; }
+            if (!Array.isArray(a) || !a.length) break;
+            out.push(...a);
+            if (a.length < 12 || new Date(a[a.length - 1].deal_date) < chegara) break;
+          }
+        }
+        return out.filter(x => new Date(x.deal_date) >= chegara);
+      })());
+      const ildiz = t => String(t || '').toLowerCase().replace(/[^а-яёa-zʻ']/g, '').slice(0, 4);
+      const tq = edokon.filter(e => e[3] >= 3 && e[3] * e[4] >= 10e6 && new Date(e[5] + ':00+05:00') > Date.now())
+        .sort((a, b) => b[3] * b[4] - a[3] * a[4]).slice(0, 250);
+      S.tahlilJami = tq.length; S.tahlil = 0;
+      let ti = 0;
+      const tahlilchi = async () => {
+        while (ti < tq.length) {
+          const e = tq[ti++];
+          try {
+            const g = await (await fetch(SHOP + '/GetLot/' + String(e[0]).slice(-7))).json();
+            const code = g && g.product_code;
+            let joy = []; try { joy = JSON.parse(g.js_lot_delivery_district || '[]'); } catch (x) { }
+            const hudud = joy[0] ? (REG[joy[0].Region_Id] || '') : '';
+            const tuman = joy[0] ? await tumanNomi(joy[0].Region_Id, joy[0].District_Id) : '';
+            const B = code ? await bitimlar(code) : [];
+            const np = B.filter(x => x.amount > 0 && x.deal_cost > 0).map(x => x.deal_cost / x.amount).sort((a, b) => a - b);
+            const xar = {};
+            for (const x of B) {
+              const k = x.customer_inn || x.customer_name;
+              const o = xar[k] || (xar[k] = { i: x.customer_inn, n: String(x.customer_name || '').replace(/\s+/g, ' ').slice(0, 90), h: x.customer_region_name || '', c: 0, b: 0 });
+              o.c++;
+            }
+            const tIl = ildiz(String(tuman).replace(/\s*(район|р-он|tumani|туман\w*)/i, ''));
+            for (const o of Object.values(xar)) o.b = o.c + (hudud && o.h === hudud ? 10 : 0) + (tIl.length >= 4 && ildiz(o.n.split(/\s+/).find(w => ildiz(w) === tIl) || '') === tIl ? 20 : 0);
+            const top = Object.values(xar).sort((a, b) => b.b - a.b).slice(0, 3).map(o => [o.i, o.n, o.h, o.c]);
+            e[6] = { h: hudud, t: tuman, k: /казн/i.test(g.lot_note || '') ? 1 : 0, n: np.length,
+              p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top };
+          } catch (x) { }
+          S.tahlil++;
+        }
+      };
+      await Promise.all(Array.from({ length: 6 }, tahlilchi));
+
       // 2) Auksion: ochiq ro'yxat + har lot tafsiloti
       S.bosqich = 'auksion';
       const L = [];
@@ -99,7 +158,6 @@
       if (!r.ok || !j.ok) throw new Error('Supabase: ' + r.status + ' ' + (j.xato || ''));
       // 4) Tugagan takliflarimiz natijasi: "Amalga oshgan bitimlar" (ochiq ma'lumot) dan qidiriladi
       S.bosqich = 'natijalar';
-      const SHOP = 'https://xarid-api-shop.uzex.uz/Common';
       const norm = x => String(x || '').toUpperCase().replace(/["'«»‘’`ʻʼ.]/g, '').replace(/(^|\s)(MCHJ|МЧЖ|OOO|ООО|XK|AJ|MAS'?ULIYATI CHEKLANGAN JAMIYAT)(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
       const biz = n => { const a = norm(n), b = norm(korxona); return a.length > 5 && b.length > 5 && (a.startsWith(b) || b.startsWith(a)); };
       let kut = [];
