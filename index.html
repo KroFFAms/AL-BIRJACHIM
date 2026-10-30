@@ -184,6 +184,10 @@ body.yopiq .side,body.yopiq main{visibility:hidden}
 .gk span{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.7}
 .gk select{width:100%;padding:8px 10px;border-radius:9px;border:0;font:inherit;font-weight:700;font-size:14px;color:#123a66;background:#fff;cursor:pointer}
 body.kxon .gk{background:#fff2;border-color:#ffd43b}
+.fb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.fb select,.fb input{flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.fb .ok{border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;background:#1d5fa8;color:#fff}
+#fBody .sm{font-size:12.5px}
 </style>
 </head>
 <body>
@@ -365,7 +369,24 @@ function firmalarOyna(){
     const by={};m.azolar.forEach(x=>{(by[x.korxona]=by[x.korxona]||[]).push(x)});
     h+='<h3>Kim qaysi firmani ko\'radi (admin)</h3><ul class="fl">'+Object.entries(by).map(([k,L])=>'<li><b>'+esc(k)+'</b>: '+L.map(x=>esc(x.ism||x.username||x.tg_id)+(x.tg_id===m.tg_id?'':' <button class="no sm" data-a="0" data-k="'+esc(k)+'" data-t="'+esc(x.tg_id)+'" title="Ruxsatni olib tashlash">×</button>')).join(', ')+'</li>').join('')+'</ul>';
   }
+  if(m.admin){
+    const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
+    h+='<h3>➕ Xodimga firma berish</h3><p class="mut sm">Xodim avval saytga Telegram bilan bir marta kirgan bo\'lishi kerak — shunda u ro\'yxatda chiqadi.</p>'+
+      '<div class="fb"><select id="fbU"><option value="">— Xodim —</option>'+U.map(x=>'<option value="'+esc(x.tg_id)+'">'+esc(x.ism||x.username||x.tg_id)+(x.username?' (@'+esc(x.username)+')':'')+'</option>').join('')+'</select>'+
+      '<select id="fbF"><option value="">— Firma —</option>'+F.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('')+'</select>'+
+      '<button class="ok" id="fbBtn">Ruxsat berish</button></div>';
+  }else{
+    h+='<h3>🔐 Admin bo\'lish</h3><p class="mut sm">Admin barcha firmalarni ko\'radi va xodimlarga ruxsat beradi. Parolni rahbardan oling.</p>'+
+      '<div class="fb"><input type="password" id="apIn" placeholder="Admin paroli" autocomplete="off"><button class="ok" id="apBtn">Kirish</button></div><p class="mut sm" id="apX"></p>';
+  }
   $('fBody').innerHTML=h;$('fm').hidden=false;
+  const fb=$('fbBtn');if(fb)fb.onclick=async()=>{const t=$('fbU').value,k=$('fbF').value;if(!t||!k){alert('Xodim va firmani tanlang');return;}
+    fb.disabled=true;try{await api('?firma_ber=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,korxona:k})});await menOl();firmalarOyna();}catch(e){alert('Bajarilmadi: '+e.message);fb.disabled=false;}};
+  const ap=$('apBtn');if(ap){const yub=async()=>{const v=$('apIn').value;if(!v)return;ap.disabled=true;$('apX').textContent='Tekshirilmoqda…';
+    try{const r=await fetch(API+'?admin_parol=1',{method:'POST',headers:{'Content-Type':'application/json','x-sessiya':ses()},body:JSON.stringify({parol:v})});const j=await r.json();
+      if(!r.ok)throw new Error(j.xato||('HTTP '+r.status));$('apX').textContent='✅ Siz endi adminsiz';await menOl();firmalarOyna();load();}
+    catch(e){$('apX').textContent='❌ '+e.message;ap.disabled=false;}};
+    ap.onclick=yub;$('apIn').onkeydown=e=>{if(e.key==='Enter')yub();};}
 }
 $('fBody').onclick=async e=>{const b=e.target.closest('button[data-k]');if(!b)return;
   if(b.dataset.a==='0'&&!confirm('Rostdan ham rad etasizmi / ruxsatni olib tashlaysizmi?'))return;
