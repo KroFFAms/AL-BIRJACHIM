@@ -388,6 +388,11 @@ window.onTelegramAuth=async u=>{
     sesYoz(j.token);$('kir').hidden=true;document.body.classList.remove('yopiq');boshlash();
   }catch(e){$('kirXato').textContent='Kirib bo\'lmadi: '+e.message;}
 };
+window.onTgUlash=async u=>{
+  const x=$('tgUX');if(x)x.textContent='Ulanmoqda…';
+  try{await api('?tg_ulash=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(u)});await menOl();firmalarOyna();}
+  catch(e){if(x)x.textContent='❌ '+e.message;}
+};
 async function chiqish(){try{await api('?chiqish=1',{method:'POST'})}catch(e){}sesYoz('');location.reload();}
 async function menOl(){
   try{MEN=await api('?men=1');}catch(e){MEN=null;return;}
@@ -399,6 +404,9 @@ function firmalarOyna(){
   const m=MEN||{firmalar:[],sorovlar:[],azolar:[]};
   const f=(m.firmalar||[]);
   let h='<p class="mut">Firma qo\'shish: shu kompyuterda AL-BIRJACHIM kengaytmasi o\'rnatilgan Chrome\'da saytga kirib turing, keyin firmaning kabinetiga (xarid yoki cooperation) <b>o\'sha firmaning kaliti bilan</b> kiring. Yig\'ish tugagach, firma shu yerda paydo bo\'ladi. Firmaning egasi bor bo\'lsa — u yoki admin tasdiqlaydi.</p>';
+  h+='<h3>🔔 Telegram xabarlar</h3>'+(m.tgUlangan
+    ?'<div class="fb"><span>✅ Telegram ulangan · xabarlar <b>'+(m.xabar?'yoqilgan':'o\'chirilgan')+'</b></span><button class="'+(m.xabar?'no':'ok')+' sm2" id="xbT">'+(m.xabar?'O\'chirish':'Yoqish')+'</button><button class="sm2" id="xbU">Uzish</button></div><p class="mut sm">Firmalaringizdagi yangi lotlar va natijalar shaxsan sizga keladi.</p>'
+    :'<p class="mut sm">Firmalaringizdagi yangi lotlar va natijalar shaxsan Telegram\'ingizga kelishi uchun pastdagi tugmani bosing va «Allow / Ruxsat» bering.</p><div id="tgU"></div><p class="mut sm" id="tgUX"></p>');
   h+='<h3>Mening firmalarim</h3>'+(f.length?'<ul class="fl">'+f.map(x=>'<li><b>'+esc(x.korxona)+'</b> <span class="hl '+(x.holat==='tasdiq'?'yutdi':'kutilmoqda')+'">'+(x.holat==='tasdiq'?'✅ ko\'radi':'⏳ tasdiq kutilmoqda')+'</span></li>').join('')+'</ul>':'<p class="mut">Hali firma yo\'q.</p>');
   const s=m.sorovlar||[];
   if(s.length)h+='<h3>Tasdiq so\'rovlari</h3><ul class="fl">'+s.map(x=>'<li><b>'+esc(x.ism||x.username||x.tg_id)+'</b>'+(x.username?' <span class="g">@'+esc(x.username)+'</span>':'')+' → '+esc(x.korxona)+' <button class="ok" data-a="1" data-k="'+esc(x.korxona)+'" data-t="'+esc(x.tg_id)+'">✅ Ruxsat</button> <button class="no" data-a="0" data-k="'+esc(x.korxona)+'" data-t="'+esc(x.tg_id)+'">❌ Rad</button></li>').join('')+'</ul>';
@@ -423,6 +431,10 @@ function firmalarOyna(){
       '<div class="fb"><input type="password" id="apIn" placeholder="Admin paroli" autocomplete="off"><button class="ok" id="apBtn">Kirish</button></div><p class="mut sm" id="apX"></p>';
   }
   $('fBody').innerHTML=h;$('fm').hidden=false;
+  const tu=$('tgU');if(tu){const sc=document.createElement('script');sc.async=true;sc.src='https://telegram.org/js/telegram-widget.js?22';
+    sc.setAttribute('data-telegram-login',BOT);sc.setAttribute('data-size','medium');sc.setAttribute('data-radius','8');sc.setAttribute('data-onauth','onTgUlash(user)');sc.setAttribute('data-request-access','write');tu.appendChild(sc);}
+  const xbT=$('xbT');if(xbT)xbT.onclick=async()=>{xbT.disabled=true;try{await api('?xabar_sozla=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({yoq:!m.xabar})});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);xbT.disabled=false;}};
+  const xbU=$('xbU');if(xbU)xbU.onclick=async()=>{if(!confirm('Telegram uzilsinmi? Shaxsiy xabarlar kelmaydi.'))return;try{await api('?xabar_sozla=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uzish:true})});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);}};
   document.querySelectorAll('#fBody input[data-all]').forEach(a=>a.onchange=()=>document.querySelectorAll('#fBody .'+a.dataset.all).forEach(c=>c.checked=a.checked));
   const chk=cls=>[...document.querySelectorAll('#fBody .'+cls+':checked')].map(c=>c.value);
   const xq=$('xqBtn');if(xq)xq.onclick=async()=>{
