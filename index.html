@@ -193,6 +193,21 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 .fch label:hover{background:var(--chip)}.fch .fall{border-bottom:1px solid var(--line);margin-bottom:3px;padding-bottom:7px}
 .fch input{width:16px;height:16px}
 .ok.wide{width:100%;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;background:#1d5fa8;color:#fff}
+.pinf{display:flex;flex-direction:column;gap:8px;margin:16px 0 4px}
+.pinf input{padding:12px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+.kbtn{padding:12px;border:0;border-radius:10px;background:linear-gradient(90deg,#123a6b,#1d5fa8,#0e8a7a);color:#fff;font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.kbtn:disabled{opacity:.6}
+.yoki{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:12px;margin:10px 0 0}.yoki:before,.yoki:after{content:"";flex:1;height:1px;background:var(--line)}
+.xq{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
+.xq input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;min-width:0}
+.xq .adm{grid-column:1/-1;display:flex;gap:8px;align-items:center;font-size:13px}
+@media(max-width:600px){.xq{grid-template-columns:1fr}}
+.xl{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.xr2{display:flex;justify-content:space-between;gap:8px;align-items:center;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 10px;flex-wrap:wrap}
+.xr2 .g{font-size:12px;color:var(--mut);margin-top:2px}.xa{display:flex;gap:4px;flex-wrap:wrap}
+.sm2{border:0;border-radius:7px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer;background:#e8eef6;color:#123a66}
+.sm2.ok{background:#e3f6ec;color:#1a7f4b}.sm2.no{background:#fde8e6;color:#b42318}
+#fBody h3 .hl{font-size:11px}
 </style>
 </head>
 <body>
@@ -238,9 +253,15 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 <div class="kirish" id="kir" hidden><div class="kb2">
   <div class="brand2"><span class="lg">📊</span><b>AL-BIRJACHIM</b></div>
   <h2>Kirish</h2>
-  <p class="mut">Har bir foydalanuvchi faqat o'z firmalarining lotlari va natijalarini ko'radi. Kirish — Telegram akkauntingiz orqali, parol kerak emas.</p>
-  <div id="tgW" class="tgw"></div>
+  <p class="mut">Har bir foydalanuvchi faqat o'z firmalarining lotlari va natijalarini ko'radi.</p>
+  <form id="pinF" class="pinf" autocomplete="on">
+    <input id="pLogin" name="username" placeholder="Login" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+    <input id="pPin" name="password" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="PIN-kod" autocomplete="current-password" required>
+    <button type="submit" class="kbtn">Kirish</button>
+  </form>
   <p class="mut sm" id="kirXato"></p>
+  <div class="yoki"><span>yoki</span></div>
+  <div id="tgW" class="tgw"></div>
 </div></div>
 <div class="md" id="fm" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="fT">
   <button class="mdx" id="fX" aria-label="Yopish">×</button>
@@ -347,6 +368,17 @@ function kirishOyna(xato){
     sc.setAttribute('data-telegram-login',BOT);sc.setAttribute('data-size','large');sc.setAttribute('data-radius','10');sc.setAttribute('data-onauth','onTelegramAuth(user)');sc.setAttribute('data-request-access','write');w.appendChild(sc);}
   setTimeout(()=>{if(!$('tgW').querySelector('iframe')&&!$('kirXato').textContent)$('kirXato').innerHTML='Telegram tugmasi chiqmadi. Internetni tekshiring. Birinchi marta bo\'lsa — @BotFather → /setdomain → @'+BOT+' → <b>kroffams.github.io</b> qilinganini tekshiring.';},6000);
 }
+$('pinF').onsubmit=async e=>{
+  e.preventDefault();const L=$('pLogin').value.trim(),P=$('pPin').value.trim();if(!L||!P)return;
+  const b=e.target.querySelector('button');b.disabled=true;$('kirXato').textContent='Tekshirilmoqda…';
+  try{
+    const r=await fetch(API+'?pin_kirish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:L,pin:P})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.token)throw new Error(j.xato||('HTTP '+r.status));
+    sesYoz(j.token);$('kirXato').textContent='';$('pPin').value='';$('kir').hidden=true;document.body.classList.remove('yopiq');boshlash();
+  }catch(err){$('kirXato').textContent='❌ '+err.message;$('pPin').value='';$('pPin').focus();}
+  b.disabled=false;
+};
 window.onTelegramAuth=async u=>{
   $('kirXato').textContent='Tekshirilmoqda…';
   try{
@@ -376,20 +408,42 @@ function firmalarOyna(){
   }
   if(m.admin){
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
-    h+='<h3>➕ Xodimga firma berish</h3><p class="mut sm">Xodim avval saytga Telegram bilan bir marta kirgan bo\'lishi kerak — shunda u ro\'yxatda chiqadi.</p>'+
-      '<div class="fb"><select id="fbU"><option value="">— Xodim —</option>'+U.map(x=>'<option value="'+esc(x.tg_id)+'">'+esc(x.ism||x.username||x.tg_id)+(x.username?' (@'+esc(x.username)+')':'')+'</option>').join('')+'</select>'+
-      '</div><div class="fch"><label class="fall"><input type="checkbox" id="fbAll"> <b>Hammasini belgilash</b></label>'+
-      F.map(k=>'<label><input type="checkbox" class="fbK" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>'+
-      '<button class="ok wide" id="fbBtn">✅ Belgilangan firmalarga ruxsat berish</button>';
+    const fChk=(cls)=>'<div class="fch"><label class="fall"><input type="checkbox" data-all="'+cls+'"> <b>Hammasini belgilash</b></label>'+F.map(k=>'<label><input type="checkbox" class="'+cls+'" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>';
+    h+='<h3>👤 Yangi xodim qo\'shish</h3><div class="xq">'+
+      '<input id="xqIsm" placeholder="Ism (masalan: Dilshod)"><input id="xqLog" placeholder="Login (masalan: dilshod)" autocapitalize="none"><input id="xqPin" inputmode="numeric" maxlength="6" placeholder="PIN (4–6 raqam)">'+
+      '<label class="adm"><input type="checkbox" id="xqAdm"> Admin (hamma firmalarni ko\'radi)</label></div>'+
+      '<div class="mut sm">Qaysi firmalarni ko\'radi:</div>'+fChk('xqK')+
+      '<button class="ok wide" id="xqBtn">➕ Xodimni qo\'shish</button><p class="mut sm" id="xqX"></p>';
+    h+='<h3>👥 Xodimlar ('+U.length+')</h3><div class="xl">'+(U.map(x=>'<div class="xr2"><div><b>'+esc(x.ism||x.username||x.tg_id)+'</b>'+(x.admin?' <span class="hl yutdi">admin</span>':'')+
+        '<div class="g">'+(x.login?'login: <b>'+esc(x.login)+'</b>':(x.username?'Telegram @'+esc(x.username):'Telegram'))+' · '+(x.admin?'hamma firmalar':((x.firmalar||[]).length?esc((x.firmalar||[]).map(qisqa).join(', ')):'<i>firma yo\'q</i>'))+'</div></div>'+
+        '<div class="xa"><button class="ok sm2" data-x="firma" data-t="'+esc(x.tg_id)+'">Firma berish</button>'+(x.login?'<button class="sm2" data-x="pin" data-t="'+esc(x.tg_id)+'">PIN</button>':'')+(x.tg_id===m.tg_id?'':'<button class="no sm2" data-x="del" data-t="'+esc(x.tg_id)+'">O\'chirish</button>')+'</div></div>').join('')||'<p class="mut">Hali xodim yo\'q.</p>')+'</div>';
+    h+='<div id="fbBox" hidden><h3>➕ Firma berish: <span id="fbKim"></span></h3>'+fChk('fbK')+'<button class="ok wide" id="fbBtn">✅ Belgilangan firmalarga ruxsat berish</button></div>';
   }else{
     h+='<h3>🔐 Admin bo\'lish</h3><p class="mut sm">Admin barcha firmalarni ko\'radi va xodimlarga ruxsat beradi. Parolni rahbardan oling.</p>'+
       '<div class="fb"><input type="password" id="apIn" placeholder="Admin paroli" autocomplete="off"><button class="ok" id="apBtn">Kirish</button></div><p class="mut sm" id="apX"></p>';
   }
   $('fBody').innerHTML=h;$('fm').hidden=false;
-  const fa=$('fbAll');if(fa)fa.onchange=()=>document.querySelectorAll('.fbK').forEach(c=>c.checked=fa.checked);
-  const fb=$('fbBtn');if(fb)fb.onclick=async()=>{const t=$('fbU').value,K=[...document.querySelectorAll('.fbK:checked')].map(c=>c.value);
-    if(!t){alert('Xodimni tanlang');return;}if(!K.length){alert('Kamida bitta firmani belgilang');return;}
-    fb.disabled=true;try{await api('?firma_ber=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,korxonalar:K})});await menOl();firmalarOyna();alert('✅ '+K.length+' ta firmaga ruxsat berildi');}catch(e){alert('Bajarilmadi: '+e.message);fb.disabled=false;}};
+  document.querySelectorAll('#fBody input[data-all]').forEach(a=>a.onchange=()=>document.querySelectorAll('#fBody .'+a.dataset.all).forEach(c=>c.checked=a.checked));
+  const chk=cls=>[...document.querySelectorAll('#fBody .'+cls+':checked')].map(c=>c.value);
+  const xq=$('xqBtn');if(xq)xq.onclick=async()=>{
+    const body={ism:$('xqIsm').value.trim(),login:$('xqLog').value.trim().toLowerCase(),pin:$('xqPin').value.trim(),admin:$('xqAdm').checked,korxonalar:chk('xqK')};
+    if(!body.admin&&!body.korxonalar.length&&!confirm('Hech qanday firma belgilanmadi. Baribir qo\'shilsinmi?'))return;
+    xq.disabled=true;$('xqX').textContent='Saqlanmoqda…';
+    try{await api('?xodim_qosh=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      await menOl();firmalarOyna();alert('✅ Xodim qo\'shildi.\nLogin: '+body.login+'\nPIN: '+body.pin+'\n\nShu ma\'lumotni xodimga bering.');}
+    catch(e){$('xqX').textContent='❌ '+e.message;xq.disabled=false;}};
+  let fbT='';
+  $('fBody').querySelectorAll('button[data-x]').forEach(b=>b.onclick=async()=>{
+    const t=b.dataset.t,x=(m.foydalanuvchilar||[]).find(z=>z.tg_id===t)||{};
+    if(b.dataset.x==='firma'){fbT=t;$('fbKim').textContent=x.ism||x.login||t;$('fbBox').hidden=false;
+      document.querySelectorAll('#fBody .fbK').forEach(c=>c.checked=(x.firmalar||[]).includes(c.value));$('fbBox').scrollIntoView({behavior:'smooth',block:'center'});return;}
+    if(b.dataset.x==='pin'){const p=prompt('Yangi PIN (4–6 raqam) — '+(x.ism||x.login)+':');if(!p)return;
+      try{await api('?xodim_ozgartir=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,pin:p.trim()})});alert('✅ PIN yangilandi');}catch(e){alert('❌ '+e.message);}return;}
+    if(b.dataset.x==='del'){if(!confirm((x.ism||x.login)+' — o\'chirilsinmi? U boshqa kira olmaydi.'))return;
+      try{await api('?xodim_ozgartir=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,ochir:true})});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);}}
+  });
+  const fb=$('fbBtn');if(fb)fb.onclick=async()=>{const K=chk('fbK');if(!fbT)return;if(!K.length){alert('Kamida bitta firmani belgilang');return;}
+    fb.disabled=true;try{await api('?firma_ber=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:fbT,korxonalar:K})});await menOl();firmalarOyna();alert('✅ '+K.length+' ta firmaga ruxsat berildi');}catch(e){alert('Bajarilmadi: '+e.message);fb.disabled=false;}};
   const ap=$('apBtn');if(ap){const yub=async()=>{const v=$('apIn').value;if(!v)return;ap.disabled=true;$('apX').textContent='Tekshirilmoqda…';
     try{const r=await fetch(API+'?admin_parol=1',{method:'POST',headers:{'Content-Type':'application/json','x-sessiya':ses()},body:JSON.stringify({parol:v})});const j=await r.json();
       if(!r.ok)throw new Error(j.xato||('HTTP '+r.status));$('apX').textContent='✅ Siz endi adminsiz';await menOl();firmalarOyna();load();}
