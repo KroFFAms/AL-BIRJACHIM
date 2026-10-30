@@ -487,7 +487,7 @@ function renderN(){
       '<td class="num">'+(x.dona_narx?'<b>'+fmt(x.dona_narx)+'</b><div class="g">jami '+fmt(x.shartnoma_summa||0)+'</div>':'')+'</td>'+
       '<td class="num">'+(farq!==null&&x.holat==='yutqazdi'?farq+'%':'')+'</td>'+
       '<td class="num">'+(x.ishtirokchilar??'')+'</td>'+
-      '<td><a href="https://xarid.uzex.uz/shop/lot-details/'+String(x.lot).slice(-7)+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+      '<td><a href="'+(/^ML/i.test(String(x.lot))?KOOP_URL:'https://xarid.uzex.uz/shop/lot-details/'+String(x.lot).slice(-7))+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
   }).join('')||'<tr><td colspan="11" class="note">Hali natija yo\'q. Narx bergan lotlar tugagach, keyingi yangilashda shu yerda chiqadi.</td></tr>';
   $('note').textContent='Narx bergan lotlarimiz natijasi "Amalga oshgan bitimlar" ochiq ma\'lumotidan olinadi. Farq — g\'olib narxi bizning narxdan necha foiz past.';
 }
