@@ -159,11 +159,37 @@ main{max-width:1400px;width:100%;margin:0 auto;padding:20px 24px 40px}
   .side .sub{margin-top:0}
   main{padding:12px 12px 40px}
 }
+
+/* ---- Akkaunt ---- */
+.usr{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.usr b{display:block;font-size:13.5px}.usr small{display:block;opacity:.7;font-size:11px}
+.ub{display:flex;align-items:center;gap:6px;width:100%;text-align:left;background:rgba(255,255,255,.1);color:#fff;border:0;border-radius:8px;padding:7px 9px;font:inherit;font-size:13px;cursor:pointer}
+.ub:hover{background:rgba(255,255,255,.2)}
+.bd{margin-left:auto;background:#e03131;color:#fff;border-radius:999px;font-size:11px;padding:0 7px;font-weight:700}
+.kirish{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:linear-gradient(150deg,#0f2f55,#174d8c 55%,#0d6f64)}
+.kirish[hidden]{display:none}
+.kb2{background:var(--card);color:var(--ink);border-radius:18px;max-width:420px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center}
+.brand2{display:flex;align-items:center;justify-content:center;gap:10px;font-size:20px;margin-bottom:6px}
+.brand2 .lg{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#e8f0fb;font-size:20px}
+.kb2 h2{margin:8px 0 6px}.kb2 .mut{color:var(--mut)}.kb2 .sm{font-size:12.5px;min-height:1.2em}
+.tgw{margin:18px 0 6px;min-height:46px}
+body.yopiq .side,body.yopiq main{visibility:hidden}
+.fl{list-style:none;padding:0;margin:0 0 10px;display:flex;flex-direction:column;gap:6px}
+.fl li{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.fl button{border:0;border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.fl .ok{background:#e3f6ec;color:#1a7f4b}.fl .no{background:#fde8e6;color:#b42318}.fl .sm{padding:0 7px}
+#fBody h3{font-size:14px;margin:14px 0 8px}
+
+.gk{display:flex;flex-direction:column;gap:5px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:9px 10px}
+.gk span{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;opacity:.7}
+.gk select{width:100%;padding:8px 10px;border-radius:9px;border:0;font:inherit;font-weight:700;font-size:14px;color:#123a66;background:#fff;cursor:pointer}
+body.kxon .gk{background:#fff2;border-color:#ffd43b}
 </style>
 </head>
 <body>
 <aside class="side" id="side">
   <div class="brand"><span class="lg">📊</span><div><b>AL-BIRJACHIM</b><small>lotlar tahlili</small></div></div>
+  <label class="gk"><span>🏢 Korxona</span><select id="gKx" title="Tanlangan korxona barcha bo'limlarda ko'rinadi"><option value="">Hammasi</option></select></label>
   <nav class="tabs" aria-label="Bo'limlar">
     <div class="sh">Bo'limlar</div>
     <button class="tab on" data-t="d"><i>🏠</i>Bosh sahifa</button>
@@ -180,6 +206,9 @@ main{max-width:1400px;width:100%;margin:0 auto;padding:20px 24px 40px}
     <a href="https://xarid.uzex.uz/auction" target="birja_auksion" rel="noopener" title="Ochiq auksionlar"><i>🔨</i><span><b>Auksion</b><small>ochiq ro'yxat</small></span></a>
     <a href="https://autopilot.uz/app/main" target="birja_autopilot" rel="noopener" title="Avtopilot"><i>🛫</i><span><b>Avtopilot</b><small>autopilot.uz</small></span></a>
   </nav>
+  <div class="usr"><div><b id="uIsm">…</b><small id="uRol"></small></div>
+    <button class="ub" id="fBtn" title="Firmalarim va tasdiq so'rovlari">🏢 Firmalarim <span class="bd" id="fBadge" hidden></span></button>
+    <button class="ub" id="chBtn" title="Chiqish">⎋ Chiqish</button></div>
   <button class="yb" id="yBtn">🔄 Yangilash</button>
   <div class="sub" id="sub">Yuklanmoqda…</div>
 </aside>
@@ -197,6 +226,18 @@ main{max-width:1400px;width:100%;margin:0 auto;padding:20px 24px 40px}
   <div class="st"><b>3</b><div><b>Kabinet sahifasida «🔄 Birjachi» ni bosing</b><br><span class="mut sm">O'ng pastda oyna chiqib, jarayonni ko'rsatadi: xarid'da 1–3 daqiqa, cooperation'da taxminan 1,5 daqiqa. Tugagach, Telegram'ga xabar keladi va bu sayt yangilanadi. Har bir korxona (KROFF, AMS, Drive) uchun o'z kabinetida alohida bosiladi.</span></div></div>
   <p class="mut sm" id="mdHolat"></p>
 </div></div>
+<div class="kirish" id="kir" hidden><div class="kb2">
+  <div class="brand2"><span class="lg">📊</span><b>AL-BIRJACHIM</b></div>
+  <h2>Kirish</h2>
+  <p class="mut">Har bir foydalanuvchi faqat o'z firmalarining lotlari va natijalarini ko'radi. Kirish — Telegram akkauntingiz orqali, parol kerak emas.</p>
+  <div id="tgW" class="tgw"></div>
+  <p class="mut sm" id="kirXato"></p>
+</div></div>
+<div class="md" id="fm" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="fT">
+  <button class="mdx" id="fX" aria-label="Yopish">×</button>
+  <h2 id="fT">🏢 Firmalarim</h2>
+  <div id="fBody"></div>
+</div></div>
 <main>
   <div class="stats" id="stats"></div>
   <div class="bar" id="nbar" hidden>
@@ -207,7 +248,7 @@ main{max-width:1400px;width:100%;margin:0 auto;padding:20px 24px 40px}
       <option value="bitim_yoq">⚪ Bitim bo'lmadi</option>
       <option value="kutilmoqda">⏳ Kutilmoqda</option>
     </select>
-    <select id="nKorx"><option value="">Korxona: hammasi</option></select>
+    <select id="nKorx" hidden><option value="">Korxona: hammasi</option></select>
     <input type="search" id="nq" placeholder="Qidirish: mahsulot, lot №, g'olib…">
   </div>
   <div class="bar" id="ebar">
@@ -274,17 +315,64 @@ function left(end){
   return '<span class="left '+cls+'">'+t+' qoldi</span>';
 }
 
-// Ma'lumot manbai: avval Supabase Edge Function, ishlamasa — yonidagi lotlar.json
+// ---------- Akkaunt: Telegram orqali kirish, sessiya ----------
 const API='https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja';
-async function olish(){
-  try{
-    const r=await fetch(API,{cache:'no-store'});
-    if(r.ok)return await r.json();
-  }catch(e){}
-  const r=await fetch('lotlar.json?v='+Date.now());
+const BOT='AlBirjachim_bot';
+const SK='birjachim_sessiya';
+const ses=()=>{try{return localStorage.getItem(SK)||''}catch(e){return ''}};
+const sesYoz=t=>{try{t?localStorage.setItem(SK,t):localStorage.removeItem(SK)}catch(e){}};
+let MEN=null;
+async function api(q,o){
+  o=o||{};const hd=Object.assign({},o.headers||{});const t=ses();if(t)hd['x-sessiya']=t;
+  const r=await fetch(API+(q||''),Object.assign({cache:'no-store'},o,{headers:hd}));
+  if(r.status===401){sesYoz('');kirishOyna();throw new Error('kirish kerak');}
   if(!r.ok)throw new Error('HTTP '+r.status);
-  return await r.json();
+  return r.json();
 }
+async function olish(){return api('');}
+function kirishOyna(xato){
+  const k=$('kir');k.hidden=false;document.body.classList.add('yopiq');
+  $('kirXato').textContent=xato||'';
+  const w=$('tgW');
+  if(!w.dataset.ok){w.dataset.ok=1;const sc=document.createElement('script');sc.async=true;sc.src='https://telegram.org/js/telegram-widget.js?22';
+    sc.setAttribute('data-telegram-login',BOT);sc.setAttribute('data-size','large');sc.setAttribute('data-radius','10');sc.setAttribute('data-onauth','onTelegramAuth(user)');sc.setAttribute('data-request-access','write');w.appendChild(sc);}
+  setTimeout(()=>{if(!$('tgW').querySelector('iframe')&&!$('kirXato').textContent)$('kirXato').innerHTML='Telegram tugmasi chiqmadi. Internetni tekshiring. Birinchi marta bo\'lsa — @BotFather → /setdomain → @'+BOT+' → <b>kroffams.github.io</b> qilinganini tekshiring.';},6000);
+}
+window.onTelegramAuth=async u=>{
+  $('kirXato').textContent='Tekshirilmoqda…';
+  try{
+    const r=await fetch(API+'?kirish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(u)});
+    const j=await r.json();
+    if(!r.ok||!j.token)throw new Error(j.xato||('HTTP '+r.status));
+    sesYoz(j.token);$('kir').hidden=true;document.body.classList.remove('yopiq');boshlash();
+  }catch(e){$('kirXato').textContent='Kirib bo\'lmadi: '+e.message;}
+};
+async function chiqish(){try{await api('?chiqish=1',{method:'POST'})}catch(e){}sesYoz('');location.reload();}
+async function menOl(){
+  try{MEN=await api('?men=1');}catch(e){MEN=null;return;}
+  $('uIsm').textContent=MEN.ism||('ID '+MEN.tg_id);
+  $('uRol').textContent=MEN.admin?'Admin — barcha firmalar':((MEN.firmalar||[]).filter(f=>f.holat==='tasdiq').length+' ta firma');
+  const n=(MEN.sorovlar||[]).length;$('fBadge').textContent=n?n:'';$('fBadge').hidden=!n;
+}
+function firmalarOyna(){
+  const m=MEN||{firmalar:[],sorovlar:[],azolar:[]};
+  const f=(m.firmalar||[]);
+  let h='<p class="mut">Firma qo\'shish: shu kompyuterda AL-BIRJACHIM kengaytmasi o\'rnatilgan Chrome\'da saytga kirib turing, keyin firmaning kabinetiga (xarid yoki cooperation) <b>o\'sha firmaning kaliti bilan</b> kiring. Yig\'ish tugagach, firma shu yerda paydo bo\'ladi. Firmaning egasi bor bo\'lsa — u yoki admin tasdiqlaydi.</p>';
+  h+='<h3>Mening firmalarim</h3>'+(f.length?'<ul class="fl">'+f.map(x=>'<li><b>'+esc(x.korxona)+'</b> <span class="hl '+(x.holat==='tasdiq'?'yutdi':'kutilmoqda')+'">'+(x.holat==='tasdiq'?'✅ ko\'radi':'⏳ tasdiq kutilmoqda')+'</span></li>').join('')+'</ul>':'<p class="mut">Hali firma yo\'q.</p>');
+  const s=m.sorovlar||[];
+  if(s.length)h+='<h3>Tasdiq so\'rovlari</h3><ul class="fl">'+s.map(x=>'<li><b>'+esc(x.ism||x.username||x.tg_id)+'</b>'+(x.username?' <span class="g">@'+esc(x.username)+'</span>':'')+' → '+esc(x.korxona)+' <button class="ok" data-a="1" data-k="'+esc(x.korxona)+'" data-t="'+esc(x.tg_id)+'">✅ Ruxsat</button> <button class="no" data-a="0" data-k="'+esc(x.korxona)+'" data-t="'+esc(x.tg_id)+'">❌ Rad</button></li>').join('')+'</ul>';
+  if(m.admin&&(m.azolar||[]).length){
+    const by={};m.azolar.forEach(x=>{(by[x.korxona]=by[x.korxona]||[]).push(x)});
+    h+='<h3>Kim qaysi firmani ko\'radi (admin)</h3><ul class="fl">'+Object.entries(by).map(([k,L])=>'<li><b>'+esc(k)+'</b>: '+L.map(x=>esc(x.ism||x.username||x.tg_id)+(x.tg_id===m.tg_id?'':' <button class="no sm" data-a="0" data-k="'+esc(k)+'" data-t="'+esc(x.tg_id)+'" title="Ruxsatni olib tashlash">×</button>')).join(', ')+'</li>').join('')+'</ul>';
+  }
+  $('fBody').innerHTML=h;$('fm').hidden=false;
+}
+$('fBody').onclick=async e=>{const b=e.target.closest('button[data-k]');if(!b)return;
+  if(b.dataset.a==='0'&&!confirm('Rostdan ham rad etasizmi / ruxsatni olib tashlaysizmi?'))return;
+  b.disabled=true;
+  try{await api('?tasdiq=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({korxona:b.dataset.k,tg_id:b.dataset.t,ruxsat:b.dataset.a==='1'})});await menOl();firmalarOyna();load();}
+  catch(err){alert('Bajarilmadi: '+err.message);b.disabled=false;}
+};
 async function load(){
   try{
     const j=await olish();
@@ -295,14 +383,18 @@ async function load(){
     const K=j.korxonalar||[];D.korxonalar=K;
     $('sub').textContent=K.length
       ?'Yangilangan: '+K.map(k=>qisqa(k.nom)+(k.platforma==='cooperation'?' koop':'')+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
-      :'Yangilangan: '+dstr(new Date(j.yangilangan))+' · '+j.manba;
+      :(j.admin?'Hali ma\'lumot yo\'q':'Sizga hali firma biriktirilmagan — «🏢 Firmalarim» ni oching');
     const KQ=[...new Set(K.map(k=>qisqa(k.nom)))];
     $('korx').innerHTML='<option value="">Korxona: hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
+    $('gKx').innerHTML='<option value="">Hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
+    if(KX&&!KQ.includes(KX))KX='';
+    $('gKx').value=KX;$('korx').value=KX;
     $('korx').style.display=K.length>0?'':'none';
     render();
   }catch(e){
+    if(/kirish kerak/.test(e.message))return;
     $('tb').innerHTML='';
-    $('stats').innerHTML='<div class="err">lotlar.json yuklanmadi ('+esc(e.message)+'). Sahifani GitHub Pages orqali oching, fayl bilan bir papkada bo\'lsin.</div>';
+    $('stats').innerHTML='<div class="err">Ma\'lumot yuklanmadi ('+esc(e.message)+'). Internetni tekshirib, sahifani yangilang.</div>';
   }
 }
 
@@ -362,7 +454,7 @@ const HOLAT={yutdi:'✅ Bizga chiqdi',yutqazdi:'❌ Chiqmadi',bitim_yoq:"⚪ Bit
 let N=null,nYuk=false;
 async function loadN(){
   if(nYuk)return;nYuk=true;
-  try{const r=await fetch(API+'?natijalar=1',{cache:'no-store'});N=r.ok?await r.json():[];}catch(e){N=[];}
+  try{N=await api('?natijalar=1');}catch(e){N=[];}
   if(!Array.isArray(N))N=[];
   nYuk=false;
   const ks=[...new Set(N.map(x=>x.korxona))];
@@ -374,7 +466,7 @@ function renderN(){
   $('ebar').hidden=true;$('nbar').hidden=false;$('chips').innerHTML='';$('more').hidden=true;
   if(!N){$('stats').innerHTML='';$('th').innerHTML='';$('tb').innerHTML='<tr><td class="note">Yuklanmoqda…</td></tr>';loadN();return;}
   const h=$('nHolat').value,k=$('nKorx').value,q=$('nq').value.trim().toLowerCase();
-  const all=N.filter(x=>!k||x.korxona===k);
+  const all=N.filter(x=>(!k||x.korxona===k)&&(!KX||qisqa(x.korxona)===KX));
   const L=all.filter(x=>(!h||x.holat===h)&&(!q||(x.lot+' '+(x.nomi||'')+' '+(x.golib||'')).toLowerCase().includes(q)));
   const c=s=>all.filter(x=>x.holat===s).length, yut=c('yutdi'), yq=c('yutqazdi');
   const TX=all.filter(x=>x.taxmin_orni!=null), tx1=TX.filter(x=>x.taxmin_orni===1).length, tx3=TX.filter(x=>x.taxmin_orni>0).length;
@@ -404,7 +496,7 @@ let KX='';try{KX=localStorage.getItem('birjachim_kx')||'';}catch(e){}
 let T=null,tYuk=false;
 async function loadT(){
   if(tYuk)return;tYuk=true;
-  try{const r=await fetch(API+'?tarix=1',{cache:'no-store'});T=r.ok?await r.json():[];}catch(e){T=[];}
+  try{T=await api('?tarix=1');}catch(e){T=[];}
   if(!Array.isArray(T))T=[];
   tYuk=false;if(tab==='d')renderD();
 }
@@ -435,7 +527,7 @@ function ochish(t,o){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
   tab=t;guruh=o.guruh||'';limit=100;
   if(t==='e'||t==='k'){
-    $('korx').value=o.korx?qisqa(o.korx):'';$('vaqt').value=o.vaqt||'';$('q').value='';
+    $('korx').value=o.korx?qisqa(o.korx):KX;$('vaqt').value=o.vaqt||'';$('q').value='';
     if(o.hammasi){$('minSoni').value='0';$('minSum').value='0';$('mos').checked=false;}
     else{if(o.qiziq){$('minSoni').value='3';$('minSum').value='10';}}
   }
@@ -513,7 +605,7 @@ function renderD(){
 }
 $('dash').onclick=e=>{
   const kb=e.target.closest('[data-kx]');
-  if(kb){KX=kb.dataset.kx;try{localStorage.setItem('birjachim_kx',KX);}catch(_){}renderD();return;}
+  if(kb){setKX(kb.dataset.kx);return;}
   const b=e.target.closest('[data-go]');if(!b)return;const o=JSON.parse(b.dataset.go);ochish(o.t,o);};
 
 function render(){
@@ -586,7 +678,21 @@ const mdOch=v=>{$('md').hidden=!v;if(v)$('mdX').focus();};
 $('yBtn').onclick=()=>mdOch(true);$('mdX').onclick=()=>mdOch(false);
 $('md').onclick=e=>{if(e.target===$('md'))mdOch(false);};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('md').hidden)mdOch(false);});
-load();
+// Bitta korxona tanlovi — barcha bo'limlar uchun (Bosh sahifa, E-do'kon, Kooperatsiya, Natijalar)
+function setKX(k){
+  KX=k||'';try{localStorage.setItem('birjachim_kx',KX);}catch(_){}
+  $('gKx').value=KX;$('korx').value=KX;
+  document.body.classList.toggle('kxon',!!KX);
+  limit=100;guruh='';render();
+}
+$('gKx').addEventListener('change',()=>setKX($('gKx').value));
+$('korx').addEventListener('change',()=>setKX($('korx').value));
+function boshlash(){if(!ses()){kirishOyna();return;}menOl();load();}
+$('fBtn').onclick=()=>{menOl().then(firmalarOyna);};
+$('chBtn').onclick=chiqish;
+$('fX').onclick=()=>{$('fm').hidden=true;};
+$('fm').onclick=e=>{if(e.target===$('fm'))$('fm').hidden=true;};
+boshlash();
 </script>
 </body>
 </html>
