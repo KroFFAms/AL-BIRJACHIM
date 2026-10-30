@@ -188,6 +188,11 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 .fb select,.fb input{flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
 .fb .ok{border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;background:#1d5fa8;color:#fff}
 #fBody .sm{font-size:12.5px}
+.fch{display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin:6px 0 8px;background:var(--bg)}
+.fch label{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:13.5px}
+.fch label:hover{background:var(--chip)}.fch .fall{border-bottom:1px solid var(--line);margin-bottom:3px;padding-bottom:7px}
+.fch input{width:16px;height:16px}
+.ok.wide{width:100%;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;background:#1d5fa8;color:#fff}
 </style>
 </head>
 <body>
@@ -373,15 +378,18 @@ function firmalarOyna(){
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
     h+='<h3>➕ Xodimga firma berish</h3><p class="mut sm">Xodim avval saytga Telegram bilan bir marta kirgan bo\'lishi kerak — shunda u ro\'yxatda chiqadi.</p>'+
       '<div class="fb"><select id="fbU"><option value="">— Xodim —</option>'+U.map(x=>'<option value="'+esc(x.tg_id)+'">'+esc(x.ism||x.username||x.tg_id)+(x.username?' (@'+esc(x.username)+')':'')+'</option>').join('')+'</select>'+
-      '<select id="fbF"><option value="">— Firma —</option>'+F.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('')+'</select>'+
-      '<button class="ok" id="fbBtn">Ruxsat berish</button></div>';
+      '</div><div class="fch"><label class="fall"><input type="checkbox" id="fbAll"> <b>Hammasini belgilash</b></label>'+
+      F.map(k=>'<label><input type="checkbox" class="fbK" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>'+
+      '<button class="ok wide" id="fbBtn">✅ Belgilangan firmalarga ruxsat berish</button>';
   }else{
     h+='<h3>🔐 Admin bo\'lish</h3><p class="mut sm">Admin barcha firmalarni ko\'radi va xodimlarga ruxsat beradi. Parolni rahbardan oling.</p>'+
       '<div class="fb"><input type="password" id="apIn" placeholder="Admin paroli" autocomplete="off"><button class="ok" id="apBtn">Kirish</button></div><p class="mut sm" id="apX"></p>';
   }
   $('fBody').innerHTML=h;$('fm').hidden=false;
-  const fb=$('fbBtn');if(fb)fb.onclick=async()=>{const t=$('fbU').value,k=$('fbF').value;if(!t||!k){alert('Xodim va firmani tanlang');return;}
-    fb.disabled=true;try{await api('?firma_ber=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,korxona:k})});await menOl();firmalarOyna();}catch(e){alert('Bajarilmadi: '+e.message);fb.disabled=false;}};
+  const fa=$('fbAll');if(fa)fa.onchange=()=>document.querySelectorAll('.fbK').forEach(c=>c.checked=fa.checked);
+  const fb=$('fbBtn');if(fb)fb.onclick=async()=>{const t=$('fbU').value,K=[...document.querySelectorAll('.fbK:checked')].map(c=>c.value);
+    if(!t){alert('Xodimni tanlang');return;}if(!K.length){alert('Kamida bitta firmani belgilang');return;}
+    fb.disabled=true;try{await api('?firma_ber=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,korxonalar:K})});await menOl();firmalarOyna();alert('✅ '+K.length+' ta firmaga ruxsat berildi');}catch(e){alert('Bajarilmadi: '+e.message);fb.disabled=false;}};
   const ap=$('apBtn');if(ap){const yub=async()=>{const v=$('apIn').value;if(!v)return;ap.disabled=true;$('apX').textContent='Tekshirilmoqda…';
     try{const r=await fetch(API+'?admin_parol=1',{method:'POST',headers:{'Content-Type':'application/json','x-sessiya':ses()},body:JSON.stringify({parol:v})});const j=await r.json();
       if(!r.ok)throw new Error(j.xato||('HTTP '+r.status));$('apX').textContent='✅ Siz endi adminsiz';await menOl();firmalarOyna();load();}
