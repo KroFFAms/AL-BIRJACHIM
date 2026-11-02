@@ -5,6 +5,9 @@
   if (window.__BIRJA && window.__BIRJA.holat === 'ISHLAYAPTI') return 'allaqachon ishlayapti';
   const S = window.__BIRJA = { holat: 'ISHLAYAPTI', bosqich: 'boshlandi', boshlandi: new Date().toISOString() };
   const API = 'https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja';
+  // Kengaytma qo'ygan sessiya (saytga Telegram orqali kirgan bo'lsangiz) — firma akkauntingizga bog'lanadi
+  const SES = document.documentElement.dataset.birjachiSessiya || '';
+  const HJ = SES ? { 'Content-Type': 'application/json', 'x-sessiya': SES } : { 'Content-Type': 'application/json' };
   const AUK = 'https://xarid-api-auction.uzex.uz/Common';
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const pad = n => String(n).padStart(2, '0');
@@ -137,7 +140,7 @@
       for (const t of takliflar) if (!tqIds.has(t[0])) { const e = edokon.find(z => z[0] === t[0]); if (e) tq.push(e); }
       // Boshqa korxona yig'ishida (3 kun ichida) tahlil qilingan lotlar qayta tahlil qilinmaydi — tezlik uchun
       const eski = {};
-      try { const jj = await (await fetch(API, { cache: 'no-store' })).json(); for (const r of (jj.edokon || [])) if (r[7] && r[7].x) eski[r[0]] = r[7]; } catch (x) { }
+      try { const jj = await (await fetch(API, { cache: 'no-store', headers: SES ? { 'x-sessiya': SES } : {} })).json(); for (const r of (jj.edokon || [])) if (r[7] && r[7].x) eski[r[0]] = r[7]; } catch (x) { }
       const yangi = tq.filter(e => { if (eski[e[0]]) { e[6] = eski[e[0]]; return false; } return true; });
       S.tahlilJami = yangi.length; S.tahlilTayyor = tq.length - yangi.length; S.tahlil = 0;
       let ti = 0;
@@ -174,12 +177,32 @@
             }
             const top = Object.values(xar).sort((a, b) => b.b - a.b || b.c - a.c).slice(0, 3).map(o => [o.i, o.n, o.h, o.c, o.b, o.t]);
             e[6] = { h: hudud, t: tuman, k: /казн/i.test(g.lot_note || '') ? 1 : 0, n: np.length,
-              p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top };
+              p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top, kod: code || '', bosh: g.lot_start_date || '' };
           } catch (x) { }
           S.tahlil++;
         }
       };
       await Promise.all(Array.from({ length: 8 }, tahlilchi));
+      // Reja-jadval (Avtopilot usuli): shu tovarni, shu miqdor va narxda rejaga kiritgan buyurtmachilar birinchi o'ringa chiqadi
+      try {
+        const RL = tq.filter(e => e[6] && e[6].kod && e[6].h && !/ta viloyat/.test(e[6].h))
+          .map(e => ({ id: e[0], kod: e[6].kod, viloyat: e[6].h, tuman: e[6].t || '', soni: e[3], narx: e[4], bosh: e[6].bosh || '' }));
+        if (RL.length) {
+          const rm = await (await fetch(API + '?reja_mos=1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lotlar: RL }) })).json();
+          const kun = s => { const m = String(s || '').match(/\d{4}-(\d\d)-(\d\d)/); return m ? m[2] + '.' + m[1] : ''; };
+          let n = 0;
+          for (const e of tq) {
+            const M = rm && rm.mos && rm.mos[e[0]];
+            if (!M || !M.length) continue;
+            n++;
+            const rx = M.map(o => [o.i, String(o.n || '').slice(0, 90), o.h || '', 0, o.b, 0, 'reja ' + kun(o.s) + ': ' + o.q + ' × ' + Math.round(o.p).toLocaleString('ru-RU')]);
+            const qolgan = (e[6].x || []).filter(z => !rx.some(r => r[0] && r[0] === z[0]));
+            e[6].x = [...rx, ...qolgan].slice(0, 3);
+            e[6].r = M.length;
+          }
+          S.reja = n;
+        }
+      } catch (x) { S.rejaXato = String(x); }
       // Narx bergan lotlarimiz uchun taxminni saqlaymiz: savdo tugagach to'g'ri chiqqani tekshiriladi
       for (const t of takliflar) { const e = edokon.find(z => z[0] === t[0]); if (e && e[6] && e[6].x) t[6] = e[6].x.map(z => [z[0], z[1], z[4]]); }
 
@@ -205,7 +228,7 @@
 
       // 3) Supabase'ga yozish
       S.bosqich = 'yozish';
-      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ korxona, manba: "xarid.uzex.uz — kabinet (Tushgan takliflar) + ochiq Auksion", edokon, auksion, takliflar }) });
+      const r = await fetch(API, { method: 'POST', headers: HJ, body: JSON.stringify({ korxona, manba: "xarid.uzex.uz — kabinet (Tushgan takliflar) + ochiq Auksion", edokon, auksion, takliflar }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.ok) throw new Error('Supabase: ' + r.status + ' ' + (j.xato || ''));
       // 4) Tugagan takliflarimiz natijasi: "Amalga oshgan bitimlar" (ochiq ma'lumot) dan qidiriladi
@@ -213,7 +236,7 @@
       const norm = x => String(x || '').toUpperCase().replace(/["'«»‘’`ʻʼ.]/g, '').replace(/(^|\s)(MCHJ|МЧЖ|OOO|ООО|XK|AJ|MAS'?ULIYATI CHEKLANGAN JAMIYAT)(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
       const biz = n => { const a = norm(n), b = norm(korxona); return a.length > 5 && b.length > 5 && (a.startsWith(b) || b.startsWith(a)); };
       let kut = [];
-      try { kut = await (await fetch(API + '?kutilayotgan=1', { cache: 'no-store' })).json(); } catch (e) { kut = []; }
+      try { kut = await (await fetch(API + '?kutilayotgan=1&korxona=' + encodeURIComponent(korxona), { cache: 'no-store' })).json(); } catch (e) { kut = []; }
       kut = (Array.isArray(kut) ? kut : []).filter(t => t.korxona === korxona).slice(0, 60);
       S.tekshiriladi = kut.length;
       const natijalar = [];
@@ -253,7 +276,7 @@
 
       const mos = edokon;
       const qiziq = mos.filter(e => e[3] >= 3 && e[3] * e[4] >= 10e6);
-      S.natija = { korxona, telegram: j.telegram, edokon: edokon.length, bizgaMos: mos.length, qiziq: qiziq.length, auksion: auksion.length,
+      S.natija = { korxona, telegram: j.telegram, firma: j.firma, edokon: edokon.length, bizgaMos: mos.length, qiziq: qiziq.length, auksion: auksion.length,
         top: qiziq.sort((a, b) => b[3] * b[4] - a[3] * a[4]).slice(0, 10).map(e => `${e[2]} — ${e[3]} × ${Math.round(e[4]).toLocaleString('ru-RU')} = ${Math.round(e[3] * e[4] / 1e6)} mln (${e[5].replace('T', ' ')})`) };
       S.holat = 'TAYYOR';
     } catch (e) { S.holat = 'XATO'; S.xato = String(e && e.message || e); }

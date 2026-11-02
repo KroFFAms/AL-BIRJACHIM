@@ -208,6 +208,7 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 .sm2{border:0;border-radius:7px;padding:5px 9px;font:inherit;font-size:12px;cursor:pointer;background:#e8eef6;color:#123a66}
 .sm2.ok{background:#e3f6ec;color:#1a7f4b}.sm2.no{background:#fde8e6;color:#b42318}
 #fBody h3 .hl{font-size:11px}
+.xb.rj{background:#e8f6ee;border-color:#9fd6b5}
 </style>
 </head>
 <body>
@@ -415,6 +416,8 @@ function firmalarOyna(){
     h+='<h3>Kim qaysi firmani ko\'radi (admin)</h3><ul class="fl">'+Object.entries(by).map(([k,L])=>'<li><b>'+esc(k)+'</b>: '+L.map(x=>esc(x.ism||x.username||x.tg_id)+(x.tg_id===m.tg_id?'':' <button class="no sm" data-a="0" data-k="'+esc(k)+'" data-t="'+esc(x.tg_id)+'" title="Ruxsatni olib tashlash">×</button>')).join(', ')+'</li>').join('')+'</ul>';
   }
   if(m.admin){
+    const R=m.reja;
+    h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 5 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>';
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
     const fChk=(cls)=>'<div class="fch"><label class="fall"><input type="checkbox" data-all="'+cls+'"> <b>Hammasini belgilash</b></label>'+F.map(k=>'<label><input type="checkbox" class="'+cls+'" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>';
     h+='<h3>👤 Yangi xodim qo\'shish</h3><div class="xq">'+
@@ -611,7 +614,7 @@ function xaridorHtml(x){
   if(!t)return '<span class="g" title="Tahlil faqat qo\'lga ilinadigan lotlar uchun (soni ≥ 3, summa ≥ 10 mln)">—</span>';
   let h='<div class="xr">';
   if(t.h)h+='<div class="hd">📍 '+esc(t.h)+(t.t?', '+esc(t.t):'')+(t.k?' · <b>byudjet</b>':'')+'</div>';
-  h+=(t.x||[]).map((z,i)=>'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'📍 tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>').join('')||'<span class="g">3 oyda bitim topilmadi</span>';
+  h+=(t.x||[]).map((z,i)=>(z[6]?'<span class="xb rj" title="Reja-jadvalda shu tovar bor · STIR '+esc(z[0]||'')+' · ball '+z[4]+'/10">📋 '+esc(String(z[1]).slice(0,60))+' <i>'+esc(z[6])+' · <b>'+z[4]+'</b>/10</i></span>':'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'📍 tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>')).join('')||'<span class="g">3 oyda bitim topilmadi</span>';
   if(t.p)h+='<div class="pr">💰 3 oy: <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
   return h+'</div>';
 }
