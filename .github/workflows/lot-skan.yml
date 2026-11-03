@@ -1,0 +1,20 @@
+# AL-BIRJACHIM — lotlarni avtomatik yangilash (har 15 daqiqada, hech qaysi kompyutersiz)
+# GitHub o'zi ishga tushiradi. Faqat ochiq ma'lumotni o'qiydi: kabinetga kirmaydi, narx bermaydi.
+name: Lotlarni yangilash
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+concurrency: { group: lot-skan, cancel-in-progress: false }
+jobs:
+  skan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: skan }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node skan/skan.mjs
+        env:
+          SKAN_KALIT: ${{ secrets.SKAN_KALIT }}
