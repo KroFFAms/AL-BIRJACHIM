@@ -209,6 +209,9 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 .sm2.ok{background:#e3f6ec;color:#1a7f4b}.sm2.no{background:#fde8e6;color:#b42318}
 #fBody h3 .hl{font-size:11px}
 .xb.rj{background:#e8f6ee;border-color:#9fd6b5}
+.tv{margin-top:4px;font-size:12px;line-height:1.3;background:#eef5ff;border:1px solid #c9dcf5;border-radius:6px;padding:3px 6px;display:inline-block;text-align:right}.tv span{color:#5f6b7a}
+.rq{margin-top:4px;font-size:12px}.rqb{display:block;margin-top:2px;padding:2px 6px;border-radius:6px;background:#fff4ec;border:1px solid #f3cfb3}.rqb.biz{background:#e8f6ee;border-color:#9fd6b5}.rqb i{color:#5f6b7a;font-style:normal}
+.rqk{grid-column:1/-1}.rqt{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.rqt th,.rqt td{padding:4px 6px;border-top:1px solid var(--line);text-align:left}.rqt .num{text-align:right}.rqt b{font-size:13px;display:inline}
 </style>
 </head>
 <body>
@@ -570,6 +573,16 @@ async function loadN(){
   $('nKorx').innerHTML='<option value="">Korxona: hammasi</option>'+ks.map(k=>'<option value="'+esc(k)+'">'+esc(qisqa(k))+'</option>').join('');
   if(tab==='n')renderN();
   if(tab==='d')renderD();
+  if(tab==='e')render();
+}
+function raqobatHtml(all){
+  const by={};
+  all.filter(x=>x.holat==='yutqazdi'&&(x.golib_stir||x.golib)).forEach(x=>{const k=x.golib_stir||x.golib;const o=by[k]||(by[k]={n:x.golib,s:x.golib_stir,c:0,f:[],t:new Set()});o.c++;
+    if(x.bizning_narx&&x.dona_narx)o.f.push((x.bizning_narx-x.dona_narx)/x.bizning_narx*100);if(x.nomi)o.t.add(String(x.nomi).split(/\s+/).slice(0,2).join(' '));});
+  const L=Object.values(by).sort((a,b)=>b.c-a.c).slice(0,8);
+  if(!L.length)return '';
+  return '<div class="stat rqk"><b style="font-size:15px">🥊 Bizni ko\'p yutganlar</b><table class="rqt"><tr><th>Firma</th><th class="num">Necha marta</th><th class="num">Bizdan arzon (o\'rta)</th><th>Tovarlar</th></tr>'+
+    L.map(o=>{const f=o.f.length?o.f.reduce((a,b)=>a+b,0)/o.f.length:null;return '<tr><td><b>'+esc(o.n||'')+'</b><div class="g">STIR '+esc(o.s||'')+'</div></td><td class="num">'+o.c+'</td><td class="num">'+(f!==null?Math.round(f)+'%':'—')+'</td><td class="g">'+esc([...o.t].slice(0,3).join(', '))+'</td></tr>';}).join('')+'</table></div>';
 }
 function renderN(){
   $('ebar').hidden=true;$('nbar').hidden=false;$('chips').innerHTML='';$('more').hidden=true;
@@ -584,7 +597,7 @@ function renderN(){
     '<div class="stat"><b style="color:var(--ok)">'+yut+'</b><span>bizga chiqdi</span></div>'+
     '<div class="stat"><b style="color:var(--bad)">'+yq+'</b><span>chiqmadi</span></div>'+
     '<div class="stat"><b>'+((yut+yq)?Math.round(yut/(yut+yq)*100)+'%':'—')+'</b><span>yutish ulushi · ⏳ '+c('kutilmoqda')+' kutilmoqda</span></div>'+
-    '<div class="stat"><b>'+(TX.length?Math.round(tx3/TX.length*100)+'%':'—')+'</b><span>buyurtmachi taxmini to\'g\'ri'+(TX.length?' (1-o\'rinda '+Math.round(tx1/TX.length*100)+'%, '+TX.length+' ta)':'')+'</span></div>';
+    '<div class="stat"><b>'+(TX.length?Math.round(tx3/TX.length*100)+'%':'—')+'</b><span>buyurtmachi taxmini to\'g\'ri'+(TX.length?' (1-o\'rinda '+Math.round(tx1/TX.length*100)+'%, '+TX.length+' ta)':'')+'</span></div>'+raqobatHtml(all);
   $('th').innerHTML='<tr><th>Tugash</th><th>Korxona</th><th>Mahsulot / lot</th><th class="num">Soni</th><th class="num">Bizning narx</th><th>Natija</th><th>G\'olib</th><th class="num">G\'olib narxi</th><th class="num">Farq</th><th class="num">Ishtirokchi</th><th></th></tr>';
   $('tb').innerHTML=L.map(x=>{
     const farq=x.bizning_narx&&x.dona_narx?Math.round((x.bizning_narx-x.dona_narx)/x.bizning_narx*100):null;
@@ -620,12 +633,47 @@ function kunlik(kx){
   return Object.keys(by).sort().slice(-30).map(k=>{const v=Object.values(by[k]);return {kun:k,soni:v.reduce((a,r)=>a+(r.qiziq_soni||0),0),sum:v.reduce((a,r)=>a+(+r.qiziq_summa||0),0)};});
 }
 // ---------- Ehtimoliy xaridorlar (Avtopilot kabi) ----------
+// ---------- Narx tavsiyasi (faqat maslahat — narxni dastur bermaydi) ----------
+// Asos: 3 oylik g'olib narxlar (shu tovar kodi), o'z natijalarimizdagi g'oliblar chegirmasi, demping chegarasi (-20%).
+function tarixChegirma(){
+  if(!Array.isArray(N))return null;
+  const r=N.filter(x=>x.dona_narx>0&&x.boshlangich_narx>0&&(x.holat==='yutdi'||x.holat==='yutqazdi')).map(x=>x.dona_narx/x.boshlangich_narx).filter(v=>v>0.5&&v<=1.05).sort((a,b)=>a-b);
+  return r.length>=5?{m:r[Math.floor(r.length/2)],n:r.length}:null;
+}
+function chiroyli(v){const q=v>=1e6?1000:v>=1e4?100:10;return Math.floor(v/q)*q;}
+function tavsiya(x){
+  const st=x.price;if(!(st>0))return null;
+  const pol=Math.ceil(st*0.8),t=x.ta&&x.ta.p,H=tarixChegirma(),asos=[];let v=[];
+  if(t&&t[0]>0){v.push((t[0]+t[2])/2);asos.push('3 oy: '+fmt(t[0])+'–'+fmt(t[1])+', o\'rta '+fmt(t[2])+' ('+x.ta.n+' bitim)');}
+  if(H){v.push(st*H.m);asos.push('bizning natijalar: g\'oliblar o\'rtacha '+Math.round((1-H.m)*100)+'% tushirgan ('+H.n+' lot)');}
+  let n=v.length?v.reduce((a,b)=>a+b,0)/v.length:st*0.92;
+  if(!v.length)asos.push('tarix yo\'q — boshlang\'ichdan ~8% past');
+  n=Math.max(pol,Math.min(st,chiroyli(n)));
+  let eh='o\'rta',c='#a15c00';
+  if(t&&t[0]>0){if(n<=t[0]){eh='yuqori';c='#1a7f4b';}else if(n>t[2]){eh='past';c='#b42318';}}
+  if(t&&t[0]>0&&t[0]<pol){asos.push('bozor narxi demping chegarasidan past — raqobat qattiq');if(n===pol){eh='past';c='#b42318';}}
+  return {n,foiz:Math.round((1-n/st)*100),eh,c,asos,pol};
+}
+function tavsiyaHtml(x){
+  if(!qiziqmi(x))return '';
+  const T=tavsiya(x);if(!T)return '';
+  return '<div class="tv" title="'+esc('Faqat maslahat. '+T.asos.join(' · ')+'. Tan narxingizdan pastga tushmang.')+'">💡 <b>'+fmt(T.n)+'</b> <span>(−'+T.foiz+'%)</span><br><i style="color:'+T.c+'">ehtimol: '+T.eh+'</i></div>';
+}
+// Bizning firmalardanmi (raqobatchi ro'yxatida o'zimizni ajratish uchun)
+function bizmi(nom){
+  const k=t=>String(t||'').toUpperCase().replace(/["'«»“”`ʻʼ.]/g,'').replace(/(^|\s)(MCHJ|МЧЖ|OOO|ООО|XK|YATT|ЧП|СП)(?=\s|$)/g,' ').replace(/\s+/g,' ').trim();
+  const n=k(nom);if(n.length<4)return false;
+  const F=[...((MEN&&MEN.firmalar)||[]).map(f=>f.korxona),...((D.korxonalar)||[]).map(z=>z.nom)];
+  return F.some(f=>{const a=k(f);if(!a)return false;if(a===n)return true;const [q,u]=a.length<n.length?[a,n]:[n,a];return q.length>=6&&u.startsWith(q.slice(0,Math.min(q.length,14)));});
+}
 function xaridorHtml(x){
   const t=x.ta;
   if(!t)return '<span class="g" title="Tahlil faqat qo\'lga ilinadigan lotlar uchun (soni ≥ 3, summa ≥ 10 mln)">—</span>';
   let h='<div class="xr">';
   if(t.h)h+='<div class="hd">📍 '+esc(t.h)+(t.t?', '+esc(t.t):'')+(t.k?' · <b>byudjet</b>':'')+'</div>';
   h+=(t.x||[]).map((z,i)=>(z[6]?'<span class="xb rj" title="Reja-jadvalda shu tovar bor · STIR '+esc(z[0]||'')+' · ball '+z[4]+'/10">📋 '+esc(String(z[1]).slice(0,60))+' <i>'+esc(z[6])+' · <b>'+z[4]+'</b>/10</i></span>':'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'📍 tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>')).join('')||'<span class="g">3 oyda bitim topilmadi</span>';
+  if(t.g&&t.g.length)h+='<div class="rq">🥊 Odatda yutadi: '+t.g.map(z=>{const biz=bizmi(z[1]);const f=z[3]&&x.price?Math.round((1-z[3]/x.price)*100):null;
+    return '<span class="rqb'+(biz?' biz':'')+'" title="STIR '+esc(z[0])+' · oxirgi g\'alaba '+esc(z[4])+(z[5]?' · shu viloyatda '+z[5]+' marta':'')+'">'+(biz?'✅ ':'')+esc(String(z[1]).slice(0,40))+' <i>'+z[2]+' marta'+(z[3]?' · o\'rta '+fmt(z[3])+(f!==null?' ('+(f>=0?'−':'+')+Math.abs(f)+'%)':''):'')+'</i></span>';}).join('')+'</div>';
   if(t.p)h+='<div class="pr">💰 3 oy: <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
   return h+'</div>';
 }
@@ -747,7 +795,7 @@ function render(){
   $('tb').innerHTML=view.map(x=>{
     const cls=x.end<=now?' class="end"':'';
     if(tab==='k')return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div></td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+(x.kod?' · '+esc(x.kod):'')+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td>'+(/faol/i.test(x.holat)?'<span class="hl kutilmoqda">Savdo faol</span>':'<span class="hl bitim_yoq">'+esc(x.holat.replace(/^Savdo tugadi\s*\/?\s*/,'Tugadi ').trim()||'Tugadi')+'</span>')+(x.golib?'<div class="g">🏆 '+esc(x.golib)+'</div>':'')+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Kabinet</a></td></tr>';
-    if(tab==='e')return '<tr'+cls+'><td>'+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'<div class="dm" title="Boshlang\'ich narxdan 20% past — demping chegarasi">demping &lt; '+fmt(x.price*.8)+'</div></td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+xaridorHtml(x)+'</td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+    if(tab==='e')return '<tr'+cls+'><td>'+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'<div class="dm" title="Boshlang\'ich narxdan 20% past — demping chegarasi">demping &lt; '+fmt(x.price*.8)+'</div>'+tavsiyaHtml(x)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+xaridorHtml(x)+'</td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
     return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+esc(x.tur)+'</div></td><td>'+esc(x.cust)+'<div class="g" title="'+esc(x.cat)+'">'+esc(toifa(x.cat))+'</div></td><td class="prods">'+esc(x.name)+(x.n>1?' <span class="g">('+x.n+' xil)</span>':'')+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
   }).join('')||'<tr><td colspan="8" class="note">Hech narsa topilmadi.</td></tr>';
   $('more').hidden=L.length<=limit;
@@ -796,7 +844,7 @@ function setKX(k){
 }
 $('gKx').addEventListener('change',()=>setKX($('gKx').value));
 $('korx').addEventListener('change',()=>setKX($('korx').value));
-function boshlash(){if(!ses()){kirishOyna();return;}menOl();load();}
+function boshlash(){if(!ses()){kirishOyna();return;}menOl();load();loadN();}
 $('fBtn').onclick=()=>{menOl().then(firmalarOyna);};
 $('chBtn').onclick=chiqish;
 $('fX').onclick=()=>{$('fm').hidden=true;};

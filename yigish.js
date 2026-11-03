@@ -176,8 +176,20 @@
               o.b = Math.min(10, (o.t ? 4 : 0) + (o.v ? 3 : 0) + Math.min(2, o.c - 1 + 1) + (new Date(o.oxirgi) >= chegara ? 1 : 0));
             }
             const top = Object.values(xar).sort((a, b) => b.b - a.b || b.c - a.c).slice(0, 3).map(o => [o.i, o.n, o.h, o.c, o.b, o.t]);
+            // Raqobatchilar: shu tovarni kim yutgan (avval shu viloyatda, keyin respublika bo'yicha 3 oy)
+            const gol = {}, korilgan = new Set();
+            const gq = (x, vil) => {
+              if (korilgan.has(x.deal_id)) return; korilgan.add(x.deal_id);
+              const k = x.provider_inn || x.provider_name; if (!k) return;
+              const o = gol[k] || (gol[k] = { i: x.provider_inn, n: String(x.provider_name || '').replace(/\s+/g, ' ').slice(0, 80), c: 0, v: 0, p: [], o: '' });
+              o.c++; if (vil) o.v++; if (x.amount > 0 && x.deal_cost > 0) o.p.push(x.deal_cost / x.amount); if (x.deal_date > o.o) o.o = x.deal_date;
+            };
+            H.forEach(x => gq(x, 1));
+            B.forEach(x => gq(x, hudud && x.customer_region_name === hudud ? 1 : 0));
+            const raq = Object.values(gol).sort((a, b) => b.v - a.v || b.c - a.c).slice(0, 3)
+              .map(o => { const q = o.p.sort((a, b) => a - b); return [o.i || '', o.n, o.c, q.length ? Math.round(q[Math.floor(q.length / 2)]) : 0, String(o.o).slice(0, 10), o.v]; });
             e[6] = { h: hudud, t: tuman, k: /казн/i.test(g.lot_note || '') ? 1 : 0, n: np.length,
-              p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top, kod: code || '', bosh: g.lot_start_date || '' };
+              p: np.length ? [Math.round(np[0]), Math.round(np[np.length - 1]), Math.round(np[Math.floor(np.length / 2)])] : null, x: top, kod: code || '', bosh: g.lot_start_date || '', g: raq };
           } catch (x) { }
           S.tahlil++;
         }
