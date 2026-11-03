@@ -498,6 +498,7 @@ async function load(){
     $('sub').textContent=K.length
       ?'Yangilangan: '+K.map(k=>qisqa(k.nom)+(k.platforma==='cooperation'?' koop':'')+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
       :(j.admin?'Hali ma\'lumot yo\'q':'Sizga hali firma biriktirilmagan — «🏢 Firmalarim» ni oching');
+    if(j.skan&&j.skan.yangilangan)$('sub').textContent='🛰 Avtomatik: '+dstr(new Date(j.skan.yangilangan))+(j.skan.jurnal&&j.skan.jurnal.xato?' (xato)':'')+' · '+$('sub').textContent;
     const KQ=[...new Set(K.map(k=>qisqa(k.nom)))];
     $('korx').innerHTML='<option value="">Korxona: hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
     $('gKx').innerHTML='<option value="">Hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
@@ -869,7 +870,8 @@ function setKX(k){
 }
 $('gKx').addEventListener('change',()=>setKX($('gKx').value));
 $('korx').addEventListener('change',()=>setKX($('korx').value));
-function boshlash(){if(!ses()){kirishOyna();return;}menOl();load();loadN();belgilarOl().then(()=>{if(tab==='e'||tab==='k')render();});}
+let avtoT=null;
+function boshlash(){if(!ses()){kirishOyna();return;}clearInterval(avtoT);avtoT=setInterval(()=>{if(!document.hidden)load();},10*60e3);menOl();load();loadN();belgilarOl().then(()=>{if(tab==='e'||tab==='k')render();});}
 $('fBtn').onclick=()=>{menOl().then(firmalarOyna);};
 $('chBtn').onclick=chiqish;
 $('fX').onclick=()=>{$('fm').hidden=true;};
