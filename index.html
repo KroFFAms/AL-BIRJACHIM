@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AL-BIRJACHIM — aktiv lotlar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f2f5f9;--card:#fff;--ink:#16202c;--mut:#677487;--line:#e2e8ef;--pri:#1d5fa8;--pri2:#0e8a7a;--ok:#16a06a;--warn:#e08a00;--bad:#d64545;--chip:#eef3f8;--sh:0 1px 2px rgba(16,24,40,.05),0 4px 14px rgba(16,24,40,.06);
   --c1:#1d5fa8;--c2:#0e8a7a;--c3:#7c4dce;--c4:#e08a00;--c5:#d64545;--c6:#2f9e44;--c7:#c2255c;--c8:#1098ad;--c9:#5f6b7a}
@@ -213,32 +215,140 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 .rq{margin-top:4px;font-size:12px}.rqb{display:block;margin-top:2px;padding:2px 6px;border-radius:6px;background:#fff4ec;border:1px solid #f3cfb3}.rqb.biz{background:#e8f6ee;border-color:#9fd6b5}.rqb i{color:#5f6b7a;font-style:normal}
 .rqk{grid-column:1/-1}.rqt{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}.rqt th,.rqt td{padding:4px 6px;border-top:1px solid var(--line);text-align:left}.rqt .num{text-align:right}.rqt b{font-size:13px;display:inline}
 .yz{all:unset;cursor:pointer;font-size:18px;line-height:1;color:#b8c2cc;margin-right:6px;vertical-align:-2px}.yz.on{color:#f5a623}.yz:hover{color:#f5a623}.chk{display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:14px;cursor:pointer}
+
+/* ================= Zamonaviy dizayn (2026) ================= */
+:root{--bg:#f6f7f9;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e6e8ec;--pri:#2563eb;--pri2:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--chip:#f1f3f6;
+  --sh:0 1px 2px rgba(15,23,42,.04);--c1:#2563eb;--c2:#0f172a;--c3:#0f172a;--c4:#0f172a;--c5:#dc2626;--sb:#0f172a;--sbt:#94a3b8}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0f17;--card:#121826;--ink:#e5e9f0;--mut:#8b96a8;--line:#222b3a;--pri:#60a5fa;--chip:#1a2232;--sh:none;--c1:#60a5fa;--c2:#e5e9f0;--c3:#e5e9f0;--c4:#e5e9f0;--sb:#070a10}}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:14px;letter-spacing:-.005em;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1,"cv11" 1}
+.num,.k .v,.stat b,.br .m,.kc .v{font-variant-numeric:tabular-nums}
+svg{display:block;flex:none}
+/* Yon panel */
+.side{background:var(--sb);color:#e2e8f0;padding:20px 14px;gap:18px;border-right:1px solid rgba(255,255,255,.06)}
+.brand .lg,.brand2 .lg{background:var(--pri);color:#fff;width:34px;height:34px;border-radius:9px}
+.brand b{font-size:15px;font-weight:700;letter-spacing:.2px}.brand small{color:var(--sbt);opacity:1}
+.side .sh{color:var(--sbt);opacity:1;font-weight:600;font-size:10.5px;letter-spacing:.9px}
+.side .tab{color:#cbd5e1;font-weight:500;padding:9px 12px;border-radius:8px;position:relative}
+.side .tab i,.side .kir i{width:auto;display:grid;place-items:center;opacity:.85}
+.side .tab:hover{background:rgba(255,255,255,.05);color:#fff}
+.side .tab.on{background:rgba(255,255,255,.08);color:#fff;box-shadow:none}
+.side .tab.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--pri)}
+.side .tab.on i{opacity:1;color:#93c5fd}
+.side .kir a{background:transparent;border:1px solid transparent;color:#cbd5e1;padding:7px 10px;border-radius:8px}
+.side .kir a:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.06);color:#fff}
+.side .kir b{font-weight:500}.side .kir small{color:var(--sbt);opacity:1}
+.gk{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px}
+.gk span{color:var(--sbt);opacity:1;font-weight:600}
+.gk select{background:#1e293b;color:#fff;font-weight:600;border:1px solid rgba(255,255,255,.08);border-radius:8px}
+body.kxon .gk{background:rgba(37,99,235,.12);border-color:rgba(96,165,250,.5)}
+.usr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px}
+.usr small{color:var(--sbt);opacity:1}
+.ub{background:transparent;color:#cbd5e1;padding:7px 8px;gap:8px}.ub:hover{background:rgba(255,255,255,.06);color:#fff}
+.yb,.side .yb{background:var(--pri);border:0;color:#fff;border-radius:8px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;backdrop-filter:none}
+.yb:hover{background:#1d4ed8}
+.side .sub{color:var(--sbt);opacity:1}
+/* Asosiy qism */
+main{padding:28px 32px 48px}
+#dash h3{font-size:12px;color:var(--mut);font-weight:600;letter-spacing:.8px;margin:28px 2px 12px}
+.ksw button{box-shadow:none;border-radius:8px;padding:6px 12px;font-weight:500;font-size:13px}
+.ksw button.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.ksw span{font-weight:500}
+.kp{gap:16px}
+.k{border-radius:12px;padding:18px;box-shadow:var(--sh);transition:border-color .15s,box-shadow .15s}
+.k::after{display:none}
+.k:hover{transform:none;border-color:#cbd5e1;box-shadow:0 4px 16px rgba(15,23,42,.06)}
+.k .ic{width:32px;height:32px;border-radius:8px;background:var(--chip);color:var(--mut);margin-bottom:14px}
+.k .t{font-size:12.5px;font-weight:500}
+.k .v{font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--ink);margin-top:4px}
+.k[style*="--c5"] .v{color:var(--bad)}.k[style*="--c5"] .ic{color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,transparent)}
+.k[style*="--c1"] .ic{color:var(--pri);background:color-mix(in srgb,var(--pri) 10%,transparent)}
+.k .go{color:var(--pri);font-weight:600}
+.pn{border-radius:12px;padding:20px;box-shadow:var(--sh)}
+.pn h4{font-size:14px;font-weight:600;margin-bottom:16px}
+.row2{gap:16px}
+.br{grid-template-columns:150px 1fr 110px;padding:6px 8px;border-radius:6px}
+.br .n{font-weight:500;color:var(--ink)}
+.br .tr{height:8px;border-radius:4px;background:var(--chip)}
+.br .fl{background:var(--pri)!important;border-radius:4px}
+.br:hover .fl{background:#1d4ed8!important}
+.dn .ring>div{width:112px;height:112px}.dn .ring b{font-weight:700;letter-spacing:-.02em}
+.lg2 i{border-radius:50%;width:8px;height:8px}
+.cl .c i{background:var(--pri);border-radius:4px 4px 1px 1px}
+.kc{border-radius:12px;box-shadow:var(--sh)}.kc:hover{transform:none;border-color:#cbd5e1}
+.kc .av{background:var(--chip)!important;color:var(--ink);border-radius:10px;font-weight:700;font-size:12px}
+.kc .pb i{background:var(--pri)!important}
+.tl{border-radius:12px;box-shadow:var(--sh)}
+.tl .gp{background:var(--chip)!important;color:var(--mut);font-weight:500}
+/* Statistika, filtrlar */
+.stats{gap:12px;margin-bottom:16px}
+.stat{border-radius:12px;padding:14px 16px;box-shadow:var(--sh)}
+.stat b{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.bar{border-radius:12px;padding:10px 12px;gap:8px;box-shadow:var(--sh)}
+.bar input[type=search],.bar select{background:var(--card);border-radius:8px;height:36px;padding:0 10px;font:inherit;font-size:13.5px;color:var(--ink)}
+.bar input[type=search]:focus,.bar select:focus{outline:2px solid color-mix(in srgb,var(--pri) 35%,transparent);outline-offset:0;border-color:var(--pri)}
+.chips{gap:6px;margin-bottom:14px}
+.chip{background:var(--card);border-radius:8px;padding:6px 10px;font-weight:500;color:var(--ink)}
+.chip:hover{border-color:#cbd5e1}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--card)}
+/* Jadval */
+.tw{border-radius:12px;box-shadow:var(--sh)}
+th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);padding:11px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line)}
+tbody tr:hover td{background:color-mix(in srgb,var(--chip) 60%,transparent)}
+tbody tr:last-child td{border-bottom:0}
+.kb{background:var(--chip);border:0;border-radius:5px;padding:1px 6px;font-weight:500;color:var(--mut)}
+.hl{border-radius:999px;padding:2px 9px;font-weight:600}
+.xr .xb{background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.xr .xb:first-of-type{border-color:var(--line);border-left:3px solid var(--pri);background:transparent}
+.xr .xb.rj,.xb.rj{border-left:3px solid var(--ok)!important;background:color-mix(in srgb,var(--ok) 6%,transparent)!important;border-color:var(--line)}
+.tv{background:color-mix(in srgb,var(--pri) 6%,transparent);border:1px solid color-mix(in srgb,var(--pri) 25%,transparent);border-radius:8px;padding:5px 8px;color:var(--ink)}
+.rqb{background:transparent!important;border:1px solid var(--line)!important;border-radius:8px;padding:4px 8px}
+.rqb.biz{border-left:3px solid var(--ok)!important}
+.dm{color:var(--mut)}
+.yz{color:#cbd5e1}.yz.on,.yz:hover{color:#f59e0b}
+a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
+.more{border-radius:8px;font-weight:500}
+/* Oynalar va kirish */
+.md{background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
+.mdb{border-radius:14px;box-shadow:0 24px 64px rgba(15,23,42,.25);border:1px solid var(--line)}
+.mdb h2{font-size:18px;font-weight:700}
+.kirish{background:var(--sb)}
+.kb2{border-radius:14px;padding:32px 28px}
+.brand2 .lg{display:inline-grid;place-items:center}
+.kbtn,.bm{background:var(--pri)!important;border-radius:8px;font-weight:600}
+.kbtn:hover{background:#1d4ed8!important}
+.pinf input{border-radius:8px;font-size:15px}
+.ok.wide,.fb .ok{background:var(--pri);border-radius:8px}
+.sm2{background:var(--chip);color:var(--ink)}
+.fl li,.xr2{background:var(--card);border-radius:8px}
+.lb{display:block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin:6px 0 2px}.pr .lb{display:inline;margin:0}.tv .lb{display:inline;margin:0 4px 0 0}.xr .hd{font-weight:500}
+#tb td:first-child{white-space:nowrap}
 </style>
 </head>
 <body>
 <aside class="side" id="side">
-  <div class="brand"><span class="lg">📊</span><div><b>AL-BIRJACHIM</b><small>lotlar tahlili</small></div></div>
-  <label class="gk"><span>🏢 Korxona</span><select id="gKx" title="Tanlangan korxona barcha bo'limlarda ko'rinadi"><option value="">Hammasi</option></select></label>
+  <div class="brand"><span class="lg"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg></span><div><b>AL-BIRJACHIM</b><small>lotlar tahlili</small></div></div>
+  <label class="gk"><span>Korxona</span><select id="gKx" title="Tanlangan korxona barcha bo'limlarda ko'rinadi"><option value="">Hammasi</option></select></label>
   <nav class="tabs" aria-label="Bo'limlar">
     <div class="sh">Bo'limlar</div>
-    <button class="tab on" data-t="d"><i>🏠</i>Bosh sahifa</button>
-    <button class="tab" data-t="e"><i>🛒</i>Elektron do'kon</button>
-    <button class="tab" data-t="a"><i>🔨</i>Auksion</button>
-    <button class="tab" data-t="k"><i>🤝</i>Kooperatsiya</button>
-    <button class="tab" data-t="n"><i>🏁</i>Natijalar</button>
+    <button class="tab on" data-t="d"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>Bosh sahifa</button>
+    <button class="tab" data-t="e"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.6l2.4 12h11l2-8H6.3"/></svg></i>Elektron do'kon</button>
+    <button class="tab" data-t="a"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 13-8.5 8.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg></i>Auksion</button>
+    <button class="tab" data-t="k"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></i>Kooperatsiya</button>
+    <button class="tab" data-t="n"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg></i>Natijalar</button>
   </nav>
   <nav class="kir" aria-label="Kabinetlarga kirish">
     <div class="sh">Kabinetlarga kirish</div>
-    <a href="https://xarid.uzex.uz/provider/shop/rival-lots/0" target="birja_xarid" rel="noopener" title="Davlat xaridlari — kabinet (E-IMZO bilan kirasiz)"><i>🏛</i><span><b>Xarid</b><small>xarid.uzex.uz</small></span></a>
-    <a href="https://cabinet.cooperation.uz/corporate/provider/e-shop/requests?pageIndex=1" target="birja_koop" rel="noopener" title="Kooperatsiya — kabinet"><i>🤝</i><span><b>Kooperatsiya</b><small>cooperation.uz</small></span></a>
-    <a href="https://ekoplatforma.uz/home" target="birja_eko" rel="noopener" title="Mahalliy ishlab chiqaruvchilar ekotizimi — kabinet"><i>🌿</i><span><b>Eco</b><small>ekoplatforma.uz</small></span></a>
-    <a href="https://xarid.uzex.uz/auction" target="birja_auksion" rel="noopener" title="Ochiq auksionlar"><i>🔨</i><span><b>Auksion</b><small>ochiq ro'yxat</small></span></a>
-    <a href="https://autopilot.uz/app/main" target="birja_autopilot" rel="noopener" title="Avtopilot"><i>🛫</i><span><b>Avtopilot</b><small>autopilot.uz</small></span></a>
+    <a href="https://xarid.uzex.uz/provider/shop/rival-lots/0" target="birja_xarid" rel="noopener" title="Davlat xaridlari — kabinet (E-IMZO bilan kirasiz)"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg></i><span><b>Xarid</b><small>xarid.uzex.uz</small></span></a>
+    <a href="https://cabinet.cooperation.uz/corporate/provider/e-shop/requests?pageIndex=1" target="birja_koop" rel="noopener" title="Kooperatsiya — kabinet"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></i><span><b>Kooperatsiya</b><small>cooperation.uz</small></span></a>
+    <a href="https://ekoplatforma.uz/home" target="birja_eko" rel="noopener" title="Mahalliy ishlab chiqaruvchilar ekotizimi — kabinet"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 4 13c0-6 8-10 16-10 0 8-4 16-10 16z"/><path d="M4 20c4-4 7-6 11-8"/></svg></i><span><b>Eco</b><small>ekoplatforma.uz</small></span></a>
+    <a href="https://xarid.uzex.uz/auction" target="birja_auksion" rel="noopener" title="Ochiq auksionlar"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 13-8.5 8.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg></i><span><b>Auksion</b><small>ochiq ro'yxat</small></span></a>
+    <a href="https://autopilot.uz/app/main" target="birja_autopilot" rel="noopener" title="Avtopilot"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></i><span><b>Avtopilot</b><small>autopilot.uz</small></span></a>
   </nav>
   <div class="usr"><div><b id="uIsm">…</b><small id="uRol"></small></div>
-    <button class="ub" id="fBtn" title="Firmalarim va tasdiq so'rovlari">🏢 Firmalarim <span class="bd" id="fBadge" hidden></span></button>
-    <button class="ub" id="chBtn" title="Chiqish">⎋ Chiqish</button></div>
-  <button class="yb" id="yBtn">🔄 Yangilash</button>
+    <button class="ub" id="fBtn" title="Firmalarim va tasdiq so'rovlari"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1"/></svg> Firmalarim <span class="bd" id="fBadge" hidden></span></button>
+    <button class="ub" id="chBtn" title="Chiqish"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg> Chiqish</button></div>
+  <button class="yb" id="yBtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg> Yangilash</button>
   <div class="sub" id="sub">Yuklanmoqda…</div>
 </aside>
 <div class="md" id="md" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="mdT">
@@ -256,7 +366,7 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
   <p class="mut sm" id="mdHolat"></p>
 </div></div>
 <div class="kirish" id="kir" hidden><div class="kb2">
-  <div class="brand2"><span class="lg">📊</span><b>AL-BIRJACHIM</b></div>
+  <div class="brand2"><span class="lg"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg></span><b>AL-BIRJACHIM</b></div>
   <h2>Kirish</h2>
   <p class="mut">Har bir foydalanuvchi faqat o'z firmalarining lotlari va natijalarini ko'radi.</p>
   <form id="pinF" class="pinf" autocomplete="on">
@@ -270,7 +380,7 @@ body.kxon .gk{background:#fff2;border-color:#ffd43b}
 </div></div>
 <div class="md" id="fm" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="fT">
   <button class="mdx" id="fX" aria-label="Yopish">×</button>
-  <h2 id="fT">🏢 Firmalarim</h2>
+  <h2 id="fT">Firmalarim</h2>
   <div id="fBody"></div>
 </div></div>
 <main>
@@ -498,7 +608,7 @@ async function load(){
     $('sub').textContent=K.length
       ?'Yangilangan: '+K.map(k=>qisqa(k.nom)+(k.platforma==='cooperation'?' koop':'')+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
       :(j.admin?'Hali ma\'lumot yo\'q':'Sizga hali firma biriktirilmagan — «🏢 Firmalarim» ni oching');
-    if(j.skan&&j.skan.yangilangan)$('sub').textContent='🛰 Avtomatik: '+dstr(new Date(j.skan.yangilangan))+(j.skan.jurnal&&j.skan.jurnal.xato?' (xato)':'')+' · '+$('sub').textContent;
+    if(j.skan&&j.skan.yangilangan)$('sub').textContent='Avtomatik: '+dstr(new Date(j.skan.yangilangan))+(j.skan.jurnal&&j.skan.jurnal.xato?' (xato)':'')+' · '+$('sub').textContent;
     const KQ=[...new Set(K.map(k=>qisqa(k.nom)))];
     $('korx').innerHTML='<option value="">Korxona: hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
     $('gKx').innerHTML='<option value="">Hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
@@ -567,7 +677,7 @@ function chips(){
   const qs=$('qolSel');if(qs)qs.onchange=()=>{guruh=qs.value;limit=100;render();};
 }
 
-const HOLAT={yutdi:'✅ Bizga chiqdi',yutqazdi:'❌ Chiqmadi',bitim_yoq:"⚪ Bitim bo'lmadi",kutilmoqda:'⏳ Kutilmoqda'};
+const HOLAT={yutdi:'Bizga chiqdi',yutqazdi:'❌ Chiqmadi',bitim_yoq:"⚪ Bitim bo'lmadi",kutilmoqda:'⏳ Kutilmoqda'};
 let N=null,nYuk=false;
 async function loadN(){
   if(nYuk)return;nYuk=true;
@@ -662,7 +772,7 @@ function tavsiya(x){
 function tavsiyaHtml(x){
   if(!qiziqmi(x))return '';
   const T=tavsiya(x);if(!T)return '';
-  return '<div class="tv" title="'+esc('Faqat maslahat. '+T.asos.join(' · ')+'. Tan narxingizdan pastga tushmang.')+'">💡 <b>'+fmt(T.n)+'</b> <span>(−'+T.foiz+'%)</span><br><i style="color:'+T.c+'">ehtimol: '+T.eh+'</i></div>';
+  return '<div class="tv" title="'+esc('Faqat maslahat. '+T.asos.join(' · ')+'. Tan narxingizdan pastga tushmang.')+'"><span class="lb">Tavsiya</span> <b>'+fmt(T.n)+'</b> <span>(−'+T.foiz+'%)</span><br><i style="color:'+T.c+'">ehtimol: '+T.eh+'</i></div>';
 }
 // Bizning firmalardanmi (raqobatchi ro'yxatida o'zimizni ajratish uchun)
 function bizmi(nom){
@@ -696,11 +806,11 @@ function xaridorHtml(x){
   const t=x.ta;
   if(!t)return '<span class="g" title="Tahlil faqat qo\'lga ilinadigan lotlar uchun (soni ≥ 3, summa ≥ 10 mln)">—</span>';
   let h='<div class="xr">';
-  if(t.h)h+='<div class="hd">📍 '+esc(t.h)+(t.t?', '+esc(t.t):'')+(t.k?' · <b>byudjet</b>':'')+'</div>';
-  h+=(t.x||[]).map((z,i)=>(z[6]?'<span class="xb rj" title="Reja-jadvalda shu tovar bor · STIR '+esc(z[0]||'')+' · ball '+z[4]+'/10">📋 '+esc(String(z[1]).slice(0,60))+' <i>'+esc(z[6])+' · <b>'+z[4]+'</b>/10</i></span>':'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+(i?'':'👤 ')+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'📍 tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>')).join('')||'<span class="g">3 oyda bitim topilmadi</span>';
-  if(t.g&&t.g.length)h+='<div class="rq">🥊 Odatda yutadi: '+t.g.map(z=>{const biz=bizmi(z[1]);const f=z[3]&&x.price?Math.round((1-z[3]/x.price)*100):null;
-    return '<span class="rqb'+(biz?' biz':'')+'" title="STIR '+esc(z[0])+' · oxirgi g\'alaba '+esc(z[4])+(z[5]?' · shu viloyatda '+z[5]+' marta':'')+'">'+(biz?'✅ ':'')+esc(String(z[1]).slice(0,40))+' <i>'+z[2]+' marta'+(z[3]?' · o\'rta '+fmt(z[3])+(f!==null?' ('+(f>=0?'−':'+')+Math.abs(f)+'%)':''):'')+'</i></span>';}).join('')+'</div>';
-  if(t.p)h+='<div class="pr">💰 3 oy: <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
+  if(t.h)h+='<div class="hd">'+esc(t.h)+(t.t?', '+esc(t.t):'')+(t.k?' · <b>byudjet</b>':'')+'</div>';
+  h+=(t.x||[]).map((z,i)=>(z[6]?'<span class="xb rj" title="Reja-jadvalda shu tovar bor · STIR '+esc(z[0]||'')+' · ball '+z[4]+'/10">'+esc(String(z[1]).slice(0,60))+' <i>'+esc(z[6])+' · <b>'+z[4]+'</b>/10</i></span>':'<span class="xb" title="STIR '+esc(z[0]||'')+' · '+esc(z[2]||'')+(z[4]!=null?' · ball '+z[4]+'/10':'')+'">'+''+esc(String(z[1]).slice(0,60))+' <i>'+(z[5]?'tuman mos · ':'')+esc(z[2]||'')+(z[3]>1?' · '+z[3]+' marta':'')+(z[4]!=null?' · <b>'+z[4]+'</b>/10':'')+'</i></span>')).join('')||'<span class="g">3 oyda bitim topilmadi</span>';
+  if(t.g&&t.g.length)h+='<div class="rq"><span class="lb">Odatda yutadi</span>'+t.g.map(z=>{const biz=bizmi(z[1]);const f=z[3]&&x.price?Math.round((1-z[3]/x.price)*100):null;
+    return '<span class="rqb'+(biz?' biz':'')+'" title="STIR '+esc(z[0])+' · oxirgi g\'alaba '+esc(z[4])+(z[5]?' · shu viloyatda '+z[5]+' marta':'')+'">'+(biz?'Biz · ':'')+esc(String(z[1]).slice(0,40))+' <i>'+z[2]+' marta'+(z[3]?' · o\'rta '+fmt(z[3])+(f!==null?' ('+(f>=0?'−':'+')+Math.abs(f)+'%)':''):'')+'</i></span>';}).join('')+'</div>';
+  if(t.p)h+='<div class="pr"><span class="lb">3 oylik narx</span> <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
   return h+'</div>';
 }
 // ---------- Bosh sahifa (dashboard) ----------
@@ -737,7 +847,8 @@ function renderD(){
   const Q24=Q.filter(x=>x.end-now<=day);
   const nn=(N||[]).filter(x=>!KX||qisqa(x.korxona)===KX), c=h=>nn.filter(x=>x.holat===h).length;
   const kxo=KX?{korx:KX}:{};
-  const kpi=(ic,t,v,sub,o,ac)=>'<button class="k" style="--ac:var('+ac+')" '+go(o)+'><div class="ic">'+ic+'</div><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div><span class="go">Ochish →</span></button>';
+  const KI={'🎯':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>','⏰':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>','🛒':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.6l2.4 12h11l2-8H6.3"/></svg>','🔨':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 13-8.5 8.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>','🤝':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>'};
+  const kpi=(ic,t,v,sub,o,ac)=>'<button class="k" style="--ac:var('+ac+')" '+go(o)+'><div class="ic">'+(KI[ic]||ic)+'</div><div class="t">'+t+'</div><div class="v">'+v+'</div><div class="s">'+sub+'</div><span class="go">Ochish →</span></button>';
   let h='<div class="ksw"><span>Korxona:</span><button data-kx=""'+(KX?'':' class="on"')+'>Hammasi</button>'+
     KL.map(k=>'<button data-kx="'+esc(k)+'" style="--ac:'+(KC[k]||'#5f6b7a')+'"'+(KX===k?' class="on"':'')+'>'+esc(k)+'</button>').join('')+'</div>';
   h+='<div class="kp">'+
@@ -755,9 +866,9 @@ function renderD(){
   const p1=tot?y/tot*100:0,p2=tot?(y+yq)/tot*100:0,p3=tot?(y+yq+kt)/tot*100:0;
   const ring=tot?'conic-gradient(var(--ok) 0 '+p1+'%,var(--bad) '+p1+'% '+p2+'%,var(--warn) '+p2+'% '+p3+'%,var(--mut) '+p3+'% 100%)':'conic-gradient(var(--chip) 0 100%)';
   const leg=(col,t,n,hol)=>'<button '+go({t:'n',holat:hol})+'><i style="background:'+col+'"></i>'+t+'<b>'+(N?n:'…')+'</b></button>';
-  h+='<div class="row2" style="margin-top:12px"><div class="pn"><h4>📦 Guruhlar bo\'yicha — qo\'lga ilinadigan lotlar</h4>'+bars+'</div>'+
-    '<div class="pn"><h4>🏁 Narx bergan lotlarimiz'+(KX?' — '+esc(KX):'')+'</h4><div class="dn"><div class="ring" style="background:'+ring+'"><div><div><b>'+((y+yq)?Math.round(y/(y+yq)*100)+'%':'—')+'</b><span>yutish ulushi</span></div></div></div>'+
-    '<div class="lg2">'+leg('var(--ok)','✅ Bizga chiqdi',y,'yutdi')+leg('var(--bad)','❌ Chiqmadi',yq,'yutqazdi')+leg('var(--warn)','⏳ Kutilmoqda',kt,'kutilmoqda')+leg('var(--mut)','⚪ Bitim bo\'lmadi',bt,'bitim_yoq')+'</div></div></div></div>';
+  h+='<div class="row2" style="margin-top:12px"><div class="pn"><h4>Guruhlar bo\'yicha — qo\'lga ilinadigan lotlar</h4>'+bars+'</div>'+
+    '<div class="pn"><h4>Narx bergan lotlarimiz'+(KX?' — '+esc(KX):'')+'</h4><div class="dn"><div class="ring" style="background:'+ring+'"><div><div><b>'+((y+yq)?Math.round(y/(y+yq)*100)+'%':'—')+'</b><span>yutish ulushi</span></div></div></div>'+
+    '<div class="lg2">'+leg('var(--ok)','Bizga chiqdi',y,'yutdi')+leg('var(--bad)','Chiqmadi',yq,'yutqazdi')+leg('var(--warn)','Kutilmoqda',kt,'kutilmoqda')+leg('var(--mut)','Bitim bo\'lmadi',bt,'bitim_yoq')+'</div></div></div></div>';
   // Tarix grafigi + korxonalar natijasi
   const kd=T?kunlik(KX):[], cmax=Math.max(1,...kd.map(x=>x.soni));
   const chart=!T?'<div class="note">Yuklanmoqda…</div>':kd.length<2
@@ -770,15 +881,15 @@ function renderD(){
     const sumY=L.filter(x=>x.holat==='yutdi').reduce((a,x)=>a+(+x.shartnoma_summa||0),0);
     return '<tr data-kx="'+esc(k)+'"'+(KX===k?' style="font-weight:700"':'')+'><td><span class="kb" style="border-color:'+(KC[k]||'var(--line)')+'">'+esc(k)+'</span></td><td>'+L.length+'</td><td style="color:var(--ok)">'+y+'</td><td style="color:var(--bad)">'+q+'</td><td><b>'+((y+q)?Math.round(y/(y+q)*100)+'%':'—')+'</b></td><td>'+(F.length?Math.round(F.reduce((a,b)=>a+b,0)/F.length)+'%':'—')+'</td><td>'+(sumY?mln(sumY):'—')+'</td></tr>';
   }).join('');
-  h+='<div class="row2 eq" style="margin-top:12px"><div class="pn"><h4>📈 Qo\'lga ilinadigan lotlar — kunlar bo\'yicha'+(KX?' · '+esc(KX):'')+'</h4>'+chart+'</div>'+
-    '<div class="pn"><h4>🏆 Korxonalar natijasi</h4>'+(N?(nrow?'<div style="overflow-x:auto"><table class="nt"><thead><tr><th>Korxona</th><th title="Narx bergan lotlar">Jami</th><th>✅</th><th>❌</th><th>Ulush</th><th title="Yutqazganda g\'olib narxi biznikidan o\'rtacha necha % past">Farq</th><th>Yutgan</th></tr></thead><tbody>'+nrow+'</tbody></table></div><div class="note" style="margin-top:6px">Qatorni bossangiz, sahifa shu korxonaga o\'tadi.</div>':'<div class="note">Hali narx bergan lot yo\'q.</div>'):'<div class="note">Yuklanmoqda…</div>')+'</div></div>';
+  h+='<div class="row2 eq" style="margin-top:12px"><div class="pn"><h4>Qo\'lga ilinadigan lotlar — kunlar bo\'yicha'+(KX?' · '+esc(KX):'')+'</h4>'+chart+'</div>'+
+    '<div class="pn"><h4>Korxonalar natijasi</h4>'+(N?(nrow?'<div style="overflow-x:auto"><table class="nt"><thead><tr><th>Korxona</th><th title="Narx bergan lotlar">Jami</th><th>Yutdi</th><th>Chiqmadi</th><th>Ulush</th><th title="Yutqazganda g\'olib narxi biznikidan o\'rtacha necha % past">Farq</th><th>Yutgan</th></tr></thead><tbody>'+nrow+'</tbody></table></div><div class="note" style="margin-top:6px">Qatorni bossangiz, sahifa shu korxonaga o\'tadi.</div>':'<div class="note">Hali narx bergan lot yo\'q.</div>'):'<div class="note">Yuklanmoqda…</div>')+'</div></div>';
   // Korxonalar
   const K=KX?[]:[...new Set(D.e.flatMap(x=>x.k))];
   if(K.length){
     const kmax=Math.max(1,...K.map(k=>Q.filter(x=>x.k.includes(k)).length));
     h+='<h3>Korxonalar</h3><div class="kx">'+K.map(k=>{
       const L=Q.filter(x=>x.k.includes(k)),kk=(D.korxonalar||[]).find(z=>z.nom===k),q=qisqa(k),ac=KC[q]||'#5f6b7a';
-      return '<button class="kc" style="--ac:'+ac+'" '+go({t:'e',qiziq:1,korx:k})+'><div class="av">'+esc(q.slice(0,5))+'</div><div style="flex:1;min-width:0"><div class="v">'+L.length+' <span class="s">qo\'lga ilinadigan</span></div><div class="s">'+mln(s(L))+(kk?' · 🕒 '+dstr(new Date(kk.yangilangan)):'')+'</div><div class="pb"><i style="width:'+(L.length/kmax*100)+'%"></i></div></div></button>';
+      return '<button class="kc" style="--ac:'+ac+'" '+go({t:'e',qiziq:1,korx:k})+'><div class="av">'+esc(q.slice(0,5))+'</div><div style="flex:1;min-width:0"><div class="v">'+L.length+' <span class="s">qo\'lga ilinadigan</span></div><div class="s">'+mln(s(L))+(kk?' · '+dstr(new Date(kk.yangilangan)):'')+'</div><div class="pb"><i style="width:'+(L.length/kmax*100)+'%"></i></div></div></button>';
     }).join('')+'</div>';
   }
   // Eng katta lotlar
