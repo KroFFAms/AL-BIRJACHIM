@@ -401,6 +401,17 @@ async function menOl(){
   $('uRol').textContent=MEN.admin?'Admin — barcha firmalar':((MEN.firmalar||[]).filter(f=>f.holat==='tasdiq').length+' ta firma');
   const n=(MEN.sorovlar||[]).length;$('fBadge').textContent=n?n:'';$('fBadge').hidden=!n;
 }
+function kengJurnal(){
+  let d=null;try{d=JSON.parse(document.documentElement.dataset.rejaJurnal||'null')}catch(e){}
+  if(!d)return '<p class="mut sm">🧩 Kengaytma bu brauzerda topilmadi (yoki 1.2.3 dan eski).</p>';
+  const j=d.j||{},t=x=>x?dstr(new Date(x)):'—';
+  let h='🧩 Kengaytma '+esc(d.v||'')+' · oxirgi yurish: <b>'+t(j.vaqt||j.tugadi)+'</b>';
+  if(j.yangi!=null)h+=' · yangi: '+j.yangi+(j.navbat?' / navbatda '+j.navbat:'');
+  if(j.eski)h+=' · eski: '+j.eski+(j.eskiSana?' ('+esc(String(j.eskiSana).slice(0,10))+' gacha)':'');
+  if(j.xato)h+=' · <span style="color:#b42318">xato: '+esc(j.xato)+'</span>';
+  if(d.p&&d.p.gacha>Date.now())h+=' · ⏸ tanaffus '+t(d.p.gacha)+' gacha';
+  return '<p class="mut sm">'+h+'</p>';
+}
 function firmalarOyna(){
   const m=MEN||{firmalar:[],sorovlar:[],azolar:[]};
   const f=(m.firmalar||[]);
@@ -417,7 +428,7 @@ function firmalarOyna(){
   }
   if(m.admin){
     const R=m.reja;
-    h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 5 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>';
+    h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 10 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>'+kengJurnal();
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
     const fChk=(cls)=>'<div class="fch"><label class="fall"><input type="checkbox" data-all="'+cls+'"> <b>Hammasini belgilash</b></label>'+F.map(k=>'<label><input type="checkbox" class="'+cls+'" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>';
     h+='<h3>👤 Yangi xodim qo\'shish</h3><div class="xq">'+
