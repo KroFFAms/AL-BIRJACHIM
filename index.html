@@ -522,6 +522,7 @@ function kengJurnal(){
   const j=d.j||{},t=x=>x?dstr(new Date(x)):'—';
   let h='🧩 Kengaytma '+esc(d.v||'')+' · oxirgi yurish: <b>'+t(j.vaqt||j.tugadi)+'</b>';
   if(j.yangi!=null)h+=' · yangi: '+j.yangi+(j.navbat?' / navbatda '+j.navbat:'');
+  if(j.lot)h+=' · lotlar: '+esc(j.lot);
   if(j.eski)h+=' · eski: '+j.eski+(j.eskiSana?' ('+esc(String(j.eskiSana).slice(0,10))+' gacha)':'');
   if(j.xato)h+=' · <span style="color:#b42318">xato: '+esc(j.xato)+'</span>';
   if(d.p&&d.p.gacha>Date.now())h+=' · ⏸ tanaffus '+t(d.p.gacha)+' gacha';
@@ -608,7 +609,7 @@ async function load(){
     $('sub').textContent=K.length
       ?'Yangilangan: '+K.map(k=>qisqa(k.nom)+(k.platforma==='cooperation'?' koop':'')+' ('+dstr(new Date(k.yangilangan))+')').join(' · ')
       :(j.admin?'Hali ma\'lumot yo\'q':'Sizga hali firma biriktirilmagan — «🏢 Firmalarim» ni oching');
-    if(j.skan&&j.skan.yangilangan)$('sub').textContent='Avtomatik: '+dstr(new Date(j.skan.yangilangan))+(j.skan.jurnal&&j.skan.jurnal.xato?' (xato)':'')+' · '+$('sub').textContent;
+    if(j.skan&&j.skan.yangilangan)$('sub').textContent='Avtomatik: '+dstr(new Date(j.skan.yangilangan))+(j.skan.jurnal&&j.skan.jurnal.manba==='kengaytma'?' (kompyuter orqali)':'')+(j.skan.jurnal&&j.skan.jurnal.xato?' (server ulana olmadi)':'')+' · '+$('sub').textContent;
     const KQ=[...new Set(K.map(k=>qisqa(k.nom)))];
     $('korx').innerHTML='<option value="">Korxona: hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
     $('gKx').innerHTML='<option value="">Hammasi</option>'+KQ.map(k=>'<option value="'+esc(k)+'">'+esc(k)+'</option>').join('');
