@@ -4,8 +4,8 @@ const SHOP = 'https://xarid-api-shop.uzex.uz/Common';
 const KALIT = process.env.SKAN_KALIT || '';
 const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36', 'Accept': 'application/json, text/plain, */*', 'Origin': 'https://xarid.uzex.uz', 'Referer': 'https://xarid.uzex.uz/' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function J(url, o = {}) {
-  const r = await fetch(url, { ...o, headers: { ...UA, ...(o.headers || {}) }, signal: AbortSignal.timeout(20000) });
+async function J(url, o = {}, ms = 20000) {
+  const r = await fetch(url, { ...o, headers: { ...UA, ...(o.headers || {}) }, signal: AbortSignal.timeout(ms) });
   if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
   const t = await r.text(); return t ? JSON.parse(t) : null;
 }
@@ -29,7 +29,7 @@ async function bitimlar(kod) {
   const st = await J(API + '?skan_holat=1', { headers: { 'x-skan-kalit': KALIT } });
   const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); return; }
   const lotlar = []; let id = oxirgi + 1, bosh = 0, eng = oxirgi, xato = 0; const t0 = Date.now();
-  while (bosh < 80 && id - oxirgi <= 800 && Date.now() - t0 < 6 * 60e3) {
+  while (bosh < 80 && id - oxirgi <= 600 && Date.now() - t0 < 6 * 60e3) {
     const ids = [id, id + 1, id + 2, id + 3]; id += 4;
     const res = await Promise.all(ids.map(async i => { try { const g = await J(SHOP + '/GetLot/' + i); return g && g.lot_display_no ? { ...g, __id: i } : null; } catch (e) { xato++; return null; } }));
     for (const g of res) { if (g) { bosh = 0; eng = Math.max(eng, g.__id); lotlar.push(g); } else bosh++; }
@@ -42,6 +42,12 @@ async function bitimlar(kod) {
     if (fa && g.product_code && g.lot_amount >= 3 && g.lot_amount * g.price >= 10e6 && !kesh[g.product_code] && Date.now() - t0 < 9 * 60e3) bitim[g.product_code] = kesh[g.product_code] = await bitimlar(g.product_code);
   }
   if (!lotlar.length) { console.log('yangi lot yo\'q'); return; }
-  const r = await J(API + '?lot_yoz=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ lotlar, oxirgi: eng, bitim }) });
-  console.log(lotlar.length + ' ta lot →', JSON.stringify(r));
+  // Serverga 150 tadan bo'lib yuboriladi (katta paket vaqtida ulgurmasligi mumkin)
+  lotlar.sort((a, b) => a.__id - b.__id);
+  for (let i = 0; i < lotlar.length; i += 150) {
+    const qism = lotlar.slice(i, i + 150), ox = i + 150 >= lotlar.length ? eng : qism[qism.length - 1].__id;
+    const bq = {}; for (const g of qism) if (bitim[g.product_code]) bq[g.product_code] = bitim[g.product_code];
+    const r = await J(API + '?lot_yoz=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ lotlar: qism, oxirgi: ox, bitim: bq }) }, 120000);
+    console.log(qism.length + ' ta lot →', JSON.stringify(r));
+  }
 })().catch(e => { console.error(e); process.exit(1); });
