@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AL-BIRJACHIM — aktiv lotlar</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#1d5fa8"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="AL-BIRJACHIM">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -567,6 +571,8 @@ function firmalarOyna(){
   if(m.admin){
     const R=m.reja;
     h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 10 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>'+kengJurnal();
+    h+='<h3>💰 Telegram xabarlari: eng kam summa</h3><div class="fb"><input id="tgMin" inputmode="decimal" style="max-width:120px" value="'+(m.tgMinSum!=null?(m.tgMinSum/1e6):10)+'"><span>mln so\'m va undan yuqori</span><button class="ok" id="tgMinB">Saqlash</button></div>'+
+      '<p class="mut sm" id="tgMinX">Shundan kichik lotlar Telegram\'ga yuborilmaydi (yangi lotlar, 2 soat va 30 daqiqa eslatmalari). Saytda hammasi ko\'rinaveradi. ⭐ belgilagan lotlaringiz eslatmasi har doim keladi.</p>';
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
     const fChk=(cls)=>'<div class="fch"><label class="fall"><input type="checkbox" data-all="'+cls+'"> <b>Hammasini belgilash</b></label>'+F.map(k=>'<label><input type="checkbox" class="'+cls+'" value="'+esc(k)+'"> '+esc(k)+'</label>').join('')+'</div>';
     h+='<h3>👤 Yangi xodim qo\'shish</h3><div class="xq">'+
@@ -595,6 +601,9 @@ function firmalarOyna(){
   const xbU=$('xbU');if(xbU)xbU.onclick=async()=>{if(!confirm('Telegram uzilsinmi? Shaxsiy xabarlar kelmaydi.'))return;try{await api('?xabar_sozla=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uzish:true})});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);}};
   document.querySelectorAll('#fBody input[data-all]').forEach(a=>a.onchange=()=>document.querySelectorAll('#fBody .'+a.dataset.all).forEach(c=>c.checked=a.checked));
   const chk=cls=>[...document.querySelectorAll('#fBody .'+cls+':checked')].map(c=>c.value);
+  const tmb=$('tgMinB');if(tmb)tmb.onclick=async()=>{const v=$('tgMin').value.trim();if(v==='')return;tmb.disabled=true;$('tgMinX').textContent='Saqlanmoqda…';
+    try{const r=await api('?sozlama=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_min_mln:v})});$('tgMinX').textContent='✅ Saqlandi: endi '+(r.tg_min_sum/1e6).toLocaleString('ru-RU')+' mln so\'m va undan yuqori lotlar yuboriladi.';await menOl();}
+    catch(e){$('tgMinX').textContent='❌ '+e.message+' (13_sozlama_SQL ishga tushirilganmi?)';}tmb.disabled=false;};
   const xq=$('xqBtn');if(xq)xq.onclick=async()=>{
     const body={ism:$('xqIsm').value.trim(),login:$('xqLog').value.trim().toLowerCase(),pin:$('xqPin').value.trim(),admin:$('xqAdm').checked,korxonalar:chk('xqK')};
     if(!body.admin&&!body.korxonalar.length&&!confirm('Hech qanday firma belgilanmadi. Baribir qo\'shilsinmi?'))return;
@@ -1027,5 +1036,6 @@ $('fX').onclick=()=>{$('fm').hidden=true;};
 $('fm').onclick=e=>{if(e.target===$('fm'))$('fm').hidden=true;};
 boshlash();
 </script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 </body>
 </html>
