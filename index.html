@@ -535,6 +535,23 @@ function tgSorov(){
   $('tgKey').onclick=()=>{try{sessionStorage.setItem('tgKeyin','1');}catch(e){}clearInterval(tgPoll);$('fm').hidden=true;};
   tgTasdiqUla();
 }
+async function tizimHolat(){
+  const el=$('tzH');if(!el)return;
+  let r;try{r=await api('?tizim_holat=1');}catch(e){el.textContent='❌ '+e.message;return;}
+  const ago=t=>{if(!t)return null;const d=Math.round((Date.now()-new Date(t).getTime())/60e3);return d<1?'hozir':d<60?d+' daq oldin':d<1440?Math.floor(d/60)+' soat oldin':Math.floor(d/1440)+' kun oldin';};
+  const q=(ok,nom,mat)=>'<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--line,#e2e8ef)"><span>'+(ok===null?'⚪':ok?'🟢':'🔴')+'</span><span style="flex:1"><b>'+nom+'</b><br><span class="mut">'+mat+'</span></span></div>';
+  const m=t=>t?(Date.now()-new Date(t).getTime())/60e3:1e9;
+  const gh=r.github&&r.github.vaqt,sk=r.skan||{},j=sk.jurnal||{},hs=r.hisobot||{},es=r.eslatma&&r.eslatma.vaqt,nt=r.natija||{};
+  let h='';
+  h+=q(gh?m(gh)<45:null,'GitHub robot (lotlarni o\'qiydi)',gh?'oxirgi ishga tushish: '+ago(gh):'hali ma\'lumot yo\'q (yangi versiyadan keyin paydo bo\'ladi)');
+  h+=q(sk.yangilangan?!j.xato:null,'Yangi lotlar',sk.yangilangan?'oxirgi yangi lot: '+ago(sk.yangilangan)+(j.xato?' · xato: '+esc(String(j.xato).slice(0,120)):''):'—');
+  h+=q(es?m(es)<15:null,'Server taymeri (har 5 daqiqa)',es?'oxirgi: '+ago(es):'hali ma\'lumot yo\'q');
+  h+=q(hs.vaqt?!hs.xato:null,'Soatlik Telegram hisobot',hs.vaqt?(hs.xato?'xato: '+esc(String(hs.xato).slice(0,120)):'oxirgi tekshiruv: '+ago(hs.vaqt)+(hs.yuborildi!=null?' · '+hs.yuborildi+' kishiga yuborildi':'')):'hali ma\'lumot yo\'q');
+  h+=q(nt.vaqt?m(nt.vaqt)<120:null,'Natijalarni tekshirish (yutdik/yutmadik)',nt.vaqt?'oxirgi: '+ago(nt.vaqt)+' · '+(nt.manba||'')+(nt.yozildi!=null?' · '+nt.yozildi+' ta yangilandi':''):'hali ma\'lumot yo\'q');
+  const K=Object.entries(r.kabinet||{});
+  if(K.length)h+='<div class="mut" style="margin-top:6px">Kabinetga oxirgi kirish (takliflarimiz shundan yig\'iladi):<br>'+K.slice(0,12).map(([k,t])=>(m(t)>1440?'⚠️ ':'')+esc(qisqa(k))+' — '+ago(t)).join(' · ')+'</div>';
+  el.innerHTML=h;
+}
 async function menOl(){
   try{MEN=await api('?men=1');}catch(e){MEN=null;return;}
   $('uIsm').textContent=MEN.ism||('ID '+MEN.tg_id);
@@ -571,6 +588,7 @@ function firmalarOyna(){
   if(m.admin){
     const R=m.reja;
     h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 10 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>'+kengJurnal();
+    h+='<h3>🩺 Tizim holati</h3><div id="tzH" class="sm">Yuklanmoqda…</div>';
     h+='<h3>💰 Telegram xabarlari: eng kam summa</h3><div class="fb"><input id="tgMin" inputmode="decimal" style="max-width:120px" value="'+(m.tgMinSum!=null?(m.tgMinSum/1e6):10)+'"><span>mln so\'m va undan yuqori</span><button class="ok" id="tgMinB">Saqlash</button></div>'+
       '<p class="mut sm" id="tgMinX">Shundan kichik lotlar Telegram\'ga yuborilmaydi (yangi lotlar, 2 soat va 30 daqiqa eslatmalari). Saytda hammasi ko\'rinaveradi. ⭐ belgilagan lotlaringiz eslatmasi har doim keladi.</p>';
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
@@ -582,7 +600,7 @@ function firmalarOyna(){
       '<button class="ok wide" id="xqBtn">➕ Xodimni qo\'shish</button><p class="mut sm" id="xqX"></p>';
     h+='<h3>👥 Xodimlar ('+U.length+')</h3><div class="xl">'+(U.map(x=>'<div class="xr2"><div><b>'+esc(x.ism||x.username||x.tg_id)+'</b>'+(x.admin?' <span class="hl yutdi">admin</span>':'')+
         '<div class="g">'+(x.login?'login: <b>'+esc(x.login)+'</b>':(x.username?'Telegram @'+esc(x.username):'Telegram'))+' · '+(x.admin?'hamma firmalar':((x.firmalar||[]).length?esc((x.firmalar||[]).map(qisqa).join(', ')):'<i>firma yo\'q</i>'))+'</div></div>'+
-        '<div class="xa"><button class="ok sm2" data-x="firma" data-t="'+esc(x.tg_id)+'">Firma berish</button>'+(x.login?'<button class="sm2" data-x="pin" data-t="'+esc(x.tg_id)+'">PIN</button>':'')+('<button class="sm2'+(x.tg?' ok':'')+'" data-x="tg" data-t="'+esc(x.tg_id)+'">'+(x.tg?'🔔 ulangan':'🔕 Telegram')+'</button>')+(x.tg_id===m.tg_id?'':'<button class="no sm2" data-x="del" data-t="'+esc(x.tg_id)+'">O\'chirish</button>')+'</div></div>').join('')||'<p class="mut">Hali xodim yo\'q.</p>')+'</div>';
+        '<div class="xa"><button class="ok sm2" data-x="firma" data-t="'+esc(x.tg_id)+'">Firma berish</button>'+(x.login?'<button class="sm2" data-x="pin" data-t="'+esc(x.tg_id)+'">PIN</button>':'')+('<button class="sm2'+(x.tg?' ok':'')+'" data-x="tg" data-t="'+esc(x.tg_id)+'">'+(x.tg?'🔔 ulangan':'🔕 Telegram')+'</button>')+'<button class="sm2" data-x="chiq" data-t="'+esc(x.tg_id)+'" title="Barcha qurilmalardan chiqarish">Chiqarish</button>'+(x.tg_id===m.tg_id?'':'<button class="no sm2" data-x="del" data-t="'+esc(x.tg_id)+'">O\'chirish</button>')+'</div></div>').join('')||'<p class="mut">Hali xodim yo\'q.</p>')+'</div>';
     h+='<div id="tgBox" hidden><h3>🔔 Telegram: <span id="tgKim"></span></h3><p class="mut sm" id="tgHol"></p>'+
       '<p class="sm"><b>1.</b> Shu havolani xodimga yuboring (Telegram\'da):</p><div class="fb"><input id="tgHav" readonly onclick="this.select()"><button class="ok" id="tgNus">📋 Nusxa</button></div>'+
       '<p class="sm"><b>2.</b> Xodim havolani ochib, faqat <b>START</b> (Запустить) ni bossin — boshqa hech narsa kerak emas.</p>'+
@@ -601,6 +619,7 @@ function firmalarOyna(){
   const xbU=$('xbU');if(xbU)xbU.onclick=async()=>{if(!confirm('Telegram uzilsinmi? Shaxsiy xabarlar kelmaydi.'))return;try{await api('?xabar_sozla=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uzish:true})});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);}};
   document.querySelectorAll('#fBody input[data-all]').forEach(a=>a.onchange=()=>document.querySelectorAll('#fBody .'+a.dataset.all).forEach(c=>c.checked=a.checked));
   const chk=cls=>[...document.querySelectorAll('#fBody .'+cls+':checked')].map(c=>c.value);
+  if($('tzH'))tizimHolat();
   const tmb=$('tgMinB');if(tmb)tmb.onclick=async()=>{const v=$('tgMin').value.trim();if(v==='')return;tmb.disabled=true;$('tgMinX').textContent='Saqlanmoqda…';
     try{const r=await api('?sozlama=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_min_mln:v})});$('tgMinX').textContent='✅ Saqlandi: endi '+(r.tg_min_sum/1e6).toLocaleString('ru-RU')+' mln so\'m va undan yuqori lotlar yuboriladi.';await menOl();}
     catch(e){$('tgMinX').textContent='❌ '+e.message+' (13_sozlama_SQL ishga tushirilganmi?)';}tmb.disabled=false;};
@@ -625,6 +644,8 @@ function firmalarOyna(){
       $('tgUz').onclick=async()=>{if(!confirm('Shu xodimga Telegram xabarlari to\'xtatilsinmi?'))return;try{await chaq({uzish:true});await menOl();firmalarOyna();}catch(e){alert('❌ '+e.message);}};
       $('tgIdB').onclick=async()=>{const v=$('tgId').value.trim();if(!v)return;try{await chaq({chat:v});await menOl();firmalarOyna();alert('✅ Saqlandi');}catch(e){alert('❌ '+e.message);}};
       bx.scrollIntoView({behavior:'smooth',block:'center'});return;}
+    if(b.dataset.x==='chiq'){if(!confirm((x.ism||x.login||t)+' — barcha qurilmalardan chiqarilsinmi? (Telefon yo\'qolsa va h.k.) Qayta kirishi uchun login/PIN yoki Telegram kerak bo\'ladi.'))return;
+      try{await api('?xodim_ozgartir=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,chiqar:true})});alert('✅ Barcha qurilmalardan chiqarildi');}catch(e){alert('❌ '+e.message);}return;}
     if(b.dataset.x==='pin'){const p=prompt('Yangi PIN (4–6 raqam) — '+(x.ism||x.login)+':');if(!p)return;
       try{await api('?xodim_ozgartir=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_id:t,pin:p.trim()})});alert('✅ PIN yangilandi');}catch(e){alert('❌ '+e.message);}return;}
     if(b.dataset.x==='del'){if(!confirm((x.ism||x.login)+' — o\'chirilsinmi? U boshqa kira olmaydi.'))return;
@@ -973,7 +994,7 @@ function render(){
   $('th').innerHTML=tab==='k'
     ?'<tr><th>Lot №</th><th>Mahsulot</th><th class="num">Soni</th><th class="num" data-s="price">Dona narxi'+ar('price')+'</th><th class="num" data-s="sum">Jami summa'+ar('sum')+'</th><th data-s="end">Savdo tugashi'+ar('end')+'</th><th>Holat / g\'olib</th><th></th></tr>'
     :tab==='e'
-    ?'<tr><th>Lot №</th><th>Mahsulot</th><th class="num">Soni</th><th class="num" data-s="price">Dona narxi'+ar('price')+'</th><th class="num" data-s="sum">Jami summa'+ar('sum')+'</th><th>Ehtimoliy xaridor · 3 oylik narx</th><th data-s="end">Savdo tugashi'+ar('end')+'</th><th></th></tr>'
+    ?'<tr><th>Lot №</th><th>Mahsulot</th><th class="num">Soni</th><th class="num" data-s="price">Dona narxi'+ar('price')+'</th><th class="num" data-s="sum">Jami summa'+ar('sum')+'</th><th>Ehtimoliy xaridor <span class="mut">(taxmin)</span> · 3 oylik narx</th><th data-s="end">Savdo tugashi'+ar('end')+'</th><th></th></tr>'
     :'<tr><th>Lot №</th><th>Buyurtmachi / toifa</th><th>Mahsulotlar</th><th class="num" data-s="sum">Boshlang\'ich summa'+ar('sum')+'</th><th data-s="end">Savdo tugashi'+ar('end')+'</th><th></th></tr>';
   const view=L.slice(0,limit);
   $('tb').innerHTML=view.map(x=>{
