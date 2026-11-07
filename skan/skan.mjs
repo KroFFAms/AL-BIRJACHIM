@@ -6,7 +6,7 @@ const UA = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKi
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function J(url, o = {}, ms = 20000) {
   const r = await fetch(url, { ...o, headers: { ...UA, ...(o.headers || {}) }, signal: AbortSignal.timeout(ms) });
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url.replace(/^https:\/\/[^/]+/, '') + ' ' + (await r.text().catch(() => '')).slice(0, 80));
   const t = await r.text(); return t ? JSON.parse(t) : null;
 }
 async function bitimlar(kod) {
@@ -93,14 +93,35 @@ async function galabalar(t0) {
   if (KALIT.length < 16) { console.error('SKAN_KALIT secret qo\'yilmagan'); process.exit(1); }
   const st = await J(API + '?skan_holat=1', { headers: { 'x-skan-kalit': KALIT } });
   const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); await galabalar(Date.now()); await natijalar(Date.now()); return; }
+  const xatolar = [];
   const lotlar = []; let id = oxirgi + 1, bosh = 0, eng = oxirgi, xato = 0; const t0 = Date.now();
-  while (bosh < 80 && id - oxirgi <= 600 && Date.now() - t0 < 6 * 60e3) {
+  // Bitta lot raqamini o'qish: null — bunday lot yo'q (uzex 500/404 qaytaradi), 'xato' — tarmoq/blok
+  const ol = async i => { try { const g = await J(SHOP + '/GetLot/' + i); return g && g.lot_display_no ? { ...g, __id: i } : null; }
+    catch (e) { const m = String(e?.message || ''); if (/^HTTP (500|404|400)/.test(m)) return null; xato++; if (xatolar.length < 3) xatolar.push(String(e?.cause?.code || e?.cause?.message || m || e).slice(0, 160)); return 'xato'; } };
+  let sakradi = 0;
+  while (id - oxirgi <= 3000 && Date.now() - t0 < 6 * 60e3) {
     const ids = [id, id + 1, id + 2, id + 3]; id += 4;
-    const res = await Promise.all(ids.map(async i => { try { const g = await J(SHOP + '/GetLot/' + i); return g && g.lot_display_no ? { ...g, __id: i } : null; } catch (e) { xato++; return null; } }));
-    for (const g of res) { if (g) { bosh = 0; eng = Math.max(eng, g.__id); lotlar.push(g); } else bosh++; }
-    if (xato > 40 && !lotlar.length) { console.error('xarid.uzex.uz javob bermadi'); process.exit(1); }
+    const res = await Promise.all(ids.map(ol));
+    for (const g of res) { if (g && g !== 'xato') { bosh = 0; eng = Math.max(eng, g.__id); lotlar.push(g); } else bosh++; }
+    if (xato > 40 && !lotlar.length) {
+      console.error('xarid.uzex.uz javob bermadi. Sabab: ' + [...new Set(xatolar)].join(' | '));
+      await galabalar(t0); await natijalar(t0);
+      process.exit(1);
+    }
+    if (bosh >= 80) {
+      // Raqamlarda bo'shliq bo'lishi mumkin (uzex ba'zi raqamlarni o'tkazib yuboradi) — oldinga 50 tadan sakrab, keyingi lotni qidiramiz
+      let topdi = 0;
+      for (let k = id + 50; k - id <= (lotlar.length ? 600 : 3000) && k - oxirgi <= 3000 && !topdi && Date.now() - t0 < 6 * 60e3; k += 50) {
+        const r = await Promise.all([k, k + 1, k + 2, k + 3, k + 4].map(ol));
+        if (r.some(g => g && g !== 'xato')) topdi = k;
+        await sleep(150);
+      }
+      if (!topdi) break; // haqiqatan oxiriga yetdik
+      sakradi += topdi - 50 - id; id = topdi - 50; bosh = 0;
+    }
     await sleep(250);
   }
+  if (sakradi) console.log('bo\'shliqdan sakraldi: ' + sakradi + ' ta raqam');
   const bitim = {}, kesh = {};
   for (const g of lotlar) {
     const fa = g.lot_end_date && new Date(g.lot_end_date + '+05:00') > Date.now();
@@ -118,4 +139,3 @@ async function galabalar(t0) {
   await galabalar(t0);
   await natijalar(t0);
 })().catch(e => { console.error(e); process.exit(1); });
-
