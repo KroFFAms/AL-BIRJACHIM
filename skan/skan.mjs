@@ -26,13 +26,14 @@ async function bitimlar(kod) {
 }
 // ---- Tugagan takliflarimiz natijasi (yutdik / yutmadik) — ochiq "Amalga oshgan bitimlar" dan ----
 const norm = x => String(x || '').toUpperCase().replace(/["'«»‘’`ʻʼ.]/g, '').replace(/(^|\s)(MCHJ|МЧЖ|OOO|ООО|XK|AJ|MAS'?ULIYATI CHEKLANGAN JAMIYAT)(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
-const biz = (n, korxona) => { const a = norm(n), b = norm(korxona); return a.length > 5 && b.length > 5 && (a.startsWith(b) || b.startsWith(a)); };
+const biz = (n, korxona) => { const a = norm(n), b = norm(korxona); return (a.length >= 3 && a === b) || (a.length > 5 && b.length > 5 && (a.startsWith(b) || b.startsWith(a))); };
 async function natijalar(t0) {
   let kut; try { kut = await J(API + '?kutilayotgan_hammasi=1', { headers: { 'x-skan-kalit': KALIT } }); } catch (e) { console.log('natija: ro\'yxat olinmadi', String(e).slice(0, 120)); return; }
   if (!Array.isArray(kut) || !kut.length) { console.log('natija: kutilayotgan taklif yo\'q'); return; }
   const tugadi = () => Date.now() - t0 > 10.5 * 60e3;
   const lotKod = {}, sahifa = {}, chiq = [];
-  const bet = async (kod, yil, f) => { const k = kod + '|' + yil + '|' + f; if (!(k in sahifa)) { try { sahifa[k] = await J(SHOP + '/GetCompletedDeals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 12, display_on_shop: 1, display_on_national: 0, year_id: yil, product_code: kod }) }); } catch (e) { sahifa[k] = null; } await sleep(250); } return sahifa[k]; };
+  // nat = 0: Elektron do'kon, 1: Milliy do'kon
+  const bet = async (kod, yil, f, nat = 0) => { const k = kod + '|' + yil + '|' + f + '|' + nat; if (!(k in sahifa)) { try { sahifa[k] = await J(SHOP + '/GetCompletedDeals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 12, display_on_shop: nat ? 0 : 1, display_on_national: nat ? 1 : 0, year_id: yil, product_code: kod }) }); } catch (e) { sahifa[k] = null; } await sleep(250); } return sahifa[k]; };
   for (const t of kut) {
     if (tugadi()) break;
     try {
@@ -41,8 +42,8 @@ async function natijalar(t0) {
       const kod = lotKod[id]; if (!kod) continue;
       const yil = new Date(t.tugash).getFullYear(), chegara = new Date(t.tugash).getTime() - 864e5;
       let found = null;
-      for (let f = 1; f <= 11 * 25 && !found && !tugadi(); f += 11) {
-        const a = await bet(kod, yil, f);
+      for (const nat of [0, 1]) for (let f = 1; f <= 11 * 25 && !found && !tugadi(); f += 11) {
+        const a = await bet(kod, yil, f, nat);
         if (!Array.isArray(a) || !a.length) break;
         found = a.find(x => String(x.lot_display_no) === String(t.lot));
         if (!found && new Date(a[a.length - 1].deal_date).getTime() < chegara) break;
@@ -60,10 +61,38 @@ async function natijalar(t0) {
     catch (e) { console.log('natija yozilmadi', String(e).slice(0, 120)); }
   }
 }
+// ---- Biz yutgan bitimlar: "Amalga oshgan bitimlar" (e-do'kon + Milliy do'kon) dan bizning firmalar nomi/STIR bo'yicha ----
+async function galabalar(t0) {
+  let F; try { F = await J(API + '?bizning_firmalar=1', { headers: { 'x-skan-kalit': KALIT } }); } catch (e) { console.log('galaba: firmalar olinmadi', String(e).slice(0, 100)); return; }
+  const nomlar = F.firmalar || [], stir = F.stir || {}, ox = F.oxirgi || {};
+  const bizmi = x => (x.provider_inn && stir[String(x.provider_inn)]) || nomlar.find(n => biz(x.provider_name, n)) || null;
+  const topildi = [], yangiOx = { ...ox }, chegara = Date.now() - 3 * 864e5;
+  for (const [tur, nat] of [['shop', 0], ['national', 1]]) {
+    const oldingi = Number(ox[tur]) || 0; let eng = oldingi;
+    for (let f = 1, sah = 0; sah < (oldingi ? 80 : 400) && Date.now() - t0 < 11 * 60e3; f += 11, sah++) {
+      let a; try { a = await J(SHOP + '/GetCompletedDeals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 12, display_on_shop: nat ? 0 : 1, display_on_national: nat, year_id: new Date().getFullYear() }) }); } catch (e) { break; }
+      if (!Array.isArray(a) || !a.length) break;
+      let eski = 0;
+      for (const x of a) {
+        const id = Number(x.deal_id) || 0; eng = Math.max(eng, id);
+        if (oldingi ? id <= oldingi : new Date(x.deal_date + '+05:00').getTime() < chegara) { eski++; continue; }
+        const k = bizmi(x);
+        if (k) topildi.push({ korxona: k, lot: x.lot_display_no, nomi: x.product_name, amount: x.amount, deal_cost: x.deal_cost, pcp_count: x.pcp_count, golib: x.provider_name, golib_stir: x.provider_inn, buyurtmachi: x.customer_name, deal_date: x.deal_date, tur });
+      }
+      if (eski === a.length) break; // butun sahifa oldin ko'rilgan
+      await sleep(300);
+    }
+    yangiOx[tur] = eng;
+  }
+  const uniq = [...new Map(topildi.map(x => [x.korxona + '|' + x.lot, x])).values()];
+  console.log('galaba: ' + uniq.length + ' ta bizning bitim', uniq.map(x => x.lot + ' ' + x.tur).join(', '));
+  try { const r = await J(API + '?galaba=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ bitimlar: uniq, oxirgi: yangiOx }) }, 120000); console.log('galaba →', JSON.stringify(r)); }
+  catch (e) { console.log('galaba yozilmadi', String(e).slice(0, 120)); }
+}
 (async () => {
   if (KALIT.length < 16) { console.error('SKAN_KALIT secret qo\'yilmagan'); process.exit(1); }
   const st = await J(API + '?skan_holat=1', { headers: { 'x-skan-kalit': KALIT } });
-  const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); await natijalar(Date.now()); return; }
+  const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); await galabalar(Date.now()); await natijalar(Date.now()); return; }
   const lotlar = []; let id = oxirgi + 1, bosh = 0, eng = oxirgi, xato = 0; const t0 = Date.now();
   while (bosh < 80 && id - oxirgi <= 600 && Date.now() - t0 < 6 * 60e3) {
     const ids = [id, id + 1, id + 2, id + 3]; id += 4;
@@ -86,5 +115,7 @@ async function natijalar(t0) {
     const r = await J(API + '?lot_yoz=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ lotlar: qism, oxirgi: ox, bitim: bq }) }, 120000);
     console.log(qism.length + ' ta lot →', JSON.stringify(r));
   }
+  await galabalar(t0);
   await natijalar(t0);
 })().catch(e => { console.error(e); process.exit(1); });
+
