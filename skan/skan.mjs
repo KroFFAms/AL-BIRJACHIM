@@ -61,6 +61,28 @@ async function natijalar(t0) {
     catch (e) { console.log('natija yozilmadi', String(e).slice(0, 120)); }
   }
 }
+// ---- Taklif so'rovi: faol lotlar ro'yxati (ochiq), yangilarining tafsiloti ----
+const PRQ = 'https://xarid-api-prequest.uzex.uz/api/Public';
+async function taklifSorovi(t0) {
+  let known; try { known = new Set(((await J(API + '?ts_known=1', { headers: { 'x-skan-kalit': KALIT } })).ids || []).map(Number)); } catch (e) { console.log('ts: server tayyor emas', String(e).slice(0, 100)); return; }
+  const all = [];
+  for (let f = 1; f <= 5000; f += 100) {
+    let a; try { a = await J(PRQ + '/GetLots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 99 }) }); } catch (e) { console.log('ts: ro\'yxat o\'qilmadi', String(e).slice(0, 100)); break; }
+    const d = a && a.Data; if (!Array.isArray(d) || !d.length) break;
+    all.push(...d); if (d.length < 100) break; await sleep(300);
+  }
+  const yangi = all.filter(x => !known.has(Number(x.id)));
+  const det = [];
+  for (let i = 0; i < yangi.length && det.length < 400 && Date.now() - t0 < 11 * 60e3; i += 4) {
+    const r = await Promise.all(yangi.slice(i, i + 4).map(async x => { try { const g = await J(PRQ + '/GetLot?id=' + x.id); return g && g.Data ? { ...x, ...g.Data } : x; } catch (e) { return x; } }));
+    det.push(...r); await sleep(250);
+  }
+  console.log('ts: faol ' + all.length + ', yangi ' + yangi.length + ', o\'qildi ' + det.length);
+  for (let i = 0; i < det.length; i += 100) {
+    try { const r = await J(API + '?ts_yoz=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ lotlar: det.slice(i, i + 100), faol: all.length }) }, 120000); console.log('ts →', JSON.stringify(r)); }
+    catch (e) { console.log('ts yozilmadi', String(e).slice(0, 120)); }
+  }
+}
 // ---- Biz yutgan bitimlar: "Amalga oshgan bitimlar" (e-do'kon + Milliy do'kon) dan bizning firmalar nomi/STIR bo'yicha ----
 async function galabalar(t0) {
   let F; try { F = await J(API + '?bizning_firmalar=1', { headers: { 'x-skan-kalit': KALIT } }); } catch (e) { console.log('galaba: firmalar olinmadi', String(e).slice(0, 100)); return; }
@@ -92,7 +114,7 @@ async function galabalar(t0) {
 (async () => {
   if (KALIT.length < 16) { console.error('SKAN_KALIT secret qo\'yilmagan'); process.exit(1); }
   const st = await J(API + '?skan_holat=1', { headers: { 'x-skan-kalit': KALIT } });
-  const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); await galabalar(Date.now()); await natijalar(Date.now()); return; }
+  const oxirgi = Number(st.oxirgi) || 0; if (!oxirgi) { console.log('boshlanmagan'); await galabalar(Date.now()); await natijalar(Date.now()); await taklifSorovi(Date.now()); return; }
   const xatolar = [];
   const lotlar = []; let id = oxirgi + 1, bosh = 0, eng = oxirgi, xato = 0; const t0 = Date.now();
   // Bitta lot raqamini o'qish: null — bunday lot yo'q (uzex 500/404 qaytaradi), 'xato' — tarmoq/blok
@@ -105,7 +127,7 @@ async function galabalar(t0) {
     for (const g of res) { if (g && g !== 'xato') { bosh = 0; eng = Math.max(eng, g.__id); lotlar.push(g); } else bosh++; }
     if (xato > 40 && !lotlar.length) {
       console.error('xarid.uzex.uz javob bermadi. Sabab: ' + [...new Set(xatolar)].join(' | '));
-      await galabalar(t0); await natijalar(t0);
+      await galabalar(t0); await natijalar(t0); await taklifSorovi(t0);
       process.exit(1);
     }
     if (bosh >= 80) {
@@ -136,6 +158,7 @@ async function galabalar(t0) {
     const r = await J(API + '?lot_yoz=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-skan-kalit': KALIT }, body: JSON.stringify({ lotlar: qism, oxirgi: ox, bitim: bq }) }, 120000);
     console.log(qism.length + ' ta lot →', JSON.stringify(r));
   }
+  await taklifSorovi(t0);
   await galabalar(t0);
   await natijalar(t0);
 })().catch(e => { console.error(e); process.exit(1); });
