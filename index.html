@@ -339,6 +339,8 @@ a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
     <button class="tab" data-t="e"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.6l2.4 12h11l2-8H6.3"/></svg></i>Elektron do'kon</button>
     <button class="tab" data-t="a"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 13-8.5 8.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg></i>Auksion</button>
     <button class="tab" data-t="k"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg></i>Kooperatsiya</button>
+    <button class="tab" data-t="i"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></i>Imkoniyatlar</button>
+    <button class="tab" data-t="s"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg></i>Taklif so'rovi</button>
     <button class="tab" data-t="n"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg></i>Natijalar</button>
   </nav>
   <nav class="kir" aria-label="Kabinetlarga kirish">
@@ -535,6 +537,16 @@ function tgSorov(){
   $('tgKey').onclick=()=>{try{sessionStorage.setItem('tgKeyin','1');}catch(e){}clearInterval(tgPoll);$('fm').hidden=true;};
   tgTasdiqUla();
 }
+async function raqobatYoz(o){try{await api('?raqobat=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});if($('rqS')){$('rqS').value='';$('rqN').value='';}raqobatOyna();}catch(e){alert('❌ '+e.message+' (STIR 9 raqam bo\'lishi kerak; 13_sozlama_SQL ishga tushirilganmi?)');}}
+async function raqobatOyna(){
+  const el=$('rqH');if(!el)return;let r;try{r=await api('?raqobat=1');}catch(e){el.textContent='❌ '+e.message;return;}
+  const mlnF=n=>(n/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' mln';
+  let h=(r.raqobatchilar||[]).length?(r.raqobatchilar.map(x=>'<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line,#e2e8ef)"><span style="flex:1"><b>'+esc(x.nom)+'</b> <span class="mut">STIR '+esc(x.stir)+(x.soni?' · 90 kunda bizdan '+x.soni+' ta yutgan ('+mlnF(x.summa)+')':'')+'</span></span><button class="no sm2" data-rqo="'+esc(x.stir)+'">O\'chirish</button></div>').join('')):'<p class="mut">Hali belgilanmagan.</p>';
+  if((r.tavsiya||[]).length)h+='<div class="mut" style="margin-top:8px">Bizdan ko\'p yutganlar (90 kun) — kuzatishga qo\'shish:</div>'+r.tavsiya.map(x=>'<button class="sm2" style="margin:3px 4px 0 0" data-rqq="'+esc(x.stir)+'" data-rqn="'+esc(x.nom)+'">➕ '+esc(String(x.nom).slice(0,30))+' ('+x.soni+')</button>').join('');
+  el.innerHTML=h;
+  el.querySelectorAll('[data-rqo]').forEach(b=>b.onclick=()=>{if(confirm('Kuzatuvdan olib tashlansinmi?'))raqobatYoz({ochir:b.dataset.rqo});});
+  el.querySelectorAll('[data-rqq]').forEach(b=>b.onclick=()=>raqobatYoz({stir:b.dataset.rqq,nom:b.dataset.rqn}));
+}
 async function tizimHolat(){
   const el=$('tzH');if(!el)return;
   let r;try{r=await api('?tizim_holat=1');}catch(e){el.textContent='❌ '+e.message;return;}
@@ -589,6 +601,8 @@ function firmalarOyna(){
     const R=m.reja;
     h+='<h3>📋 Reja-jadval bazasi</h3><p class="mut sm">'+(R?('<b>'+(R.qator||0).toLocaleString('ru-RU')+'</b> ta tovar qatori'+(R.holat?(' · '+(R.holat.tugadi?'✅ 35 kunlik tarix yig\'ildi':'⏳ eski rejalar yig\'ilmoqda')+' · oxirgi: '+dstr(new Date(R.holat.yangilangan))):' · hali boshlanmagan')+'. Kengaytma Chrome ochiq turganda har 10 daqiqada yangilaydi.'):'9_reja_SQL hali ishga tushirilmagan.')+'</p>'+kengJurnal();
     h+='<h3>🩺 Tizim holati</h3><div id="tzH" class="sm">Yuklanmoqda…</div>';
+    h+='<h3>🥊 Kuzatiladigan raqobatchilar</h3><p class="mut sm">Belgilangan raqobatchi biz qatnashadigan lotda odatda yutsa — hisobotda 🥊 belgisi chiqadi. Har dushanba 09:00 hisobotida haftalik xulosa keladi. Botda: /raqobat</p><div id="rqH" class="sm">Yuklanmoqda…</div>'+
+      '<div class="fb" style="margin-top:6px"><input id="rqS" inputmode="numeric" placeholder="STIR (9 raqam)" style="max-width:150px"><input id="rqN" placeholder="Nomi"><button class="ok" id="rqB">➕ Qo\'shish</button></div>';
     h+='<h3>💰 Telegram xabarlari: eng kam summa</h3><div class="fb"><input id="tgMin" inputmode="decimal" style="max-width:120px" value="'+(m.tgMinSum!=null?(m.tgMinSum/1e6):10)+'"><span>mln so\'m va undan yuqori</span><button class="ok" id="tgMinB">Saqlash</button></div>'+
       '<p class="mut sm" id="tgMinX">Shundan kichik lotlar Telegram\'ga yuborilmaydi (yangi lotlar, 2 soat va 30 daqiqa eslatmalari). Saytda hammasi ko\'rinaveradi. ⭐ belgilagan lotlaringiz eslatmasi har doim keladi.</p>';
     const U=m.foydalanuvchilar||[],F=m.barchaFirmalar||[];
@@ -620,6 +634,8 @@ function firmalarOyna(){
   document.querySelectorAll('#fBody input[data-all]').forEach(a=>a.onchange=()=>document.querySelectorAll('#fBody .'+a.dataset.all).forEach(c=>c.checked=a.checked));
   const chk=cls=>[...document.querySelectorAll('#fBody .'+cls+':checked')].map(c=>c.value);
   if($('tzH'))tizimHolat();
+  if($('rqH'))raqobatOyna();
+  const rqB=$('rqB');if(rqB)rqB.onclick=()=>raqobatYoz({stir:$('rqS').value.trim(),nom:$('rqN').value.trim()});
   const tmb=$('tgMinB');if(tmb)tmb.onclick=async()=>{const v=$('tgMin').value.trim();if(v==='')return;tmb.disabled=true;$('tgMinX').textContent='Saqlanmoqda…';
     try{const r=await api('?sozlama=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tg_min_mln:v})});$('tgMinX').textContent='✅ Saqlandi: endi '+(r.tg_min_sum/1e6).toLocaleString('ru-RU')+' mln so\'m va undan yuqori lotlar yuboriladi.';await menOl();}
     catch(e){$('tgMinX').textContent='❌ '+e.message+' (13_sozlama_SQL ishga tushirilganmi?)';}tmb.disabled=false;};
@@ -881,6 +897,87 @@ function xaridorHtml(x){
   if(t.p)h+='<div class="pr"><span class="lb">3 oylik narx</span> <b>'+fmt(t.p[0])+' – '+fmt(t.p[1])+'</b> <span class="g">· o\'rta '+fmt(t.p[2])+' · '+t.n+' bitim</span></div>';
   return h+'</div>';
 }
+// ---------- Taklif so'rovi (xarid.uzex.uz) ----------
+let TSD=null,TSt=0,TSf={firma:'',v:'',k:'',min:'10',q:'',mos:true,n:100},TSo=false;
+const VILS=['Buxoro','Navoiy','Samarqand','Toshkent sh.','Toshkent v.','Andijon',"Farg'ona",'Namangan','Qashqadaryo','Surxondaryo','Jizzax','Sirdaryo','Xorazm',"Qoraqalpog'iston"];
+async function renderS(majbur){
+  const el=$('dash');
+  if(majbur||!TSD||Date.now()-TSt>5*60e3){el.innerHTML='<div class="note" style="padding:20px">Yuklanmoqda…</div>';try{TSD=await api('?ts=1');TSt=Date.now();}catch(e){el.innerHTML='<div class="note" style="padding:20px">❌ '+esc(e.message)+' (14_taklif_sorovi_SQL ishga tushirilganmi?)</div>';return;}if(tab!=='s')return;}
+  const R=TSD.lotlar||[],f=TSf,YO=TSD.yonalish||{},adm=!!(MEN&&MEN.admin);
+  const yoBor=Object.keys(YO).length;
+  const mn=(Number(String(f.min).replace(',','.'))||0)*1e6,q=f.q.trim().toLowerCase();
+  const L=R.filter(x=>(!f.mos||!yoBor||x.firmalar.length)&&(!f.firma||x.firmalar.includes(f.firma))&&(!f.v||x.viloyat===f.v)&&(!f.k||x.kategoriya===f.k)&&Number(x.summa)>=mn&&(!q||(String(x.nomi)+' '+x.kategoriya+' '+x.buyurtmachi+' '+x.lot).toLowerCase().includes(q)));
+  const opt=(arr,val,bosh,lab)=>'<option value="">'+bosh+'</option>'+arr.map(v=>'<option value="'+esc(v)+'"'+(v===val?' selected':'')+'>'+esc(lab?lab(v):v)+'</option>').join('');
+  let h='<div class="pn" style="margin-bottom:12px"><h4 style="margin:0 0 6px">📝 Taklif so\'rovi — xarid.uzex.uz</h4><div class="note">Ta\'mirlash, qurilish, xizmatlar va boshqa "Taklif so\'rovi" lotlari. Robot har 10–15 daqiqada yangilaydi. Firma yo\'nalishiga mos yangi lotlar soatlik Telegram hisobotida <b>📝 Taklif so\'rovi</b> bo\'limida keladi.</div>'+
+    (adm?'<div style="margin-top:8px"><button class="sm2'+(yoBor?'':' ok')+'" id="sYo">⚙️ Firmalar yo\'nalishi'+(yoBor?' ('+Object.keys(YO).map(qisqa).join(', ')+')':' — belgilanmagan')+'</button></div>':'')+
+    '<div id="sYoBox"></div>'+
+    '<div class="bar" style="margin-top:10px;flex-wrap:wrap;gap:8px;display:flex">'+
+    (yoBor?'<label class="tg"><input type="checkbox" id="sMos"'+(f.mos?' checked':'')+'> Faqat firmalarimga mos</label><select id="sF">'+opt(Object.keys(YO),f.firma,'Firma: hammasi',qisqa)+'</select>':'')+
+    '<select id="sV">'+opt(VILS,f.v,'Viloyat: hammasi')+'</select><select id="sK" style="max-width:260px">'+opt(TSD.kategoriyalar||[],f.k,'Toifa: hammasi')+'</select>'+
+    '<label class="tg">Kamida <input id="sMin" inputmode="decimal" style="width:60px" value="'+esc(f.min)+'"> mln</label>'+
+    '<input id="sQ" placeholder="Qidirish: nomi, buyurtmachi, lot №" value="'+esc(f.q)+'" style="flex:1;min-width:180px"></div>'+
+    '<div class="note" style="margin-top:6px"><b>'+L.length+'</b> ta lot · jami <b>'+(L.reduce((a,x)=>a+Number(x.summa||0),0)/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' mln</b> (faol: '+R.length+')</div></div>';
+  h+='<div class="tw"><table><thead><tr><th>Lot №</th><th>Ish / mahsulot · toifa</th><th>Buyurtmachi</th><th class="num">Boshlang\'ich narx</th><th>Viloyat</th><th>Tugashi</th></tr></thead><tbody>'+
+    L.slice(0,f.n).map(x=>{const end=new Date(x.tugash);const tf=(x.tafsilot||[]).slice(0,4).map(z=>esc(z[0])+(z[1]?' — '+Number(z[1]).toLocaleString('ru-RU')+' '+esc(z[2]||''):'')).join('<br>');
+      return '<tr><td>'+esc(x.lot)+(x.firmalar.length?'<div class="g">'+x.firmalar.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+(tf||esc(x.nomi||''))+'<div class="g">'+esc(x.kategoriya||'')+'</div></td><td>'+esc(x.buyurtmachi||'')+'<div class="g">'+esc(x.manzil||'')+'</div></td><td class="num"><b>'+fmt(x.summa)+'</b></td><td>'+esc(x.viloyat||'—')+'</td><td>'+dstr(end)+'<br>'+left(end)+'</td></tr>';}).join('')+
+    '</tbody></table></div>'+(L.length>f.n?'<div style="text-align:center;margin:12px"><button class="ok" id="sKop">Yana ko\'rsatish ('+(L.length-f.n)+')</button></div>':'')+
+    (L.length?'':'<div class="note" style="padding:16px">'+(yoBor&&f.mos?'Firmalaringiz yo\'nalishiga mos lot yo\'q. "Faqat firmalarimga mos" belgisini olib, hammasini ko\'ring.':'Lot topilmadi.')+'</div>')+
+    '<div class="note" style="margin:10px 2px">Lotni ochish: xarid.uzex.uz → <a href="https://xarid.uzex.uz/request-proposal/3/list" target="_blank" rel="noopener">Taklif so\'rovi</a> ro\'yxatida lot raqami bo\'yicha.</div>';
+  el.innerHTML=h;
+  const upd=()=>{TSf={...TSf,firma:$('sF')?$('sF').value:'',mos:$('sMos')?$('sMos').checked:false,v:$('sV').value,k:$('sK').value,min:$('sMin').value,q:$('sQ').value,n:100};renderS();};
+  ['sF','sMos','sV','sK','sMin'].forEach(i=>{if($(i))$(i).onchange=upd;});
+  let tq;$('sQ').oninput=()=>{clearTimeout(tq);tq=setTimeout(()=>{upd();setTimeout(()=>{const i=$('sQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},0);},400);};
+  const k=$('sKop');if(k)k.onclick=()=>{TSf.n+=100;renderS();};
+  const yb=$('sYo');if(yb)yb.onclick=()=>{TSo=!TSo;yoOyna();};
+  if(TSo)yoOyna();
+}
+function yoOyna(){
+  const box=$('sYoBox');if(!box)return;if(!TSo){box.innerHTML='';return;}
+  const F=TSD.firmalar||[],YO=TSD.yonalish||{};
+  let fir=box.dataset.f||F[0]||'';
+  const y=YO[fir]||{kat:[],soz:'',vil:[]};
+  box.innerHTML='<div class="pn" style="margin-top:10px;background:var(--chip,#eef3f8)"><div class="fb"><b>Firma:</b><select id="yF">'+F.map(k=>'<option value="'+esc(k)+'"'+(k===fir?' selected':'')+'>'+esc(qisqa(k))+(YO[k]?' ✓':'')+'</option>').join('')+'</select></div>'+
+    '<div class="sm" style="margin-top:6px"><b>Toifalar</b> (shu toifadagi hamma lotlar):</div><div class="fch" style="max-height:200px;overflow:auto">'+(TSD.kategoriyalar||[]).map(c=>'<label><input type="checkbox" class="yK" value="'+esc(c)+'"'+(y.kat.includes(c)?' checked':'')+'> '+esc(c)+'</label>').join('')+'</div>'+
+    '<div class="sm" style="margin-top:6px"><b>Kalit so\'zlar</b> (vergul bilan, ruscha ham yozing — masalan: <i>ремонт, площадк, благоустр, ta\'mir</i>):</div><input id="yS" style="width:100%" value="'+esc(y.soz||'')+'">'+
+    '<div class="sm" style="margin-top:6px"><b>Viloyatlar</b> (bo\'sh — hammasi):</div><div class="fch">'+VILS.map(v=>'<label><input type="checkbox" class="yV" value="'+esc(v)+'"'+((y.vil||[]).includes(v)?' checked':'')+'> '+esc(v)+'</label>').join('')+'</div>'+
+    '<button class="ok wide" id="yB" style="margin-top:8px">💾 Saqlash</button><p class="mut sm" id="yX">Toifa ham, kalit so\'z ham bo\'sh bo\'lsa — firma yo\'nalishi o\'chiriladi.</p></div>';
+  $('yF').onchange=()=>{box.dataset.f=$('yF').value;yoOyna();};
+  $('yB').onclick=async()=>{const body={korxona:$('yF').value,kat:[...box.querySelectorAll('.yK:checked')].map(c=>c.value),soz:$('yS').value,vil:[...box.querySelectorAll('.yV:checked')].map(c=>c.value)};
+    $('yB').disabled=true;$('yX').textContent='Saqlanmoqda…';
+    try{await api('?ts_yonalish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});box.dataset.f=body.korxona;await renderS(true);$('yX')&&($('yX').textContent='✅ Saqlandi');}
+    catch(e){$('yX').textContent='❌ '+e.message;$('yB').disabled=false;}};
+}
+// ---------- Imkoniyatlar: kabinetimizda ko'rinmagan faol lotlar ----------
+let IMK=null,IMKt=0,IMKf={v:'',g:'',min:'10',ish:false,q:'',n:100};
+async function renderI(){
+  const el=$('dash');
+  if(!IMK||Date.now()-IMKt>5*60e3){el.innerHTML='<div class="note" style="padding:20px">Yuklanmoqda…</div>';try{IMK=await api('?imkoniyat=1');IMKt=Date.now();}catch(e){el.innerHTML='<div class="note" style="padding:20px">❌ '+esc(e.message)+'</div>';return;}if(tab!=='i')return;}
+  const R=IMK.lotlar||[],f=IMKf;
+  const vil=[...new Set(R.map(x=>x[6]).filter(Boolean))].sort(),gr=[...new Set(R.map(x=>x[1]))].sort();
+  const mn=(Number(String(f.min).replace(',','.'))||0)*1e6,q=f.q.trim().toLowerCase();
+  const L=R.filter(x=>(!f.v||x[6]===f.v)&&(!f.g||x[1]===f.g)&&x[3]*x[4]>=mn&&(!f.ish||x[8].length)&&(!q||String(x[2]).toLowerCase().includes(q)||String(x[7]).includes(q)));
+  const jami=L.reduce((a,x)=>a+x[3]*x[4],0);
+  const opt=(arr,val,bosh)=>'<option value="">'+bosh+'</option>'+arr.map(v=>'<option'+(v===val?' selected':'')+'>'+esc(v)+'</option>').join('');
+  const kab=Object.entries(IMK.kabinet||{});
+  let h='<div class="pn" style="margin-bottom:12px"><h4 style="margin:0 0 6px">📦 Imkoniyatlar — kabinetingizda ko\'rinmagan faol lotlar</h4>'+
+    '<div class="note">Bu lotlar firmalaringiz kabinetida chiqmagan: shu tovarga faol taklifingiz yo\'q. Tovarni xarid.uzex.uz → <b>Мои товары</b> da joylashtirsangiz (yoki muddati o\'tganini uzaytirsangiz), savdo tugaguncha qatnasha olasiz. '+
+    (kab.length?'Kabinetga oxirgi kirish: '+kab.map(([k,t])=>esc(qisqa(k))+' '+dstr(new Date(t))).join(' · ')+'.':'<b>Diqqat:</b> oxirgi 3 kunda kabinetga kirilmagan — ro\'yxatda kabinetda bor lotlar ham bo\'lishi mumkin.')+'</div>'+
+    '<div class="bar" style="margin-top:10px;flex-wrap:wrap;gap:8px;display:flex">'+
+    '<select id="iV">'+opt(vil,f.v,'Viloyat: hammasi')+'</select><select id="iG">'+opt(gr,f.g,'Guruh: hammasi')+'</select>'+
+    '<label class="tg">Kamida <input id="iMin" inputmode="decimal" style="width:60px" value="'+esc(f.min)+'"> mln</label>'+
+    '<label class="tg"><input type="checkbox" id="iIsh"'+(f.ish?' checked':'')+'> Faqat firmalarim oldin ishlagan tovarlar</label>'+
+    '<input id="iQ" placeholder="Qidirish: nomi yoki tovar kodi" value="'+esc(f.q)+'" style="flex:1;min-width:180px"></div>'+
+    '<div class="note" style="margin-top:6px"><b>'+L.length+'</b> ta lot · jami <b>'+(jami/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' mln</b> (bazadagi faol lotlar: '+(IMK.jami||0)+')</div></div>';
+  h+='<div class="tw"><table><thead><tr><th>Lot №</th><th>Mahsulot · tovar kodi</th><th class="num">Soni</th><th class="num">Dona narxi</th><th class="num">Jami summa</th><th>Viloyat</th><th>Savdo tugashi</th><th></th></tr></thead><tbody>'+
+    L.slice(0,f.n).map(x=>{const end=new Date(x[5]+':00+05:00');return '<tr><td>'+esc(x[0])+(x[8].length?'<div class="g">'+x[8].map(k=>'<span class="kb" title="Bu firma shu tovar bilan oldin ishlagan">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x[2])+'<div class="g">'+esc(x[1])+(x[7]?' · <b>'+esc(x[7])+'</b>':'')+'</div></td><td class="num">'+Number(x[3]).toLocaleString('ru-RU',{maximumFractionDigits:2})+'</td><td class="num">'+fmt(x[4])+'</td><td class="num"><b>'+fmt(x[3]*x[4])+'</b></td><td>'+esc(x[6]||'bir nechta')+'</td><td>'+dstr(end)+'<br>'+left(end)+'</td><td><a href="https://xarid.uzex.uz/shop/lot-details/'+esc(String(x[0]).slice(-7))+'" target="_blank" rel="noopener">Ochish</a></td></tr>';}).join('')+
+    '</tbody></table></div>'+(L.length>f.n?'<div style="text-align:center;margin:12px"><button class="ok" id="iKop">Yana ko\'rsatish ('+(L.length-f.n)+')</button></div>':'')+
+    (L.length?'':'<div class="note" style="padding:16px">Mos lot topilmadi — filtrlarni kengaytiring.</div>');
+  el.innerHTML=h;
+  const upd=()=>{IMKf={...IMKf,v:$('iV').value,g:$('iG').value,min:$('iMin').value,ish:$('iIsh').checked,q:$('iQ').value,n:100};renderI();};
+  $('iV').onchange=upd;$('iG').onchange=upd;$('iIsh').onchange=upd;$('iMin').onchange=upd;
+  let tq;$('iQ').oninput=()=>{clearTimeout(tq);tq=setTimeout(()=>{upd();setTimeout(()=>{const i=$('iQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},0);},400);};
+  const k=$('iKop');if(k)k.onclick=()=>{IMKf.n+=100;renderI();};
+}
 // ---------- Bosh sahifa (dashboard) ----------
 function qiziqmi(x){return x.qty>=3&&x.sum>=10e6;}
 function ochish(t,o){
@@ -972,6 +1069,8 @@ $('dash').onclick=e=>{
 
 function render(){
   if(tab==='d'){$('dash').hidden=false;renderD();return;}
+  if(tab==='s'){$('dash').hidden=false;$('tw').hidden=true;$('ebar').hidden=true;$('nbar').hidden=true;$('more').hidden=true;$('chips').innerHTML='';$('stats').innerHTML='';$('note').textContent='';renderS();return;}
+  if(tab==='i'){$('dash').hidden=false;$('tw').hidden=true;$('ebar').hidden=true;$('nbar').hidden=true;$('more').hidden=true;$('chips').innerHTML='';$('stats').innerHTML='';$('note').textContent='';renderI();return;}
   $('dash').hidden=true;$('dash').innerHTML='';$('tw').hidden=false;
   if(tab==='n'){renderN();return;}
   $('ebar').hidden=false;$('nbar').hidden=true;
