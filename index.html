@@ -947,7 +947,7 @@ function yoOyna(){
     h.onchange=()=>L.forEach(c=>c.checked=h.checked);L.forEach(c=>c.addEventListener('change',()=>{h.checked=L.every(x=>x.checked);}));});
   $('yB').onclick=async()=>{const body={korxona:$('yF').value,kat:[...box.querySelectorAll('.yK:checked')].map(c=>c.value),soz:$('yS').value,vil:[...box.querySelectorAll('.yV:checked')].map(c=>c.value)};
     $('yB').disabled=true;$('yX').textContent='Saqlanmoqda…';
-    try{await api('?ts_yonalish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});box.dataset.f=body.korxona;await renderS(true);$('yX')&&($('yX').textContent='✅ Saqlandi');}
+    try{await api('?ts_yonalish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});box.dataset.f=body.korxona;await renderS(true);$('yX')&&($('yX').textContent=(!body.kat.length&&!body.soz.trim())?'ℹ️ Toifa ham, kalit so\'z ham tanlanmagani uchun '+qisqa(body.korxona)+' yo\'nalishi saqlanmadi (bo\'sh). Bu normal: yo\'nalishsiz ham saytda HAMMA lotlar ko\'rinadi.':'✅ Saqlandi — '+qisqa(body.korxona)+' yo\'nalishi tepada ko\'rinadi');}
     catch(e){$('yX').textContent='❌ '+e.message;$('yB').disabled=false;}};
 }
 // ---------- Imkoniyatlar: kabinetimizda ko'rinmagan faol lotlar ----------
