@@ -937,11 +937,14 @@ function yoOyna(){
   let fir=box.dataset.f||F[0]||'';
   const y=YO[fir]||{kat:[],soz:'',vil:[]};
   box.innerHTML='<div class="pn" style="margin-top:10px;background:var(--chip,#eef3f8)"><div class="fb"><b>Firma:</b><select id="yF">'+F.map(k=>'<option value="'+esc(k)+'"'+(k===fir?' selected':'')+'>'+esc(qisqa(k))+(YO[k]?' ✓':'')+'</option>').join('')+'</select></div>'+
-    '<div class="sm" style="margin-top:6px"><b>Toifalar</b> (shu toifadagi hamma lotlar):</div><div class="fch" style="max-height:200px;overflow:auto">'+(TSD.kategoriyalar||[]).map(c=>'<label><input type="checkbox" class="yK" value="'+esc(c)+'"'+(y.kat.includes(c)?' checked':'')+'> '+esc(c)+'</label>').join('')+'</div>'+
+    '<div class="sm" style="margin-top:6px"><b>Toifalar</b> (shu toifadagi hamma lotlar):</div><div class="fch" style="max-height:200px;overflow:auto">'+((TSD.kategoriyalar||[]).length?'<label class="fall"><input type="checkbox" id="yKall"'+((TSD.kategoriyalar||[]).every(c=>y.kat.includes(c))?' checked':'')+'> <b>Hammasini belgilash</b></label>':'<span class="mut sm">Hali toifa yo\'q — robot Taklif so\'rovi lotlarini hali yozmagan (lotlar paydo bo\'lgach toifalar shu yerda chiqadi).</span>')+(TSD.kategoriyalar||[]).map(c=>'<label><input type="checkbox" class="yK" value="'+esc(c)+'"'+(y.kat.includes(c)?' checked':'')+'> '+esc(c)+'</label>').join('')+'</div>'+
     '<div class="sm" style="margin-top:6px"><b>Kalit so\'zlar</b> (vergul bilan, ruscha ham yozing — masalan: <i>ремонт, площадк, благоустр, ta\'mir</i>):</div><input id="yS" style="width:100%" value="'+esc(y.soz||'')+'">'+
-    '<div class="sm" style="margin-top:6px"><b>Viloyatlar</b> (bo\'sh — hammasi):</div><div class="fch">'+VILS.map(v=>'<label><input type="checkbox" class="yV" value="'+esc(v)+'"'+((y.vil||[]).includes(v)?' checked':'')+'> '+esc(v)+'</label>').join('')+'</div>'+
+    '<div class="sm" style="margin-top:6px"><b>Viloyatlar</b> (bo\'sh — hammasi):</div><div class="fch"><label class="fall"><input type="checkbox" id="yVall"'+(VILS.every(v=>(y.vil||[]).includes(v))?' checked':'')+'> <b>Hammasini belgilash</b></label>'+VILS.map(v=>'<label><input type="checkbox" class="yV" value="'+esc(v)+'"'+((y.vil||[]).includes(v)?' checked':'')+'> '+esc(v)+'</label>').join('')+'</div>'+
     '<button class="ok wide" id="yB" style="margin-top:8px">💾 Saqlash</button><p class="mut sm" id="yX">Toifa ham, kalit so\'z ham bo\'sh bo\'lsa — firma yo\'nalishi o\'chiriladi.</p></div>';
   $('yF').onchange=()=>{box.dataset.f=$('yF').value;yoOyna();};
+  // "Hammasini belgilash": bosilsa ro'yxatdagi hammasi belgilanadi / olib tashlanadi
+  [['yKall','.yK'],['yVall','.yV']].forEach(([id,sel])=>{const h=$(id);if(!h)return;const L=[...box.querySelectorAll(sel)];
+    h.onchange=()=>L.forEach(c=>c.checked=h.checked);L.forEach(c=>c.addEventListener('change',()=>{h.checked=L.every(x=>x.checked);}));});
   $('yB').onclick=async()=>{const body={korxona:$('yF').value,kat:[...box.querySelectorAll('.yK:checked')].map(c=>c.value),soz:$('yS').value,vil:[...box.querySelectorAll('.yV:checked')].map(c=>c.value)};
     $('yB').disabled=true;$('yX').textContent='Saqlanmoqda…';
     try{await api('?ts_yonalish=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});box.dataset.f=body.korxona;await renderS(true);$('yX')&&($('yX').textContent='✅ Saqlandi');}
