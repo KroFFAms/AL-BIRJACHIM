@@ -67,7 +67,7 @@ async function taklifSorovi(t0) {
   let known; try { known = new Set(((await J(API + '?ts_known=1', { headers: { 'x-skan-kalit': KALIT } })).ids || []).map(Number)); } catch (e) { console.log('ts: server tayyor emas', String(e).slice(0, 100)); return; }
   const all = [];
   for (let f = 1; f <= 5000; f += 100) {
-    let a; try { a = await J(PRQ + '/GetLots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 99 }) }); } catch (e) { console.log('ts: ro\'yxat o\'qilmadi', String(e).slice(0, 100)); break; }
+    let a; try { a = await J(PRQ + '/GetLots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: f, to: f + 99 }) }); } catch (e) { console.log('ts: ro\'yxat o\'qilmadi', String(e).slice(0, 100), '| sabab:', String(e?.cause?.code || '') + ' ' + String(e?.cause?.message || e?.cause || '').slice(0, 200)); break; }
     const d = a && a.Data; if (!Array.isArray(d) || !d.length) break;
     all.push(...d); if (d.length < 100) break; await sleep(300);
   }
