@@ -1,0 +1,33 @@
+# AL-BIRJACHIM Ishchi — Windows o'rnatuvchisini (.exe) yasaydi.
+# ishchi/ papkasi o'zgarganda o'zi ishga tushadi (yoki Actions → "Ishchi dasturini yasash" → Run workflow).
+# Tayyor .exe: repo → Releases bo'limida.
+name: Ishchi dasturini yasash
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ['ishchi/**', '.github/workflows/ishchi.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ishchi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm install --no-audit --no-fund
+      - run: npx electron-builder --win --publish never
+      - name: Versiya raqami
+        id: v
+        shell: bash
+        run: echo "v=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Releasega joylash
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ishchi-v${{ steps.v.outputs.v }}-${{ github.run_number }}
+          name: AL-BIRJACHIM Ishchi ${{ steps.v.outputs.v }} (${{ github.run_number }})
+          files: ishchi/dist/*.exe
