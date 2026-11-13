@@ -877,7 +877,13 @@ async function navbatOl(){try{const j=await api('?navbat=1');NAVBAT=j.navbat||[]
 function tkLot(lot){return NAVBAT.filter(r=>String(r.lot)===String(lot)&&r.holat!=='bekor');}
 function tkTugma(x){const L=tkLot(x.lot);const faol=L.filter(r=>r.holat==='kutilmoqda'||r.holat==='ochildi').length,yub=L.filter(r=>r.holat==='yuborildi').length;
   return '<button class="sm2'+(faol||yub?' ok':'')+'" data-tk="'+esc(x.lot)+'" title="Narx belgilab navbatga qo\'yish — Ishchi dasturi ochib to\'ldiradi">📝 '+(yub?'✅ '+yub:faol?'⏳ '+faol:'Taklif')+'</button>';}
-function tkFirmalar(x){return [...new Set([...(x.k||[]),...(((MEN&&MEN.firmalar)||[]).filter(f=>f.holat==='tasdiq').map(f=>f.korxona))])];}
+const tkKl=n=>String(n||'').toUpperCase().replace(/\.{2,}|…/g,'').replace(/["'«»“”‘’`ʻʼ]/g,'').replace(/\s+/g,' ').trim();
+function tkFirmalar(x){
+  const L=[...new Set([...(x.k||[]),...(((MEN&&MEN.firmalar)||[]).filter(f=>f.holat==='tasdiq').map(f=>f.korxona))])];
+  const kl=n=>String(n||'').toUpperCase().replace(/\.{2,}|…/g,'').replace(/["'«»“”‘’`ʻʼ]/g,'').replace(/\s+/g,' ').trim();
+  // bir firmaning qisqartirilgan ("…") va to'liq nomi — bitta (to'liq nomi qoladi)
+  return L.filter(n=>{const k=kl(n);return !L.some(m=>m!==n&&kl(m).length>k.length&&kl(m).startsWith(k));});
+}
 async function tkYubor(body){
   const r=await fetch(API+'?navbat_qosh=1',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','x-sessiya':ses()},body:JSON.stringify(body)});
   let j={};try{j=await r.json();}catch(e){}
@@ -892,7 +898,7 @@ function tkOch(lot){
   h+='<div style="margin-top:8px"><b>Dona narxi (so\'m)</b></div><input id="tkN" inputmode="decimal" style="width:100%;font-size:18px;font-weight:700;padding:8px" value="'+(T?T.n:Math.round(x.price))+'">'+
     '<div id="tkNx" class="mut sm"></div>'+
     '<div style="margin-top:8px"><b>Qaysi firmalardan</b> <span class="mut sm">(shu lot kabinetida ko\'ringan firmalar oldindan belgilangan)</span></div><div class="fch">'+
-    (F.length?F.map(k=>'<label><input type="checkbox" class="tkF" value="'+esc(k)+'"'+((x.k||[]).includes(k)?' checked':'')+'> '+esc(k)+'</label>').join(''):'<span class="mut sm">Firma yo\'q</span>')+'</div>'+
+    (F.length?F.map(k=>'<label><input type="checkbox" class="tkF" value="'+esc(k)+'"'+((x.k||[]).some(m=>tkKl(k).startsWith(tkKl(m)))?' checked':'')+'> '+esc(k)+'</label>').join(''):'<span class="mut sm">Firma yo\'q</span>')+'</div>'+
     '<input id="tkI" placeholder="Izoh (ixtiyoriy)" style="width:100%;padding:6px;margin-top:4px">'+
     '<button class="ok wide" id="tkB" style="margin-top:10px">📝 Navbatga qo\'yish</button><p class="mut sm" id="tkX2">Navbatga tushgach, <b>AL-BIRJACHIM Ishchi</b> dasturidagi «Takliflar navbati» da chiqadi: xodim «Ochish va to\'ldirish» ni bosadi, hisob raqamini tanlab, E-IMZO bilan o\'zi yuboradi.</p>';
   $('tkBody').innerHTML=h;$('tk').hidden=false;
