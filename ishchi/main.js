@@ -1,4 +1,4 @@
-// AL-BIRJACHIM Ishchi — 1-bosqich
+// AL-BIRJACHIM Ishchi — 1-bosqich (lotlarni yig'ish) + 2-bosqich (taklif navbati)
 // Firmalar bir marta ulanadi (har biri o'z alohida sessiyasida), keyin dastur ularning
 // kabinetlaridan lotlarni o'zi yig'adi va AL-BIRJACHIM bazasiga yozadi.
 // FAQAT O'QIYDI: taklif bermaydi, hech narsani tasdiqlamaydi.
@@ -140,6 +140,63 @@ function rejala() {
   taymer = setTimeout(hammasi, ms);
 }
 
+// ---------- 📝 Taklif navbati (2-bosqich) ----------
+// Saytda narx belgilanadi → bu yerda chiqadi → "Ochish va to'ldirish": lot sahifasi ochiladi, "Taklif berish" bosiladi,
+// narx yoziladi. Hisob raqamini tanlash, "Yuborish" va E-IMZO tasdig'ini XODIMNING O'ZI qiladi.
+const API = 'https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja';
+let NAVBAT = [];
+async function api(q, o = {}) {
+  const r = await net.fetch(API + q, { method: o.method || 'GET', headers: { 'Content-Type': 'application/json', 'x-sessiya': cfg.ses || '' }, body: o.body ? JSON.stringify(o.body) : undefined });
+  let j = {}; try { j = await r.json(); } catch (_) { /* */ }
+  if (!r.ok || j.ok === false) throw new Error(j.xato || ('HTTP ' + r.status));
+  return j;
+}
+const kalit = (n) => String(n || '').toUpperCase().replace(/\.{2,}|…/g, '').replace(/["'«»“”‘’`ʻʼ]/g, '').replace(/(^|\s)(MCHJ|МЧЖ|OOO|ООО|XK|AJ|QK|YATT|YTT)(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
+function firmaTop(korxona) {
+  const a = kalit(korxona);
+  return cfg.firmalar.find((f) => { const b = kalit(f.nom); if (!a || !b) return false; if (a === b) return true; const [q, w] = a.length < b.length ? [a, b] : [b, a]; return q.length >= 10 && w.startsWith(q); });
+}
+async function navbatOl() {
+  if (!cfg.ses) return;
+  try {
+    const j = await api('?navbat=1&holat=kutilmoqda,ochildi,xato');
+    NAVBAT = (j.navbat || []).filter((r) => !r.tugash || new Date(r.tugash).getTime() > Date.now()).map((r) => { const f = firmaTop(r.korxona); return { ...r, fid: f ? f.id : null, fnom: f ? f.nom : '' }; });
+    send('navbat', NAVBAT);
+  } catch (e) { send('navbat', NAVBAT); }
+}
+function toldirishSkripti(narx) {
+  return `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));
+  let b=null;for(let i=0;i<40&&!b;i++){b=[...document.querySelectorAll('button')].find(x=>/^\\s*Taklif berish\\s*$/i.test(x.textContent)&&x.offsetParent);if(!b)await sl(500);}
+  if(!b)return 'TUGMA_YOQ';
+  b.click();
+  let inp=null;for(let i=0;i<25&&!inp;i++){await sl(400);const m=[...document.querySelectorAll('[role=dialog],.modal-content,.modal')].find(x=>x.offsetParent&&/Taklif shakli/i.test(x.textContent));
+    if(m)inp=[...m.querySelectorAll('input')].find(x=>x.offsetParent&&x.type!=='hidden'&&x.type!=='checkbox'&&!x.readOnly&&!x.closest('ng-select,.ng-select'));}
+  if(!inp)return 'FORMA_YOQ';
+  const set=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+  inp.focus();set.call(inp,${JSON.stringify(String(narx))});
+  ['input','change','keyup','blur'].forEach(t=>inp.dispatchEvent(new Event(t,{bubbles:true})));
+  inp.style.outline='3px solid #22a35a';
+  return 'OK:'+inp.value;})()`;
+}
+async function tkOch(id) {
+  const r = NAVBAT.find((x) => x.id === id); if (!r) return { xato: 'Vazifa topilmadi — ro\'yxatni yangilang' };
+  const f = r.fid && firma(r.fid);
+  if (!f) return { xato: '"' + r.korxona + '" firmasi bu dasturga ulanmagan — avval «Firma qo\'shish»' };
+  const w = firmaOynasi(f, true);
+  await ochish(w, 'https://xarid.uzex.uz/shop/lot-details/' + encodeURIComponent(r.lot_id || String(r.lot).slice(-7)));
+  let n = '';
+  try { n = await w.webContents.executeJavaScript(toldirishSkripti(Math.round(+r.narx * 100) / 100)); } catch (e) { n = 'XATO:' + e.message; }
+  if (!String(n).startsWith('OK')) {
+    const sabab = n === 'TUGMA_YOQ' ? '"Taklif berish" tugmasi yo\'q — firma sessiyasi tugagan bo\'lishi mumkin («Kirish») yoki lot yopilgan' : n === 'FORMA_YOQ' ? 'Taklif oynasi ochilmadi' : String(n);
+    log((f.nom || f.id) + ': ' + r.lot + ' — ' + sabab);
+    return { xato: sabab };
+  }
+  try { await api('?navbat_holat=1', { method: 'POST', body: { id, holat: 'ochildi' } }); } catch (_) { /* */ }
+  log((f.nom || f.id) + ': ' + r.lot + ' ochildi, narx ' + r.narx + ' yozildi — hisob raqamini tanlab, "Yuborish" ni bosing va E-IMZO bilan tasdiqlang');
+  navbatOl();
+  return { ok: true };
+}
+
 // ---------- AL-BIRJACHIM akkauntiga ulash (sayt sessiyasi — lotlar sizning akkauntingizga bog'lanadi) ----------
 async function saytgaUlash() {
   const w = new BrowserWindow({ width: 1100, height: 800, title: 'AL-BIRJACHIM — kirish', autoHideMenuBar: true, webPreferences: { partition: 'persist:sayt', contextIsolation: true, sandbox: true } });
@@ -149,7 +206,7 @@ async function saytgaUlash() {
   for (let i = 0; i < 300 && !w.isDestroyed(); i++) {
     try {
       const t = await w.webContents.executeJavaScript("localStorage.getItem('birjachim_sessiya')||''");
-      if (t && t.length > 20) { cfg.ses = t; saqla(); holatYubor(); log('AL-BIRJACHIM akkauntiga ulandi'); w.destroy(); return; }
+      if (t && t.length > 20) { cfg.ses = t; saqla(); holatYubor(); log('AL-BIRJACHIM akkauntiga ulandi'); w.destroy(); navbatOl(); return; }
     } catch (_) { /* */ }
     await sleep(2000);
   }
@@ -197,6 +254,12 @@ ipcMain.handle('ochir', async (_e, id) => {
   cfg.firmalar = cfg.firmalar.filter((x) => x.id !== id); saqla(); holatYubor();
 });
 ipcMain.handle('sayt', () => { saytgaUlash(); });
+ipcMain.handle('navbat', async () => { await navbatOl(); return NAVBAT; });
+ipcMain.handle('tk_och', (_e, id) => tkOch(id));
+ipcMain.handle('tk_holat', async (_e, id, holat) => {
+  try { await api('?navbat_holat=1', { method: 'POST', body: { id, holat } }); const r = NAVBAT.find((x) => x.id === id); log((r ? (r.fnom || r.korxona) + ': ' + r.lot : '#' + id) + ' — ' + holat); } catch (e) { log('Holat saqlanmadi: ' + e.message); }
+  await navbatOl();
+});
 ipcMain.handle('sozla', (_e, o) => {
   if (o.har != null) cfg.har = Math.max(15, Math.min(720, +o.har || 60));
   if (o.avto != null) cfg.avto = !!o.avto;
@@ -221,6 +284,7 @@ else {
     log('AL-BIRJACHIM Ishchi ishga tushdi. Firmalar: ' + cfg.firmalar.length);
     // Ishga tushgandan 1 daqiqa keyin birinchi yig'ish
     if (cfg.avto && cfg.firmalar.length) { keyingi = Date.now() + 60e3; taymer = setTimeout(hammasi, 60e3); }
+    navbatOl(); setInterval(navbatOl, 60e3); // taklif navbati har daqiqada
     holatYubor();
   });
   app.on('window-all-closed', (e) => e.preventDefault());
