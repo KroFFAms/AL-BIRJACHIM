@@ -41,58 +41,76 @@
   }
 
   // ---- ♻️ Ofertalarni aktiv qilish: «Mening mahsulotlarim → Срок истек» sahifasida ----
-  // Har bir qatorda saytning o'z «Продлить» tugmasini navbat bilan bosadi. E-IMZO so'rasa — xodim tasdiqlaydi.
-  if (P.xarid.host.test(h) && /\/provider\/shop\/offer-list\//.test(location.pathname)) {
+  // Har bir tovar uchun saytning o'z «Продлить» anketasini (republish-offer) shu oynada ochadi va
+  // «Tovarni joylashtirish» ni bosadi. E-IMZO so'rasa — xodim tasdiqlaydi. Narx/ma'lumotlar o'zgarmaydi.
+  if (P.xarid.host.test(h) && /\/provider\/shop\/(offer-list|republish-offer)\//.test(location.pathname)) {
     if (window.__BJ_AKTIV) { alert('AL-BIRJACHIM: aktiv qilish allaqachon ishlayapti.'); return; }
-    window.__BJ_AKTIV = { stop: false };
-    const S = window.__BJ_AKTIV;
+    const S = (window.__BJ_AKTIV = { stop: false });
     const sl = (ms) => new Promise((r) => setTimeout(r, ms));
+    const LS = 'bj_aktiv_qilingan';
+    const qil = (() => { try { return new Set(JSON.parse(localStorage.getItem(LS) || '[]')); } catch (_) { return new Set(); } })();
+    const saqla = () => { try { localStorage.setItem(LS, JSON.stringify([...qil].slice(-3000))); } catch (_) { /* */ } };
     const pn = document.createElement('div');
-    pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:340px';
+    pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:360px';
     pn.innerHTML = '<b>♻️ AL-BIRJACHIM — ofertalarni aktiv qilish</b><div id="bjAkM" style="margin:8px 0;color:#b9c8dc">Tayyorlanmoqda…</div><button id="bjAkS" style="background:#d9473b;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">To\'xtatish</button>';
     document.body.appendChild(pn);
-    const msg = (t) => { pn.querySelector('#bjAkM').innerHTML = t; };
-    pn.querySelector('#bjAkS').onclick = () => { S.stop = true; msg('To\'xtatilmoqda…'); };
-    const PRO = /Продлить|Uzaytir|Muddatini|Prolong/i;
-    const birinchi = () => { const r = [...document.querySelectorAll('tbody tr')].find((x) => x.offsetParent && x.querySelector('td')); return r || null; };
-    const rid = (r) => (r ? (r.querySelector('td') || r).textContent.trim().split(/\s+/)[0] : '');
-    const jami = () => { const m = /of\s+(\d+)/i.exec(document.body.innerText); return m ? +m[1] : null; };
+    const msg = (t) => { const e = document.getElementById('bjAkM'); if (e) e.innerHTML = t; };
+    pn.querySelector('#bjAkS').onclick = () => { S.stop = true; msg('To\'xtatilmoqda… (joriy tovar tugagach)'); };
+    const bor = () => { if (!document.body.contains(pn)) document.body.appendChild(pn); };
+    const qatorlar = () => [...document.querySelectorAll('tbody tr')].filter((x) => x.querySelector('td'));
+    const rid = (r) => (r.querySelector('td') || r).textContent.trim().split(/\s+/)[0];
+    const yolga = (u) => { history.pushState({}, '', u); window.dispatchEvent(new PopStateEvent('popstate', { state: {} })); };
+    const kut = async (f, ms) => { for (let t = 0; t < ms; t += 400) { const v = f(); if (v) return v; await sl(400); } return null; };
     (async () => {
-      let ok = 0, xato = 0, otk = new Set();
-      await sl(1500);
-      const n0 = jami();
-      if (!birinchi()) { msg('Bu ro\'yxat bo\'sh — aktiv qiladigan tovar yo\'q.'); S.stop = true; }
-      else if (!confirm('AL-BIRJACHIM: shu ro\'yxatdagi ' + (n0 != null ? n0 + ' ta ' : '') + 'tovar navbat bilan «Продлить» qilinadi.\nE-IMZO so\'rasa — kalitni tanlab tasdiqlang.\nBoshlaymizmi?')) { msg('Bekor qilindi.'); S.stop = true; }
-      while (!S.stop) {
-        // o'tkazib yuborilganlardan keyingi birinchi qator
-        const rows = [...document.querySelectorAll('tbody tr')].filter((x) => x.offsetParent && x.querySelector('td'));
-        const r = rows.find((x) => !otk.has(rid(x)));
-        if (!r) break;
-        const id = rid(r);
-        const ic = [...r.querySelectorAll('td:last-child *')].find((e) => e.offsetParent && (e.tagName === 'I' || e.tagName === 'A' || e.tagName === 'BUTTON' || e.tagName === 'SPAN' || e.tagName === 'svg'));
-        (ic || r.querySelector('td:last-child')).click();
-        await sl(500);
-        const it = [...document.querySelectorAll('.dropdown-item, a, button')].find((e) => e.offsetParent && PRO.test(e.textContent.trim()) && e.textContent.trim().length < 40);
-        if (!it && !ok && !xato) { document.body.click(); msg('Bu sahifada «Продлить» yo\'q. Chap menyuda <b>Mening mahsulotlarim → Срок истек</b> ni oching va «🔄 Birjachi» ni qayta bosing.'); S.yoq = true; break; }
-        if (!it) { otk.add(id); xato++; document.body.click(); msg('✅ ' + ok + ' ta aktiv · ⚠️ ' + xato + ' ta o\'tkazildi (Продлить yo\'q: ' + id + ')'); await sl(400); continue; }
-        it.click();
-        msg('⏳ ' + id + ' — aktiv qilinmoqda… (E-IMZO so\'rasa, tasdiqlang)<br>✅ ' + ok + ' ta · ⚠️ ' + xato + ' ta');
-        // ro'yxat yangilanib, shu tovar yo'qolishini kutamiz (E-IMZO uchun 3 daqiqagacha)
-        let ketdi = false;
-        for (let i = 0; i < 360 && !S.stop; i++) {
-          await sl(500);
-          const hozir = [...document.querySelectorAll('tbody tr')].filter((x) => x.offsetParent && x.querySelector('td')).map(rid);
-          if (!hozir.includes(id)) { ketdi = true; break; }
-          if ([...document.querySelectorAll('.toast-error,[class*="toast-error"],[class*="noty_type__error"],.swal2-icon-error')].some((e) => e.offsetParent)) { await sl(1500); break; }
+      if (!/\/offer-list\/8$/.test(location.pathname)) { msg('Avval chap menyuda <b>Mening mahsulotlarim → Срок истек</b> ni oching, keyin qayta bosing.'); S.yoq = true; }
+      // 1) Hamma sahifalardan «Продлить» bor tovarlarni yig'amiz
+      const ROY = [];
+      if (!S.yoq) {
+        await kut(() => qatorlar().length, 15000);
+        for (let p = 0; p < 60 && !S.stop; p++) {
+          const birinchi = qatorlar()[0] && rid(qatorlar()[0]);
+          for (const r of qatorlar()) {
+            const id = rid(r);
+            const a = [...r.querySelectorAll('.dropdown-item')].map((x) => x.textContent.trim());
+            if (a.includes('Продлить') && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: false });
+            else if (a.some((x) => /Продлить \(/.test(x)) && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: true });
+          }
+          msg('Ro\'yxat yig\'ilmoqda… ' + ROY.length + ' ta');
+          const nx = [...document.querySelectorAll('a, button')].find((e) => e.offsetParent && e.textContent.trim() === '›' && !e.disabled && !(e.closest('li') && e.closest('li').classList.contains('disabled')));
+          if (!nx) break;
+          nx.click();
+          const ok = await kut(() => qatorlar()[0] && rid(qatorlar()[0]) !== birinchi, 8000);
+          if (!ok) break;
         }
-        if (ketdi) ok++; else { otk.add(id); xato++; }
-        msg('✅ ' + ok + ' ta aktiv qilindi · ⚠️ ' + xato + ' ta o\'tkazildi');
-        await sl(600);
       }
-      if (!S.yoq) msg((S.stop && !ok && !xato ? '' : '🏁 Tugadi. ') + '✅ <b>' + ok + '</b> ta aktiv qilindi' + (xato ? ' · ⚠️ ' + xato + ' ta o\'tkazildi (qo\'lda tekshiring)' : '') + '<br><span style="font-size:12px">«Опубликован» ro\'yxatida ko\'rinadi.</span>');
-      pn.querySelector('#bjAkS').textContent = 'Yopish';
-      pn.querySelector('#bjAkS').onclick = () => pn.remove();
+      const ISH = ROY.filter((z) => !z.kat && !qil.has(z.id));
+      const KAT = ROY.filter((z) => z.kat);
+      if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
+      if (!S.yoq && !confirm('AL-BIRJACHIM: ' + ISH.length + ' ta tovar navbat bilan qayta joylanadi (Продлить → Tovarni joylashtirish).\n' + (KAT.length ? KAT.length + ' ta «Каталог» tovari o\'tkazib yuboriladi (qo\'lda).\n' : '') + 'E-IMZO so\'rasa — tasdiqlang. Boshlaymizmi?')) { msg('Bekor qilindi.'); S.yoq = true; }
+      // 2) Har birini qayta joylash
+      let ok = 0; const X = [];
+      for (let i = 0; i < ISH.length && !S.yoq && !S.stop; i++) {
+        const z = ISH[i];
+        msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
+        yolga('/provider/shop/republish-offer/' + z.id);
+        const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].some((x) => x.offsetParent && /\d/.test(x.value) && /narx|цена/i.test((x.closest('div') && x.closest('div').textContent) || '')); return b && n && !b.disabled ? b : null; }, 40000);
+        if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
+        await sl(1200);
+        tg.click();
+        msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
+        const nat = await kut(() => {
+          bor();
+          if (!/republish-offer/.test(location.pathname)) return 'ok';
+          const er = [...document.querySelectorAll('.toast-error,[class*="toast-error"]')].find((e) => e.offsetParent && e.textContent.trim());
+          return er ? 'xato: ' + er.textContent.trim().slice(0, 80) : null;
+        }, 180000);
+        if (nat === 'ok') { ok++; qil.add(z.id); saqla(); } else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
+        await sl(1500);
+      }
+      if (!S.yoq) msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi (moderatsiyada)' + (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 6).join('<br>') + '</span>' : '') + (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : ''));
+      const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
       window.__BJ_AKTIV = null;
+      if (!S.yoq) yolga('/provider/shop/offer-list/8');
     })();
     return;
   }
