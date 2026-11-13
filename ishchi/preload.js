@@ -10,5 +10,8 @@ contextBridge.exposeInMainWorld('ishchi', {
   ochir: (id) => ipcRenderer.invoke('ochir', id),
   sayt: () => ipcRenderer.invoke('sayt'),
   sozla: (o) => ipcRenderer.invoke('sozla', o),
+  navbat: () => ipcRenderer.invoke('navbat'),
+  tkOch: (id) => ipcRenderer.invoke('tk_och', id),
+  tkHolat: (id, h) => ipcRenderer.invoke('tk_holat', id, h),
   on: (ch, cb) => ipcRenderer.on(ch, (_e, d) => cb(d)),
 });
