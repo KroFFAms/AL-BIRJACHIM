@@ -40,6 +40,63 @@
     return;
   }
 
+  // ---- ♻️ Ofertalarni aktiv qilish: «Mening mahsulotlarim → Срок истек» sahifasida ----
+  // Har bir qatorda saytning o'z «Продлить» tugmasini navbat bilan bosadi. E-IMZO so'rasa — xodim tasdiqlaydi.
+  if (P.xarid.host.test(h) && /\/provider\/shop\/offer-list\//.test(location.pathname)) {
+    if (window.__BJ_AKTIV) { alert('AL-BIRJACHIM: aktiv qilish allaqachon ishlayapti.'); return; }
+    window.__BJ_AKTIV = { stop: false };
+    const S = window.__BJ_AKTIV;
+    const sl = (ms) => new Promise((r) => setTimeout(r, ms));
+    const pn = document.createElement('div');
+    pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:340px';
+    pn.innerHTML = '<b>♻️ AL-BIRJACHIM — ofertalarni aktiv qilish</b><div id="bjAkM" style="margin:8px 0;color:#b9c8dc">Tayyorlanmoqda…</div><button id="bjAkS" style="background:#d9473b;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">To\'xtatish</button>';
+    document.body.appendChild(pn);
+    const msg = (t) => { pn.querySelector('#bjAkM').innerHTML = t; };
+    pn.querySelector('#bjAkS').onclick = () => { S.stop = true; msg('To\'xtatilmoqda…'); };
+    const PRO = /Продлить|Uzaytir|Muddatini|Prolong/i;
+    const birinchi = () => { const r = [...document.querySelectorAll('tbody tr')].find((x) => x.offsetParent && x.querySelector('td')); return r || null; };
+    const rid = (r) => (r ? (r.querySelector('td') || r).textContent.trim().split(/\s+/)[0] : '');
+    const jami = () => { const m = /of\s+(\d+)/i.exec(document.body.innerText); return m ? +m[1] : null; };
+    (async () => {
+      let ok = 0, xato = 0, otk = new Set();
+      await sl(1500);
+      const n0 = jami();
+      if (!birinchi()) { msg('Bu ro\'yxat bo\'sh — aktiv qiladigan tovar yo\'q.'); S.stop = true; }
+      else if (!confirm('AL-BIRJACHIM: shu ro\'yxatdagi ' + (n0 != null ? n0 + ' ta ' : '') + 'tovar navbat bilan «Продлить» qilinadi.\nE-IMZO so\'rasa — kalitni tanlab tasdiqlang.\nBoshlaymizmi?')) { msg('Bekor qilindi.'); S.stop = true; }
+      while (!S.stop) {
+        // o'tkazib yuborilganlardan keyingi birinchi qator
+        const rows = [...document.querySelectorAll('tbody tr')].filter((x) => x.offsetParent && x.querySelector('td'));
+        const r = rows.find((x) => !otk.has(rid(x)));
+        if (!r) break;
+        const id = rid(r);
+        const ic = [...r.querySelectorAll('td:last-child *')].find((e) => e.offsetParent && (e.tagName === 'I' || e.tagName === 'A' || e.tagName === 'BUTTON' || e.tagName === 'SPAN' || e.tagName === 'svg'));
+        (ic || r.querySelector('td:last-child')).click();
+        await sl(500);
+        const it = [...document.querySelectorAll('.dropdown-item, a, button')].find((e) => e.offsetParent && PRO.test(e.textContent.trim()) && e.textContent.trim().length < 40);
+        if (!it && !ok && !xato) { document.body.click(); msg('Bu sahifada «Продлить» yo\'q. Chap menyuda <b>Mening mahsulotlarim → Срок истек</b> ni oching va «🔄 Birjachi» ni qayta bosing.'); S.yoq = true; break; }
+        if (!it) { otk.add(id); xato++; document.body.click(); msg('✅ ' + ok + ' ta aktiv · ⚠️ ' + xato + ' ta o\'tkazildi (Продлить yo\'q: ' + id + ')'); await sl(400); continue; }
+        it.click();
+        msg('⏳ ' + id + ' — aktiv qilinmoqda… (E-IMZO so\'rasa, tasdiqlang)<br>✅ ' + ok + ' ta · ⚠️ ' + xato + ' ta');
+        // ro'yxat yangilanib, shu tovar yo'qolishini kutamiz (E-IMZO uchun 3 daqiqagacha)
+        let ketdi = false;
+        for (let i = 0; i < 360 && !S.stop; i++) {
+          await sl(500);
+          const hozir = [...document.querySelectorAll('tbody tr')].filter((x) => x.offsetParent && x.querySelector('td')).map(rid);
+          if (!hozir.includes(id)) { ketdi = true; break; }
+          if ([...document.querySelectorAll('.toast-error,[class*="toast-error"],[class*="noty_type__error"],.swal2-icon-error')].some((e) => e.offsetParent)) { await sl(1500); break; }
+        }
+        if (ketdi) ok++; else { otk.add(id); xato++; }
+        msg('✅ ' + ok + ' ta aktiv qilindi · ⚠️ ' + xato + ' ta o\'tkazildi');
+        await sl(600);
+      }
+      if (!S.yoq) msg((S.stop && !ok && !xato ? '' : '🏁 Tugadi. ') + '✅ <b>' + ok + '</b> ta aktiv qilindi' + (xato ? ' · ⚠️ ' + xato + ' ta o\'tkazildi (qo\'lda tekshiring)' : '') + '<br><span style="font-size:12px">«Опубликован» ro\'yxatida ko\'rinadi.</span>');
+      pn.querySelector('#bjAkS').textContent = 'Yopish';
+      pn.querySelector('#bjAkS').onclick = () => pn.remove();
+      window.__BJ_AKTIV = null;
+    })();
+    return;
+  }
+
   // ---- Panel ----
   let box = document.getElementById('birjachi-panel');
   if (!box) {
