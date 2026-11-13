@@ -895,23 +895,36 @@ function tkOch(lot){
   let h='<div style="font-weight:700">'+esc(x.name)+'</div><div class="mut sm">Lot '+esc(x.lot)+' · '+x.qty.toLocaleString('ru-RU')+' dona · boshlang\'ich <b>'+fmt(x.price)+'</b> · demping &lt; '+fmt(x.price*.8)+' · tugash '+dstr(x.end)+' ('+left(x.end)+')</div>';
   if(T)h+='<div class="tv" style="margin:8px 0"><span class="lb">Tavsiya</span> <b>'+fmt(T.n)+'</b> (−'+T.foiz+'%) · ehtimol: <i style="color:'+T.c+'">'+T.eh+'</i><div class="mut sm">'+esc(T.asos.join(' · '))+'</div></div>';
   if(L.length)h+='<div class="mut sm" style="margin:6px 0"><b>Shu lot navbatda:</b><br>'+L.map(r=>esc(qisqa(r.korxona))+' — '+fmt(r.narx)+' · '+(TKH[r.holat]||r.holat)+(r.xato?' ('+esc(r.xato)+')':'')).join('<br>')+'</div>';
-  h+='<div style="margin-top:8px"><b>Dona narxi (so\'m)</b></div><input id="tkN" inputmode="decimal" style="width:100%;font-size:18px;font-weight:700;padding:8px" value="'+(T?T.n:Math.round(x.price))+'">'+
+  const qd0=Math.max(100,Math.round(x.price*.005/100)*100);
+  h+='<div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end"><div style="flex:2"><b>Eng past narx (so\'m)</b><input id="tkN" inputmode="decimal" style="width:100%;font-size:18px;font-weight:700;padding:8px" value="'+(T?T.n:Math.round(x.price))+'"></div>'+
+    '<div style="flex:1"><b>Qadam</b> <span class="mut sm">(har keyingi firma +)</span><input id="tkQ" inputmode="decimal" style="width:100%;font-size:18px;padding:8px" value="'+qd0+'"></div></div>'+
     '<div id="tkNx" class="mut sm"></div>'+
-    '<div style="margin-top:8px"><b>Qaysi firmalardan</b> <span class="mut sm">(shu lot kabinetida ko\'ringan firmalar oldindan belgilangan)</span></div><div class="fch">'+
-    (F.length?F.map(k=>'<label><input type="checkbox" class="tkF" value="'+esc(k)+'"'+((x.k||[]).some(m=>tkKl(k).startsWith(tkKl(m)))?' checked':'')+'> '+esc(k)+'</label>').join(''):'<span class="mut sm">Firma yo\'q</span>')+'</div>'+
+    '<div style="margin-top:8px"><b>Qaysi firmalardan, qanday narxda</b> <span class="mut sm">(har firmaga alohida narx — qo\'lda ham o\'zgartirsa bo\'ladi)</span></div><div class="fch">'+
+    (F.length?F.map(k=>'<label style="display:flex;align-items:center;gap:6px"><input type="checkbox" class="tkF" value="'+esc(k)+'"'+((x.k||[]).some(m=>tkKl(k).startsWith(tkKl(m)))?' checked':'')+'> <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(k)+'</span><input class="tkP" data-k="'+esc(k)+'" inputmode="decimal" style="width:120px;padding:4px 6px;font-weight:700;text-align:right"><span class="tkPx mut sm" style="width:46px"></span></label>').join(''):'<span class="mut sm">Firma yo\'q</span>')+'</div>'+
     '<input id="tkI" placeholder="Izoh (ixtiyoriy)" style="width:100%;padding:6px;margin-top:4px">'+
     '<button class="ok wide" id="tkB" style="margin-top:10px">📝 Navbatga qo\'yish</button><p class="mut sm" id="tkX2">Navbatga tushgach, <b>AL-BIRJACHIM Ishchi</b> dasturidagi «Takliflar navbati» da chiqadi: xodim «Ochish va to\'ldirish» ni bosadi, hisob raqamini tanlab, E-IMZO bilan o\'zi yuboradi.</p>';
   $('tkBody').innerHTML=h;$('tk').hidden=false;
-  const nx=()=>{const v=_tkN();$('tkNx').innerHTML=v>0?('jami: <b>'+fmt(v*x.qty)+'</b> · boshlang\'ichdan −'+Math.round((1-v/x.price)*100)+'%'+(v<x.price*.8?' · <b style="color:#b42318">demping chegarasidan past!</b>':'')+(v>x.price?' · <b style="color:#b42318">boshlang\'ichdan baland!</b>':'')):'';};
-  $('tkN').oninput=nx;nx();
+  const sonN=el=>Number(String((el||{}).value||'').replace(/\s/g,'').replace(',','.'))||0;
+  const px=()=>document.querySelectorAll('#tkBody .tkP').forEach(inp=>{const v=sonN(inp),sp=inp.nextElementSibling,on=inp.parentNode.querySelector('.tkF').checked;inp.disabled=!on;inp.style.opacity=on?1:.4;
+    sp.textContent=v>0?'−'+Math.round((1-v/x.price)*100)+'%':'';sp.style.color=v>0&&(v<x.price*.8||v>x.price)?'#b42318':'';});
+  const taqsim=()=>{const v=_tkN(),q=sonN($('tkQ'));let i=0;document.querySelectorAll('#tkBody .tkP').forEach(inp=>{if(inp.parentNode.querySelector('.tkF').checked){inp.value=v>0?String(Math.min(x.price,v+q*i)):'';i++;}else inp.value='';});px();};
+  const nx=()=>{const v=_tkN();$('tkNx').innerHTML=v>0?('eng past: jami <b>'+fmt(v*x.qty)+'</b> · boshlang\'ichdan −'+Math.round((1-v/x.price)*100)+'%'+(v<x.price*.8?' · <b style="color:#b42318">demping chegarasidan past!</b>':'')+(v>x.price?' · <b style="color:#b42318">boshlang\'ichdan baland!</b>':'')):'';taqsim();};
+  $('tkN').oninput=nx;$('tkQ').oninput=taqsim;
+  document.querySelectorAll('#tkBody .tkF').forEach(c=>c.onchange=taqsim);
+  document.querySelectorAll('#tkBody .tkP').forEach(inp=>inp.oninput=px);
+  nx();
   $('tkB').onclick=async()=>{
-    const v=_tkN(),firmalar=[...document.querySelectorAll('#tkBody .tkF:checked')].map(c=>c.value);
-    if(!(v>0)){alert('Narxni kiriting');return;}if(v>x.price){alert('Narx boshlang\'ich narxdan baland bo\'lmasin');return;}if(!firmalar.length){alert('Kamida bitta firmani belgilang');return;}
-    if(v<x.price*.8&&!confirm('Narx demping chegarasidan ('+fmt(x.price*.8)+') past. Davom etamizmi?'))return;
+    const R=[...document.querySelectorAll('#tkBody .tkF:checked')].map(c=>({k:c.value,n:sonN(c.parentNode.querySelector('.tkP'))}));
+    if(!R.length){alert('Kamida bitta firmani belgilang');return;}
+    const yoq=R.filter(r=>!(r.n>0));if(yoq.length){alert('Narx yozilmagan: '+yoq.map(r=>qisqa(r.k)).join(', '));return;}
+    const bal=R.filter(r=>r.n>x.price);if(bal.length){alert('Boshlang\'ich narxdan baland: '+bal.map(r=>qisqa(r.k)).join(', '));return;}
+    const dmp=R.filter(r=>r.n<x.price*.8);if(dmp.length&&!confirm('Demping chegarasidan ('+fmt(x.price*.8)+') past: '+dmp.map(r=>qisqa(r.k)+' '+fmt(r.n)).join(', ')+'. Davom etamizmi?'))return;
+    const tk=new Set(R.map(r=>r.n));if(R.length>1&&tk.size<R.length&&!confirm('Ba\'zi firmalarda narx bir xil. Shunday qolsinmi?'))return;
     $('tkB').disabled=true;$('tkX2').textContent='Yuborilmoqda…';
-    try{const r=await tkYubor({lot:x.lot,lot_id:String(x.lot).slice(-7),nomi:x.name,soni:x.qty,boshl_narx:x.price,narx:v,tugash:x.end.toISOString(),firmalar,izoh:$('tkI').value});
-      await navbatOl();$('tkX2').innerHTML='✅ <b>'+r.yozildi+'</b> ta firma navbatga qo\'yildi'+(r.xatolar&&r.xatolar.length?' · ⚠️ '+esc(r.xatolar.join('; ')):'');if(tab==='e')render();setTimeout(()=>{$('tk').hidden=true;},1200);}
-    catch(e){$('tkX2').textContent='❌ '+e.message;$('tkB').disabled=false;}
+    let n=0;const X=[];
+    for(const r of R){try{const j=await tkYubor({lot:x.lot,lot_id:String(x.lot).slice(-7),nomi:x.name,soni:x.qty,boshl_narx:x.price,narx:r.n,tugash:x.end.toISOString(),firmalar:[r.k],izoh:$('tkI').value});n+=j.yozildi||0;(j.xatolar||[]).forEach(e=>X.push(e));}catch(e){X.push(qisqa(r.k)+': '+e.message);}}
+    await navbatOl();$('tkX2').innerHTML=(n?'✅ <b>'+n+'</b> ta firma navbatga qo\'yildi':'❌ hech biri yozilmadi')+(X.length?' · ⚠️ '+esc(X.join('; ')):'');if(tab==='e')render();
+    if(!X.length)setTimeout(()=>{$('tk').hidden=true;},1200);else $('tkB').disabled=false;
   };
 }
 function _tkN(){return Number(String(($('tkN')||{}).value||'').replace(/\s/g,'').replace(',','.'))||0;}
