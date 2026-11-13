@@ -385,6 +385,11 @@ a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
   <div class="yoki"><span>yoki</span></div>
   <div id="tgW" class="tgw"></div>
 </div></div>
+<div class="md" id="tk" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="tkT">
+  <button class="mdx" id="tkX" aria-label="Yopish">×</button>
+  <h2 id="tkT">📝 Taklif navbati</h2>
+  <div id="tkBody"></div>
+</div></div>
 <div class="md" id="fm" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="fT">
   <button class="mdx" id="fX" aria-label="Yopish">×</button>
   <h2 id="fT">Firmalarim</h2>
@@ -865,6 +870,46 @@ function bizmi(nom){
   const F=[...((MEN&&MEN.firmalar)||[]).map(f=>f.korxona),...((D.korxonalar)||[]).map(z=>z.nom)];
   return F.some(f=>{const a=k(f);if(!a)return false;if(a===n)return true;const [q,u]=a.length<n.length?[a,n]:[n,a];return q.length>=6&&u.startsWith(q.slice(0,Math.min(q.length,14)));});
 }
+// ---------- 📝 Taklif navbati (2-bosqich): narx shu yerda belgilanadi → "AL-BIRJACHIM Ishchi" dasturi ochib to'ldiradi → xodim E-IMZO bilan yuboradi ----------
+let NAVBAT=[];
+const TKH={kutilmoqda:'⏳ navbatda',ochildi:'📂 ochildi',yuborildi:'✅ yuborildi',xato:'⚠️ xato',bekor:'✕ bekor'};
+async function navbatOl(){try{const j=await api('?navbat=1');NAVBAT=j.navbat||[];}catch(e){NAVBAT=[];}}
+function tkLot(lot){return NAVBAT.filter(r=>String(r.lot)===String(lot)&&r.holat!=='bekor');}
+function tkTugma(x){const L=tkLot(x.lot);const faol=L.filter(r=>r.holat==='kutilmoqda'||r.holat==='ochildi').length,yub=L.filter(r=>r.holat==='yuborildi').length;
+  return '<button class="sm2'+(faol||yub?' ok':'')+'" data-tk="'+esc(x.lot)+'" title="Narx belgilab navbatga qo\'yish — Ishchi dasturi ochib to\'ldiradi">📝 '+(yub?'✅ '+yub:faol?'⏳ '+faol:'Taklif')+'</button>';}
+function tkFirmalar(x){return [...new Set([...(x.k||[]),...(((MEN&&MEN.firmalar)||[]).filter(f=>f.holat==='tasdiq').map(f=>f.korxona))])];}
+async function tkYubor(body){
+  const r=await fetch(API+'?navbat_qosh=1',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','x-sessiya':ses()},body:JSON.stringify(body)});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok||!j.ok)throw new Error(j.xato||('HTTP '+r.status));return j;
+}
+function tkOch(lot){
+  const x=(D.e||[]).find(z=>String(z.lot)===String(lot));if(!x){alert('Lot topilmadi — sahifani yangilang');return;}
+  const T=tavsiya(x),F=tkFirmalar(x),L=tkLot(lot);
+  let h='<div style="font-weight:700">'+esc(x.name)+'</div><div class="mut sm">Lot '+esc(x.lot)+' · '+x.qty.toLocaleString('ru-RU')+' dona · boshlang\'ich <b>'+fmt(x.price)+'</b> · demping &lt; '+fmt(x.price*.8)+' · tugash '+dstr(x.end)+' ('+left(x.end)+')</div>';
+  if(T)h+='<div class="tv" style="margin:8px 0"><span class="lb">Tavsiya</span> <b>'+fmt(T.n)+'</b> (−'+T.foiz+'%) · ehtimol: <i style="color:'+T.c+'">'+T.eh+'</i><div class="mut sm">'+esc(T.asos.join(' · '))+'</div></div>';
+  if(L.length)h+='<div class="mut sm" style="margin:6px 0"><b>Shu lot navbatda:</b><br>'+L.map(r=>esc(qisqa(r.korxona))+' — '+fmt(r.narx)+' · '+(TKH[r.holat]||r.holat)+(r.xato?' ('+esc(r.xato)+')':'')).join('<br>')+'</div>';
+  h+='<div style="margin-top:8px"><b>Dona narxi (so\'m)</b></div><input id="tkN" inputmode="decimal" style="width:100%;font-size:18px;font-weight:700;padding:8px" value="'+(T?T.n:Math.round(x.price))+'">'+
+    '<div id="tkNx" class="mut sm"></div>'+
+    '<div style="margin-top:8px"><b>Qaysi firmalardan</b> <span class="mut sm">(shu lot kabinetida ko\'ringan firmalar oldindan belgilangan)</span></div><div class="fch">'+
+    (F.length?F.map(k=>'<label><input type="checkbox" class="tkF" value="'+esc(k)+'"'+((x.k||[]).includes(k)?' checked':'')+'> '+esc(k)+'</label>').join(''):'<span class="mut sm">Firma yo\'q</span>')+'</div>'+
+    '<input id="tkI" placeholder="Izoh (ixtiyoriy)" style="width:100%;padding:6px;margin-top:4px">'+
+    '<button class="ok wide" id="tkB" style="margin-top:10px">📝 Navbatga qo\'yish</button><p class="mut sm" id="tkX2">Navbatga tushgach, <b>AL-BIRJACHIM Ishchi</b> dasturidagi «Takliflar navbati» da chiqadi: xodim «Ochish va to\'ldirish» ni bosadi, hisob raqamini tanlab, E-IMZO bilan o\'zi yuboradi.</p>';
+  $('tkBody').innerHTML=h;$('tk').hidden=false;
+  const nx=()=>{const v=_tkN();$('tkNx').innerHTML=v>0?('jami: <b>'+fmt(v*x.qty)+'</b> · boshlang\'ichdan −'+Math.round((1-v/x.price)*100)+'%'+(v<x.price*.8?' · <b style="color:#b42318">demping chegarasidan past!</b>':'')+(v>x.price?' · <b style="color:#b42318">boshlang\'ichdan baland!</b>':'')):'';};
+  $('tkN').oninput=nx;nx();
+  $('tkB').onclick=async()=>{
+    const v=_tkN(),firmalar=[...document.querySelectorAll('#tkBody .tkF:checked')].map(c=>c.value);
+    if(!(v>0)){alert('Narxni kiriting');return;}if(v>x.price){alert('Narx boshlang\'ich narxdan baland bo\'lmasin');return;}if(!firmalar.length){alert('Kamida bitta firmani belgilang');return;}
+    if(v<x.price*.8&&!confirm('Narx demping chegarasidan ('+fmt(x.price*.8)+') past. Davom etamizmi?'))return;
+    $('tkB').disabled=true;$('tkX2').textContent='Yuborilmoqda…';
+    try{const r=await tkYubor({lot:x.lot,lot_id:String(x.lot).slice(-7),nomi:x.name,soni:x.qty,boshl_narx:x.price,narx:v,tugash:x.end.toISOString(),firmalar,izoh:$('tkI').value});
+      await navbatOl();$('tkX2').innerHTML='✅ <b>'+r.yozildi+'</b> ta firma navbatga qo\'yildi'+(r.xatolar&&r.xatolar.length?' · ⚠️ '+esc(r.xatolar.join('; ')):'');if(tab==='e')render();setTimeout(()=>{$('tk').hidden=true;},1200);}
+    catch(e){$('tkX2').textContent='❌ '+e.message;$('tkB').disabled=false;}
+  };
+}
+function _tkN(){return Number(String(($('tkN')||{}).value||'').replace(/\s/g,'').replace(',','.'))||0;}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-tk]');if(b){e.preventDefault();tkOch(b.dataset.tk);}});
 // ---------- ⭐ Belgilash: tugashiga 30 daqiqa qolganda Telegram eslatma ----------
 let BELGI=new Set();
 async function belgilarOl(){try{const j=await api('?belgilar=1');BELGI=new Set((j.belgilar||[]).map(b=>String(b.lot)));}catch(e){}if($('bSoni'))$('bSoni').textContent=BELGI.size;}
@@ -906,7 +951,9 @@ async function renderS(majbur){
   const R=TSD.lotlar||[],f=TSf,YO=TSD.yonalish||{},adm=!!(MEN&&MEN.admin);
   const yoBor=Object.keys(YO).length;
   const mn=(Number(String(f.min).replace(',','.'))||0)*1e6,q=f.q.trim().toLowerCase();
-  const L=R.filter(x=>(!f.mos||!yoBor||x.firmalar.length)&&(!f.firma||x.firmalar.includes(f.firma))&&(!f.v||x.viloyat===f.v)&&(!f.k||x.kategoriya===f.k)&&Number(x.summa)>=mn&&(!q||(String(x.nomi)+' '+x.kategoriya+' '+x.buyurtmachi+' '+x.lot).toLowerCase().includes(q)));
+  // Chapdagi "Korxona" tanlovi: tanlangan firmaga mos lotlargina ko'rinadi
+  const kxF=KX?Object.keys(YO).filter(k=>k===KX||qisqa(k)===qisqa(KX)):null;
+  const L=R.filter(x=>(!kxF||x.firmalar.some(k=>kxF.includes(k)))&&(!f.mos||!yoBor||x.firmalar.length)&&(!f.firma||x.firmalar.includes(f.firma))&&(!f.v||x.viloyat===f.v)&&(!f.k||x.kategoriya===f.k)&&Number(x.summa)>=mn&&(!q||(String(x.nomi)+' '+x.kategoriya+' '+x.buyurtmachi+' '+x.lot).toLowerCase().includes(q)));
   const opt=(arr,val,bosh,lab)=>'<option value="">'+bosh+'</option>'+arr.map(v=>'<option value="'+esc(v)+'"'+(v===val?' selected':'')+'>'+esc(lab?lab(v):v)+'</option>').join('');
   let h='<div class="pn" style="margin-bottom:12px"><h4 style="margin:0 0 6px">📝 Taklif so\'rovi — xarid.uzex.uz</h4><div class="note">Ta\'mirlash, qurilish, xizmatlar va boshqa "Taklif so\'rovi" lotlari. Robot har 10–15 daqiqada yangilaydi. Firma yo\'nalishiga mos yangi lotlar soatlik Telegram hisobotida <b>📝 Taklif so\'rovi</b> bo\'limida keladi.</div>'+
     (adm?'<div style="margin-top:8px"><button class="sm2'+(yoBor?'':' ok')+'" id="sYo">⚙️ Firmalar yo\'nalishi'+(yoBor?' ('+Object.keys(YO).map(qisqa).join(', ')+')':' — belgilanmagan')+'</button></div>':'')+
@@ -1102,7 +1149,7 @@ function render(){
   $('tb').innerHTML=view.map(x=>{
     const cls=x.end<=now?' class="end"':'';
     if(tab==='k')return '<tr'+cls+'><td>'+yulduz(x)+esc(x.lot)+'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div></td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+(x.kod?' · '+esc(x.kod):'')+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td>'+(/faol/i.test(x.holat)?'<span class="hl kutilmoqda">Savdo faol</span>':'<span class="hl bitim_yoq">'+esc(x.holat.replace(/^Savdo tugadi\s*\/?\s*/,'Tugadi ').trim()||'Tugadi')+'</span>')+(x.golib?'<div class="g">🏆 '+esc(x.golib)+'</div>':'')+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Kabinet</a></td></tr>';
-    if(tab==='e')return '<tr'+cls+'><td>'+yulduz(x)+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'<div class="dm" title="Boshlang\'ich narxdan 20% past — demping chegarasi">demping &lt; '+fmt(x.price*.8)+'</div>'+tavsiyaHtml(x)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+xaridorHtml(x)+'</td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
+    if(tab==='e')return '<tr'+cls+'><td>'+yulduz(x)+esc(x.lot)+(x.k.length?'<div class="g">'+x.k.map(k=>'<span class="kb">'+esc(qisqa(k))+'</span>').join(' ')+'</div>':'')+'</td><td>'+esc(x.name)+'<div class="g">'+esc(x.g)+'</div></td><td class="num">'+x.qty.toLocaleString('ru-RU',{maximumFractionDigits:2}).replace(/ /g,' ')+'</td><td class="num">'+fmt(x.price)+'<div class="dm" title="Boshlang\'ich narxdan 20% past — demping chegarasi">demping &lt; '+fmt(x.price*.8)+'</div>'+tavsiyaHtml(x)+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+xaridorHtml(x)+'</td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a><br>'+tkTugma(x)+'</td></tr>';
     return '<tr'+cls+'><td>'+esc(x.lot)+'<div class="g">'+esc(x.tur)+'</div></td><td>'+esc(x.cust)+'<div class="g" title="'+esc(x.cat)+'">'+esc(toifa(x.cat))+'</div></td><td class="prods">'+esc(x.name)+(x.n>1?' <span class="g">('+x.n+' xil)</span>':'')+'</td><td class="num"><b>'+fmt(x.sum)+'</b></td><td>'+dstr(x.end)+'<br>'+left(x.end)+'</td><td><a href="'+x.url+'" target="_blank" rel="noopener">Ochish</a></td></tr>';
   }).join('')||'<tr><td colspan="8" class="note">Hech narsa topilmadi.</td></tr>';
   $('more').hidden=L.length<=limit;
@@ -1152,10 +1199,11 @@ function setKX(k){
 $('gKx').addEventListener('change',()=>setKX($('gKx').value));
 $('korx').addEventListener('change',()=>setKX($('korx').value));
 let avtoT=null;
-function boshlash(){if(!ses()){kirishOyna();return;}clearInterval(avtoT);avtoT=setInterval(()=>{if(!document.hidden)load();},10*60e3);menOl().then(tgSorov);load();loadN();belgilarOl().then(()=>{if(tab==='e'||tab==='k')render();});}
+function boshlash(){if(!ses()){kirishOyna();return;}clearInterval(avtoT);avtoT=setInterval(()=>{if(!document.hidden)load();},10*60e3);menOl().then(tgSorov);load();loadN();belgilarOl().then(()=>{if(tab==='e'||tab==='k')render();});navbatOl().then(()=>{if(tab==='e')render();});}
 $('fBtn').onclick=()=>{menOl().then(firmalarOyna);};
 $('chBtn').onclick=chiqish;
 $('fX').onclick=()=>{$('fm').hidden=true;};
+$('tkX').onclick=()=>{$('tk').hidden=true;};
 $('fm').onclick=e=>{if(e.target===$('fm'))$('fm').hidden=true;};
 boshlash();
 </script>
