@@ -34,7 +34,7 @@
 </head>
 <body>
 <header>
-  <b>📊 AL-BIRJACHIM Ishchi</b><span class="mu" style="color:#d6e6ff">· 1-bosqich: lotlarni yig'ish</span>
+  <b>📊 AL-BIRJACHIM Ishchi</b><span class="mu" style="color:#d6e6ff">· lotlarni yig'ish + taklif navbati</span>
   <span class="sp"></span>
   <button class="ok" id="bHammasi">🔄 Hozir yig'ish</button>
 </header>
@@ -50,6 +50,12 @@
     </div>
     <div class="mu" style="margin-bottom:8px">Har bir firma <b>bir marta</b> ulanadi: ochilgan oynada kalitni tanlab, E-IMZO parolini kiritasiz. Keyin dastur shu firmaning kabinetidan lotlarni o'zi yig'adi. Sessiya tugasa — «Kirish» ni yana bosasiz.</div>
     <div id="fl"></div>
+  </div>
+
+  <div class="pn" id="pTk">
+    <div class="row" style="margin-bottom:6px"><h3 style="margin:0">📝 Takliflar navbati <span class="tg" id="tkSoni">0</span></h3><span style="flex:1"></span><button id="bTk">🔄 Yangilash</button></div>
+    <div class="mu" style="margin-bottom:8px">Narx AL-BIRJACHIM saytida (lot yonidagi «📝 Taklif») belgilanadi. Bu yerda <b>«▶ Ochish va to'ldirish»</b> ni bosing — lot ochiladi va narx yoziladi. Keyin <b>hisob raqamini tanlang, «Yuborish» ni bosing va E-IMZO bilan tasdiqlang</b>. So'ng shu yerda <b>«✅ Yubordim»</b>.</div>
+    <div id="tl"></div>
   </div>
 
   <div class="pn">
@@ -107,7 +113,29 @@ $('cAvto').onchange = () => ishchi.sozla({ avto: $('cAvto').checked });
 $('cAuto').onchange = () => ishchi.sozla({ autostart: $('cAuto').checked });
 $('nHar').onchange = () => ishchi.sozla({ har: +$('nHar').value });
 ishchi.on('holat', (d) => { H = d; chiz(); });
+let TK = [];
+const TKH = { kutilmoqda: 'navbatda', ochildi: 'ochildi — yuborishni kutmoqda', xato: 'xato' };
+function tkChiz() {
+  $('tkSoni').textContent = TK.length;
+  $('tl').innerHTML = TK.length ? TK.map((r) => {
+    const q = r.tugash ? Math.round((new Date(r.tugash) - Date.now()) / 60e3) : null;
+    const qol = q == null ? '' : q < 60 ? q + ' daq qoldi' : q < 1440 ? Math.floor(q / 60) + ' soat qoldi' : Math.floor(q / 1440) + ' kun qoldi';
+    return '<div class="f"><span class="tg ' + (r.holat === 'ochildi' ? 'ish' : r.holat === 'xato' ? 'xato' : '') + '">' + esc(TKH[r.holat] || r.holat) + '</span>' +
+      '<div><div class="nm">' + esc(r.nomi || r.lot) + '</div><div class="mu">' + esc(r.fnom || r.korxona) + (r.fid ? '' : ' · <span style="color:#ffb0a8">dasturga ulanmagan</span>') + ' · lot ' + esc(r.lot) +
+      ' · narx <b style="color:#e8eef7">' + Number(r.narx).toLocaleString('ru-RU') + '</b>' + (r.soni ? ' × ' + r.soni : '') + (qol ? ' · ' + qol : '') + (r.izoh ? ' · ' + esc(r.izoh) : '') + (r.xato ? '<br><span style="color:#ffb0a8">' + esc(r.xato) + '</span>' : '') + '</div></div>' +
+      '<div class="ac-btns"><button class="ac" data-to="' + r.id + '"' + (r.fid ? '' : ' disabled') + '>▶ Ochish va to\'ldirish</button><button class="ok" data-tyo="' + r.id + '">✅ Yubordim</button><button class="no" data-tbe="' + r.id + '" title="Bekor qilish">✕</button></div></div>';
+  }).join('') : '<div class="mu">Navbat bo\'sh.</div>';
+}
+ishchi.on('navbat', (L) => { TK = L || []; tkChiz(); });
+$('bTk').onclick = () => ishchi.navbat();
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.to) { b.disabled = true; b.textContent = '⏳ Ochilmoqda…'; const r = await ishchi.tkOch(+b.dataset.to); if (r && r.xato) alert(r.xato); b.disabled = false; tkChiz(); }
+  else if (b.dataset.tyo) { if (confirm('Taklif E-IMZO bilan yuborildimi?')) ishchi.tkHolat(+b.dataset.tyo, 'yuborildi'); }
+  else if (b.dataset.tbe) { if (confirm('Bu vazifa bekor qilinsinmi?')) ishchi.tkHolat(+b.dataset.tbe, 'bekor'); }
+});
 ishchi.on('jurnal', (q) => { const j = $('jr'); j.textContent += q + '\n'; j.scrollTop = j.scrollHeight; });
+ishchi.navbat().then((L) => { TK = L || []; tkChiz(); });
 ishchi.holat().then((L) => { $('jr').textContent = (L || []).join('\n') + (L && L.length ? '\n' : ''); $('jr').scrollTop = 1e9; });
 setInterval(chiz, 30000);
 </script>
