@@ -13,6 +13,33 @@
   };
   const p = P.xarid.host.test(h) ? P.xarid : P.koop.host.test(h) ? P.koop : null;
 
+  // ---- 📝 Taklif: saytdagi «▶ Ochish» orqali ochilgan lot sahifasida narxni yozish ----
+  // Narx sayt tomonidan oyna nomida (window.name = "bjn:<narx>:<id>") keladi. Faqat yozadi:
+  // hisob raqamini tanlash, «Yuborish» va E-IMZO — xodimning o'zi.
+  if (P.xarid.host.test(h) && /\/lot-details\//.test(location.pathname)) {
+    const m = /^bjn:([\d.]+):(\d+)/.exec(window.name || '');
+    if (!m) { alert("AL-BIRJACHIM: bu lot saytdagi «📝 Taklif» → «▶ Ochish» orqali ochilmagan, narx noma'lum."); return; }
+    (async () => {
+      const sl = (ms) => new Promise((r) => setTimeout(r, ms));
+      let b = null;
+      for (let i = 0; i < 40 && !b; i++) { b = [...document.querySelectorAll('button')].find((x) => /^\s*Taklif berish\s*$/i.test(x.textContent) && x.offsetParent); if (!b) await sl(500); }
+      if (!b) { alert('AL-BIRJACHIM: «Taklif berish» tugmasi topilmadi — kabinetga kirilmagan yoki lot yopilgan.'); return; }
+      b.click();
+      let inp = null;
+      for (let i = 0; i < 25 && !inp; i++) {
+        await sl(400);
+        const md = [...document.querySelectorAll('[role=dialog],.modal-content,.modal')].find((x) => x.offsetParent && /Taklif shakli/i.test(x.textContent));
+        if (md) inp = [...md.querySelectorAll('input')].find((x) => x.offsetParent && x.type !== 'hidden' && x.type !== 'checkbox' && !x.readOnly && !x.closest('ng-select,.ng-select'));
+      }
+      if (!inp) { alert('AL-BIRJACHIM: taklif oynasi ochilmadi.'); return; }
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      inp.focus(); set.call(inp, m[1]);
+      ['input', 'change', 'keyup', 'blur'].forEach((t) => inp.dispatchEvent(new Event(t, { bubbles: true })));
+      inp.style.outline = '3px solid #22a35a';
+    })();
+    return;
+  }
+
   // ---- Panel ----
   let box = document.getElementById('birjachi-panel');
   if (!box) {
