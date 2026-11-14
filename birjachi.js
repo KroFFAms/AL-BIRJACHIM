@@ -60,7 +60,7 @@
     const qatorlar = () => [...document.querySelectorAll('tbody tr')].filter((x) => x.querySelector('td'));
     const rid = (r) => (r.querySelector('td') || r).textContent.trim().split(/\s+/)[0];
     const yolga = (u) => { history.pushState({}, '', u); window.dispatchEvent(new PopStateEvent('popstate', { state: {} })); };
-    const kut = async (f, ms) => { for (let t = 0; t < ms; t += 400) { const v = f(); if (v) return v; await sl(400); } return null; };
+    const kut = async (f, ms) => { const tugash = Date.now() + ms; while (Date.now() < tugash) { const v = f(); if (v) return v; await sl(400); } return f() || null; };
     (async () => {
       if (!/\/offer-list\/8$/.test(location.pathname)) { msg('Avval chap menyuda <b>Mening mahsulotlarim → Срок истек</b> ni oching, keyin qayta bosing.'); S.yoq = true; }
       // 1) Hamma sahifalardan «Продлить» bor tovarlarni yig'amiz
@@ -103,6 +103,10 @@
         yolga('/provider/shop/republish-offer/' + z.id);
         const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]{2,}$/.test(x.value.trim())).length >= 2; return b && n && !b.disabled ? b : null; }, 40000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
+        // Katalogdagi mahsulot o'chirilgan bo'lsa «Tovar (ish / xizmat)» bo'sh keladi — joylab bo'lmaydi
+        await sl(1500);
+        const tovarBosh = (() => { const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /^\*?\s*(Tovar \(ish \/ xizmat\)|Товар \(работа \/ услуга\))/i.test(e.textContent.trim()) && e.textContent.trim().length < 40); let b = lb; let ns = null; for (let k = 0; k < 5 && b && !ns; k++) { b = b.parentElement; ns = b && b.querySelector('ng-select'); } return ns && !ns.querySelector('.ng-value'); })();
+        if (tovarBosh) { X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak'); continue; }
         await sl(2500);
         // Yetkazib berish muddati bo'sh bo'lsa — to'ldiramiz
         try {
