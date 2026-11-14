@@ -72,7 +72,10 @@
           for (const r of qatorlar()) {
             const id = rid(r);
             const a = [...r.querySelectorAll('.dropdown-item')].map((x) => x.textContent.trim());
-            if (a.includes('Продлить') && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: false });
+            // Xarid qoidasi: tugaganiga 90 kundan oshgan tovarni uzaytirib bo'lmaydi — ochmasdan o'tkazamiz
+            const sn = [...r.textContent.matchAll(/(\d{2})\.(\d{2})\.(\d{4})/g)].pop();
+            const eski = !!sn && Date.now() - new Date(+sn[3], +sn[2] - 1, +sn[1]).getTime() > 89 * 864e5;
+            if (a.includes('Продлить') && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: false, eski });
             else if (a.some((x) => /Продлить \(/.test(x)) && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: true });
           }
           msg('Ro\'yxat yig\'ilmoqda… ' + ROY.length + ' ta');
@@ -83,9 +86,10 @@
           if (!ok) break;
         }
       }
-      const ISH = ROY.filter((z) => !z.kat && !qil.has(z.id));
+      const ESKI = ROY.filter((z) => !z.kat && z.eski);
+      const ISH = ROY.filter((z) => !z.kat && !z.eski && !qil.has(z.id));
       const KAT = ROY.filter((z) => z.kat);
-      if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
+      if (!S.yoq && !ISH.length) { msg((ESKI.length ? '⏳ ' + ESKI.length + ' ta tovar tugaganiga 90 kundan oshgan — uzaytirib bo\'lmaydi. ' : '') + 'Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
       if (!S.yoq && !confirm('AL-BIRJACHIM: ' + ISH.length + ' ta tovar navbat bilan qayta joylanadi (Продлить → Tovarni joylashtirish).\n' + (KAT.length ? KAT.length + ' ta «Каталог» tovari o\'tkazib yuboriladi (qo\'lda).\n' : '') + 'E-IMZO so\'rasa — tasdiqlang. Boshlaymizmi?')) { msg('Bekor qilindi.'); S.yoq = true; }
       // Yetkazib berish muddati bo'sh bo'lsa — qancha kun qo'yilsin (xodim bir marta kiritadi)
       let YKUN = '';
@@ -169,7 +173,7 @@
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); } else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
         await sl(500);
       }
-      if (!S.yoq) msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi (moderatsiyada)' + (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 6).join('<br>') + '</span>' : '') + (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : ''));
+      if (!S.yoq) msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi (moderatsiyada)' + (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 6).join('<br>') + '</span>' : '') + (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') + (ESKI.length ? '<br>⏳ ' + ESKI.length + ' ta — tugaganiga 90 kundan oshgan, uzaytirib bo\'lmaydi (yangi oferta kerak)' : ''));
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
       window.__BJ_AKTIV = null;
       if (!S.yoq) yolga('/provider/shop/offer-list/8');
