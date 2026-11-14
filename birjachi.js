@@ -96,6 +96,20 @@
         const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]{2,}$/.test(x.value.trim())).length >= 2; return b && n && !b.disabled ? b : null; }, 40000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
         await sl(2500);
+        // Hisob raqamni qayta tanlash (eski ofertadagi raqam endi yaroqsiz bo'lishi mumkin)
+        try {
+          const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /Hisob raqamni tanlang|Выберите расчетный счет|Hisob raqam/i.test(e.textContent.trim()) && e.textContent.trim().length < 40);
+          let box = lb; let ns = null;
+          for (let k = 0; k < 5 && box && !ns; k++) { box = box.parentElement; ns = box && box.querySelector('ng-select'); }
+          if (ns) {
+            const joriy = (ns.querySelector('.ng-value') || {}).textContent || '';
+            const c = ns.querySelector('.ng-select-container') || ns;
+            c.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+            const ops = await kut(() => { const o = [...document.querySelectorAll('.ng-dropdown-panel .ng-option')].filter((x) => !x.classList.contains('ng-option-disabled')); return o.length ? o : null; }, 4000);
+            if (ops) { const op = ops.find((x) => x.textContent.trim() === joriy.trim()) || ops[0]; op.click(); await sl(600); }
+            document.body.click();
+          }
+        } catch (_) { /* */ }
         tg.scrollIntoView({ block: 'center' });
         await sl(500);
         tg.click();
