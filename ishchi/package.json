@@ -1,7 +1,7 @@
 {
   "name": "al-birjachim-ishchi",
   "productName": "AL-BIRJACHIM Ishchi",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "AL-BIRJACHIM ishchi dasturi: firmalar kabinetlaridan lotlarni yig'adi",
   "main": "main.js",
   "author": "KROFF",
