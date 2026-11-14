@@ -104,10 +104,10 @@
         const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]{2,}$/.test(x.value.trim())).length >= 2; return b && n && !b.disabled ? b : null; }, 40000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
         // Katalogdagi mahsulot o'chirilgan bo'lsa «Tovar (ish / xizmat)» bo'sh keladi — joylab bo'lmaydi
-        await sl(1500);
+        await sl(600);
         const tovarBosh = (() => { const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /^\*?\s*(Tovar \(ish \/ xizmat\)|Товар \(работа \/ услуга\))/i.test(e.textContent.trim()) && e.textContent.trim().length < 40); let b = lb; let ns = null; for (let k = 0; k < 5 && b && !ns; k++) { b = b.parentElement; ns = b && b.querySelector('ng-select'); } return ns && !ns.querySelector('.ng-value'); })();
         if (tovarBosh) { X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak'); continue; }
-        await sl(2500);
+        await sl(400);
         // Yetkazib berish muddati bo'sh bo'lsa — to'ldiramiz
         try {
           const lb2 = [...document.querySelectorAll('label, span, div, p')].find((e) => e.childElementCount <= 1 && /^\*?\s*(Yetkazib berish muddati|Срок поставки)/i.test(e.textContent.trim()) && e.textContent.trim().length < 40);
@@ -125,7 +125,7 @@
           const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /Hisob raqamni tanlang|Выберите расчетный счет|Hisob raqam/i.test(e.textContent.trim()) && e.textContent.trim().length < 40);
           let box = lb; let ns = null;
           for (let k = 0; k < 5 && box && !ns; k++) { box = box.parentElement; ns = box && box.querySelector('ng-select'); }
-          if (ns) {
+          if (ns && false) { // hisob raqami o'zgartirilmaydi (kerak emas ekan)
             const joriy = (ns.querySelector('.ng-value') || {}).textContent || '';
             const c = ns.querySelector('.ng-select-container') || ns;
             c.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
@@ -135,7 +135,7 @@
           }
         } catch (_) { /* */ }
         tg.scrollIntoView({ block: 'center' });
-        await sl(500);
+        await sl(200);
         tg.click();
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         const t0 = Date.now();
@@ -147,7 +147,7 @@
           return er ? 'xato: ' + er.textContent.trim().slice(0, 80) : null;
         }, 180000);
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); } else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
-        await sl(1500);
+        await sl(500);
       }
       if (!S.yoq) msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi (moderatsiyada)' + (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 6).join('<br>') + '</span>' : '') + (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : ''));
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
