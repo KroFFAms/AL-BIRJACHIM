@@ -350,6 +350,7 @@ a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
     <a href="https://ekoplatforma.uz/home" target="birja_eko" rel="noopener" title="Mahalliy ishlab chiqaruvchilar ekotizimi — kabinet"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 20A7 7 0 0 1 4 13c0-6 8-10 16-10 0 8-4 16-10 16z"/><path d="M4 20c4-4 7-6 11-8"/></svg></i><span><b>Eco</b><small>ekoplatforma.uz</small></span></a>
     <a href="https://xarid.uzex.uz/auction" target="birja_auksion" rel="noopener" title="Ochiq auksionlar"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 13-8.5 8.5a2.1 2.1 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg></i><span><b>Auksion</b><small>ochiq ro'yxat</small></span></a>
     <a href="https://autopilot.uz/app/main" target="birja_autopilot" rel="noopener" title="Avtopilot"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></i><span><b>Avtopilot</b><small>autopilot.uz</small></span></a>
+    <a href="#" id="rbBtn" title="AL-BIRJACHIM Robot — kompyuterga o'rnatiladigan dastur"><i><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><circle cx="9" cy="14" r="1.2"/><circle cx="15" cy="14" r="1.2"/><path d="M2 13v3M22 13v3"/></svg></i><span><b>Robot</b><small>kompyuterga o'rnatish</small></span></a>
   </nav>
   <div class="usr"><div><b id="uIsm">…</b><small id="uRol"></small></div>
     <button class="ub" id="fBtn" title="Firmalarim va tasdiq so'rovlari"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1"/></svg> Firmalarim <span class="bd" id="fBadge" hidden></span></button>
@@ -384,6 +385,25 @@ a{color:var(--pri);text-decoration:none}a:hover{text-decoration:underline}
   <p class="mut sm" id="kirXato"></p>
   <div class="yoki"><span>yoki</span></div>
   <div id="tgW" class="tgw"></div>
+</div></div>
+<div class="md" id="rb" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="rbT">
+  <button class="mdx" id="rbX" aria-label="Yopish">×</button>
+  <h2 id="rbT">🤖 AL-BIRJACHIM Robot</h2>
+  <p>Kompyuterga bir marta o'rnatiladi va o'zi ishlaydi:</p>
+  <ul style="margin:6px 0 10px 18px;line-height:1.6">
+    <li>🔄 hamma firmalar kabinetidan <b>lotlarni o'zi yig'adi</b> (har soatda);</li>
+    <li>♻️ har kuni ertalab <b>muddati o'tgan ofertalarni qayta joylaydi</b> (Продлить);</li>
+    <li>📝 saytda «Taklif» bilan navbatga qo'yilgan lotni <b>ochib, narxni yozadi</b> — yuborish va imzoni xodim qiladi.</li>
+  </ul>
+  <a id="rbDl" class="ok wide" style="display:block;text-align:center;padding:12px;border-radius:10px;text-decoration:none;font-weight:700" href="https://github.com/KroFFAms/AL-BIRJACHIM/releases" target="_blank" rel="noopener">⬇️ Robotni yuklab olish</a>
+  <p class="mut sm" id="rbV" style="margin-top:6px">Oxirgi versiya aniqlanmoqda…</p>
+  <ol style="margin:10px 0 0 18px;line-height:1.6">
+    <li>Yuklangan faylni oching → <b>O'rnatish</b> (eski versiya ustidan o'rnatsa ham firmalar saqlanadi).</li>
+    <li>Dasturda <b>«🔗 Ulash»</b> — AL-BIRJACHIM akkauntingizga bir marta kiring.</li>
+    <li><b>«➕ Firma qo'shish»</b> — har bir firmaga E-IMZO kaliti bilan bir marta kiring.</li>
+    <li>Har kuni ertalab E-IMZO parol so'rasa — kiriting va <b>«Запомнить на 6 час.»</b> ni belgilang. Qolganini robot o'zi qiladi.</li>
+  </ol>
+  <p class="mut sm" style="margin-top:8px">E-IMZO paroli faqat E-IMZO oynasiga kiritiladi — robot uni saqlamaydi.</p>
 </div></div>
 <div class="md" id="tk" hidden><div class="mdb" role="dialog" aria-modal="true" aria-labelledby="tkT">
   <button class="mdx" id="tkX" aria-label="Yopish">×</button>
@@ -1236,6 +1256,15 @@ $('fBtn').onclick=()=>{menOl().then(firmalarOyna);};
 $('chBtn').onclick=chiqish;
 $('fX').onclick=()=>{$('fm').hidden=true;};
 $('tkX').onclick=()=>{$('tk').hidden=true;};
+// 🤖 Robot (Ishchi dasturi) — oxirgi versiyani GitHub'dan olib, yuklab olish havolasini beradi
+$('rbX').onclick=()=>{$('rb').hidden=true;};
+$('rbBtn').onclick=async e=>{e.preventDefault();$('rb').hidden=false;
+  try{const L=await fetch('https://api.github.com/repos/KroFFAms/AL-BIRJACHIM/releases?per_page=15',{cache:'no-store'}).then(r=>r.json());
+    const R=(L||[]).find(r=>/^ishchi-v/.test(r.tag_name)&&(r.assets||[]).some(a=>/\.exe$/i.test(a.name)));
+    if(R){const a=R.assets.find(a=>/\.exe$/i.test(a.name));$('rbDl').href=a.browser_download_url;$('rbDl').removeAttribute('target');$('rbV').textContent='Versiya '+(a.name.match(/(\d+\.\d+\.\d+)/)||['',''])[1]+' · '+(a.size/1048576).toFixed(0)+' MB · '+new Date(R.published_at).toLocaleDateString('ru-RU');}
+    else $('rbV').textContent='Versiyalar ro\'yxati GitHub sahifasida.';}
+  catch(err){$('rbV').textContent='Versiyalar ro\'yxati GitHub sahifasida.';}
+};
 $('fm').onclick=e=>{if(e.target===$('fm'))$('fm').hidden=true;};
 boshlash();
 </script>
