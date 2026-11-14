@@ -2,7 +2,7 @@
 // Firmalar bir marta ulanadi (har biri o'z alohida sessiyasida), keyin dastur ularning
 // kabinetlaridan lotlarni o'zi yig'adi va AL-BIRJACHIM bazasiga yozadi.
 // FAQAT O'QIYDI: taklif bermaydi, hech narsani tasdiqlamaydi.
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, dialog, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,7 +16,7 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 // ---------- Sozlamalar ----------
 let CFG_FILE;
-let cfg = { firmalar: [], ses: '', har: 60, avto: true, autostart: true };
+let cfg = { firmalar: [], ses: '', har: 60, avto: true, autostart: true, akAvto: true, akVaqt: '09:00', akKun: 10, akOxirgi: '' };
 function yukla() { try { cfg = Object.assign(cfg, JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'))); } catch (_) { /* birinchi ishga tushish */ } }
 function saqla() { try { fs.writeFileSync(CFG_FILE, JSON.stringify(cfg, null, 2)); } catch (e) { log('Sozlama saqlanmadi: ' + e.message); } }
 
@@ -28,9 +28,9 @@ function log(m) {
   send('jurnal', q);
 }
 
-let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null;
+let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false;
 function send(ch, d) { try { if (win && !win.isDestroyed()) win.webContents.send(ch, d); } catch (_) { /* */ } }
-function holatYubor() { send('holat', { firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi }); }
+function holatYubor() { send('holat', { firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akOxirgi: cfg.akOxirgi, akIsh }); }
 function firma(id) { return cfg.firmalar.find((f) => f.id === id); }
 function yangila(f, o) { Object.assign(f, o); saqla(); holatYubor(); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -125,6 +125,7 @@ async function yigish(id) {
 }
 async function hammasi() {
   if (ishlayapti) return;
+  if (akIsh) { keyingi = Date.now() + 10 * 60e3; clearTimeout(taymer); taymer = setTimeout(hammasi, 10 * 60e3); holatYubor(); return; }
   ishlayapti = true; holatYubor();
   log('Hamma firmalar yig\'ilmoqda…');
   for (const f of cfg.firmalar) { if (f.ochiq === false) continue; await yigish(f.id); }
@@ -197,6 +198,60 @@ async function tkOch(id) {
   return { ok: true };
 }
 
+// ---------- ♻️ Ofertalarni aktiv qilish (har kuni, hamma xarid firmalari) ----------
+// «Mening mahsulotlarim → Срок истек» dagi tovarlarni saytning o'z «Продлить» anketasi orqali qayta joylaydi
+// (birjachi.js dagi mantiq). E-IMZO paroli — E-IMZO oynasida, xodim kiritadi («Запомнить на 6 час.»).
+function bildir(t, m) { try { new Notification({ title: t, body: m }).show(); } catch (_) { /* */ } }
+const bugun = () => new Date().toLocaleDateString('sv-SE');
+async function aktivFirma(f) {
+  const w = firmaOynasi(f, true);
+  yangila(f, { akHolat: 'aktiv qilinmoqda…' });
+  await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8');
+  if (!ichkaridami(f, w)) { yangila(f, { holat: 'kirish kerak', akHolat: 'kirish kerak' }); log((f.nom || f.id) + ': aktiv qilish — sessiya tugagan, «Kirish» ni bosing'); return 'kirish kerak'; }
+  await sleep(2000);
+  const js = await skriptOl('birjachi.js');
+  const kun = String(Math.max(5, +cfg.akKun || 10));
+  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';' + js + '\n;1');
+  const t0 = Date.now(); let nat = '';
+  await sleep(3000);
+  while (Date.now() - t0 < 3 * 3600e3) {
+    if (w.isDestroyed()) return 'oyna yopildi';
+    let r = null;
+    try { r = JSON.parse(await w.webContents.executeJavaScript('JSON.stringify({ish:!!window.__BJ_AKTIV,m:(document.getElementById("bjAkM")||{}).innerText||""})')); } catch (_) { /* sahifa band */ }
+    if (r) { nat = r.m; if (!r.ish) break; const q = /(\d+)\/(\d+)/.exec(r.m); yangila(f, { akHolat: q ? q[0] + ' …' : 'aktiv qilinmoqda…' }); }
+    await sleep(4000);
+  }
+  const ok = (/(\d+)\s*ta qayta joylandi/.exec(nat) || [])[1] || '0';
+  const xa = (/(\d+)\s*ta o.tmadi/.exec(nat) || [])[1] || '0';
+  const qisqa = /topilmadi/.test(nat) ? 'muddati o\'tgan tovar yo\'q' : '✅ ' + ok + (xa !== '0' ? ' · ⚠️ ' + xa : '');
+  yangila(f, { akHolat: qisqa, akSana: new Date().toISOString(), akIzoh: nat.slice(0, 1500) });
+  log((f.nom || f.id) + ': aktiv qilish — ' + qisqa + (xa !== '0' ? '\n' + nat.split('\n').slice(2, 12).join('\n') : ''));
+  try { w.hide(); } catch (_) { /* */ }
+  return qisqa;
+}
+async function aktivHammasi() {
+  if (akIsh) return;
+  for (let i = 0; i < 90 && ishlayapti; i++) await sleep(20e3); // yig'ish tugashini kutamiz
+  akIsh = true; holatYubor();
+  log('♻️ Ofertalarni aktiv qilish boshlandi. E-IMZO parol so\'rasa — kiriting va «Запомнить на 6 час.» ni belgilang.');
+  bildir('AL-BIRJACHIM', 'Ofertalarni aktiv qilish boshlandi — E-IMZO parol so\'rasa, kiriting');
+  const N = [];
+  for (const f of cfg.firmalar) {
+    if (f.ochiq === false || f.platforma !== 'xarid') continue;
+    try { N.push((f.nom || f.id) + ': ' + await aktivFirma(f)); } catch (e) { yangila(f, { akHolat: 'xato' }); N.push((f.nom || f.id) + ': xato — ' + e.message); log((f.nom || f.id) + ': aktiv qilish XATO — ' + e.message); }
+  }
+  cfg.akOxirgi = bugun(); saqla();
+  akIsh = false; holatYubor();
+  log('♻️ Tayyor:\n' + N.join('\n'));
+  bildir('AL-BIRJACHIM — ofertalar', N.join('\n').slice(0, 250));
+}
+function akTekshir() {
+  if (!cfg.akAvto || akIsh || cfg.akOxirgi === bugun()) return;
+  const [hh, mm] = String(cfg.akVaqt || '09:00').split(':').map(Number);
+  const n = new Date();
+  if (n.getHours() * 60 + n.getMinutes() >= (hh || 0) * 60 + (mm || 0)) aktivHammasi();
+}
+
 // ---------- AL-BIRJACHIM akkauntiga ulash (sayt sessiyasi — lotlar sizning akkauntingizga bog'lanadi) ----------
 async function saytgaUlash() {
   const w = new BrowserWindow({ width: 1100, height: 800, title: 'AL-BIRJACHIM — kirish', autoHideMenuBar: true, webPreferences: { partition: 'persist:sayt', contextIsolation: true, sandbox: true } });
@@ -228,6 +283,7 @@ function trayQur() {
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Ochish', click: () => { win.show(); win.focus(); } },
     { label: 'Hozir yig\'ish', click: () => hammasi() },
+    { label: 'Ofertalarni aktiv qilish', click: () => aktivHammasi() },
     { type: 'separator' },
     { label: 'Chiqish', click: () => { app.isQuitting = true; app.quit(); } },
   ]));
@@ -242,7 +298,7 @@ ipcMain.handle('qosh', async (_e, platforma) => {
   kirish(f.id);
 });
 ipcMain.handle('kirish', (_e, id) => { kirish(id); });
-ipcMain.handle('yigish', async (_e, id) => { if (!ishlayapti) await yigish(id); });
+ipcMain.handle('yigish', async (_e, id) => { if (!ishlayapti && !akIsh) await yigish(id); });
 ipcMain.handle('hammasi', () => { hammasi(); });
 ipcMain.handle('korsat', (_e, id) => { const f = firma(id); if (f) firmaOynasi(f, true); });
 ipcMain.handle('ochiq', (_e, id, v) => { const f = firma(id); if (f) yangila(f, { ochiq: !!v }); });
@@ -254,6 +310,7 @@ ipcMain.handle('ochir', async (_e, id) => {
   cfg.firmalar = cfg.firmalar.filter((x) => x.id !== id); saqla(); holatYubor();
 });
 ipcMain.handle('sayt', () => { saytgaUlash(); });
+ipcMain.handle('aktiv', () => { aktivHammasi(); });
 ipcMain.handle('navbat', async () => { await navbatOl(); return NAVBAT; });
 ipcMain.handle('tk_och', (_e, id) => tkOch(id));
 ipcMain.handle('tk_holat', async (_e, id, holat) => {
@@ -263,6 +320,9 @@ ipcMain.handle('tk_holat', async (_e, id, holat) => {
 ipcMain.handle('sozla', (_e, o) => {
   if (o.har != null) cfg.har = Math.max(15, Math.min(720, +o.har || 60));
   if (o.avto != null) cfg.avto = !!o.avto;
+  if (o.akAvto != null) cfg.akAvto = !!o.akAvto;
+  if (o.akVaqt != null && /^\d{1,2}:\d{2}$/.test(o.akVaqt)) cfg.akVaqt = o.akVaqt;
+  if (o.akKun != null) cfg.akKun = Math.max(5, Math.min(90, +o.akKun || 10));
   if (o.autostart != null) { cfg.autostart = !!o.autostart; try { app.setLoginItemSettings({ openAtLogin: cfg.autostart }); } catch (_) { /* */ } }
   saqla(); rejala();
 });
@@ -285,6 +345,7 @@ else {
     // Ishga tushgandan 1 daqiqa keyin birinchi yig'ish
     if (cfg.avto && cfg.firmalar.length) { keyingi = Date.now() + 60e3; taymer = setTimeout(hammasi, 60e3); }
     navbatOl(); setInterval(navbatOl, 60e3); // taklif navbati har daqiqada
+    setTimeout(akTekshir, 3 * 60e3); setInterval(akTekshir, 60e3); // ofertalarni aktiv qilish — kuniga bir marta
     holatYubor();
   });
   app.on('window-all-closed', (e) => e.preventDefault());
