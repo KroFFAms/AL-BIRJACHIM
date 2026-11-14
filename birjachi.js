@@ -41,9 +41,11 @@
   }
 
   // ---- ♻️ Ofertalarni aktiv qilish: «Mening mahsulotlarim → Срок истек» sahifasida ----
-  // Har bir tovar uchun saytning o'z «Продлить» anketasini (republish-offer) shu oynada ochadi va
-  // «Tovarni joylashtirish» ni bosadi. E-IMZO so'rasa — xodim tasdiqlaydi. Narx/ma'lumotlar o'zgarmaydi.
-  if (P.xarid.host.test(h) && /\/provider\/shop\/(offer-list|republish-offer)\//.test(location.pathname)) {
+  // 1) To'liq anketali tovarlar — xaridning o'z ommaviy «Продлить» usuli bilan BITTA E-IMZO imzosi;
+  // 2) qolganlari — «Joylashtirish» nusxa anketasi (add-offer/<id>) orqali bittalab: yetkazish muddati va asosiy
+  //    surat to'ldiriladi; tanlash kerak bo'lgan maydon bo'sh bo'lsa — nomi bilan ro'yxatga yoziladi, yuborilmaydi.
+  // E-IMZO paroli — E-IMZO oynasida, xodim kiritadi. Narx/ma'lumotlar o'zgartirilmaydi.
+  if (P.xarid.host.test(h) && /\/provider\/shop\/(offer-list|republish-offer|add-offer)\//.test(location.pathname)) {
     if (window.__BJ_AKTIV) { alert('AL-BIRJACHIM: aktiv qilish allaqachon ishlayapti.'); return; }
     const S = (window.__BJ_AKTIV = { stop: false });
     const sl = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -51,59 +53,57 @@
     const qil = (() => { try { return new Set(JSON.parse(localStorage.getItem(LS) || '[]')); } catch (_) { return new Set(); } })();
     const saqla = () => { try { localStorage.setItem(LS, JSON.stringify([...qil].slice(-3000))); } catch (_) { /* */ } };
     const pn = document.createElement('div');
-    pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:360px';
+    pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:380px;max-height:60vh;overflow:auto';
     pn.innerHTML = '<b>♻️ AL-BIRJACHIM — ofertalarni aktiv qilish</b><div id="bjAkM" style="margin:8px 0;color:#b9c8dc">Tayyorlanmoqda…</div><button id="bjAkS" style="background:#d9473b;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">To\'xtatish</button>';
     document.body.appendChild(pn);
     const msg = (t) => { const e = document.getElementById('bjAkM'); if (e) e.innerHTML = t; };
     pn.querySelector('#bjAkS').onclick = () => { S.stop = true; msg('To\'xtatilmoqda… (joriy tovar tugagach)'); };
     const bor = () => { if (!document.body.contains(pn)) document.body.appendChild(pn); };
     const qatorlar = () => [...document.querySelectorAll('tbody tr')].filter((x) => x.querySelector('td'));
-    const rid = (r) => (r.querySelector('td') || r).textContent.trim().split(/\s+/)[0];
+    const rid = (r) => ((r.querySelector('td') || r).textContent.match(/\d{6,}/) || [''])[0];
     const yolga = (u) => { history.pushState({}, '', u); window.dispatchEvent(new PopStateEvent('popstate', { state: {} })); };
     const kut = async (f, ms) => { const tugash = Date.now() + ms; while (Date.now() < tugash) { const v = f(); if (v) return v; await sl(400); } return f() || null; };
+    const jm = () => +((/of\s+(\d+)/.exec(document.body.innerText) || [])[1] || 0);
+    const label = (el) => { let p = el; for (let k = 0; k < 4 && p; k++) { p = p.parentElement; const l = p && p.querySelector('label'); if (l) return l.textContent.replace('*', '').trim().slice(0, 40); } return '?'; };
+    // Ro'yxatni (hamma sahifalar) yig'ish
+    async function royxat() {
+      const R = [];
+      yolga('/provider/shop/offer-list/8');
+      await kut(() => qatorlar().length || /of\s+0\b/.test(document.body.innerText), 15000); await sl(800);
+      for (let p = 0; p < 60 && !S.stop; p++) {
+        const birinchi = qatorlar()[0] && rid(qatorlar()[0]);
+        for (const r of qatorlar()) {
+          const id = rid(r); if (!id || R.some((z) => z.id === id)) continue;
+          const a = [...r.querySelectorAll('.dropdown-item')].map((x) => x.textContent.trim());
+          const nom = (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40);
+          if (a.includes('Продлить')) R.push({ id, nom, kat: false });
+          else if (a.some((x) => /Продлить \(/.test(x))) R.push({ id, nom, kat: true });
+        }
+        const nx = [...document.querySelectorAll('a, button')].find((e) => e.offsetParent && e.textContent.trim() === '›' && !e.disabled && !(e.closest('li') && e.closest('li').classList.contains('disabled')));
+        if (!nx) break;
+        nx.click();
+        if (!await kut(() => qatorlar()[0] && rid(qatorlar()[0]) !== birinchi, 8000)) break;
+      }
+      return R;
+    }
     (async () => {
       if (!/\/offer-list\/8$/.test(location.pathname)) { msg('Avval chap menyuda <b>Mening mahsulotlarim → Срок истек</b> ni oching, keyin qayta bosing.'); S.yoq = true; }
-      // 1) Hamma sahifalardan «Продлить» bor tovarlarni yig'amiz
-      const ROY = [];
-      if (!S.yoq) {
-        await kut(() => qatorlar().length, 15000);
-        for (let p = 0; p < 60 && !S.stop; p++) {
-          const birinchi = qatorlar()[0] && rid(qatorlar()[0]);
-          for (const r of qatorlar()) {
-            const id = rid(r);
-            const a = [...r.querySelectorAll('.dropdown-item')].map((x) => x.textContent.trim());
-            // Xarid qoidasi: tugaganiga 90 kundan oshgan tovarni uzaytirib bo'lmaydi — ochmasdan o'tkazamiz
-            const sn = [...r.textContent.matchAll(/(\d{2})\.(\d{2})\.(\d{4})/g)].pop();
-            const eski = !!sn && Date.now() - new Date(+sn[3], +sn[2] - 1, +sn[1]).getTime() > 89 * 864e5;
-            if (a.includes('Продлить') && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: false, eski });
-            else if (a.some((x) => /Продлить \(/.test(x)) && !ROY.some((z) => z.id === id)) ROY.push({ id, nom: (r.querySelectorAll('td')[1] || r).textContent.trim().slice(0, 40), kat: true });
-          }
-          msg('Ro\'yxat yig\'ilmoqda… ' + ROY.length + ' ta');
-          const nx = [...document.querySelectorAll('a, button')].find((e) => e.offsetParent && e.textContent.trim() === '›' && !e.disabled && !(e.closest('li') && e.closest('li').classList.contains('disabled')));
-          if (!nx) break;
-          nx.click();
-          const ok = await kut(() => qatorlar()[0] && rid(qatorlar()[0]) !== birinchi, 8000);
-          if (!ok) break;
-        }
-      }
-      const ESKI = ROY.filter((z) => !z.kat && z.eski);
-      const ISH = ROY.filter((z) => !z.kat && !z.eski && !qil.has(z.id));
+      let ROY = [];
+      if (!S.yoq) { msg('Ro\'yxat yig\'ilmoqda…'); ROY = await royxat(); }
       const KAT = ROY.filter((z) => z.kat);
-      if (!S.yoq && !ISH.length) { msg((ESKI.length ? '⏳ ' + ESKI.length + ' ta tovar tugaganiga 90 kundan oshgan — uzaytirib bo\'lmaydi. ' : '') + 'Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
-      if (!S.yoq && !confirm('AL-BIRJACHIM: ' + ISH.length + ' ta tovar navbat bilan qayta joylanadi (Продлить → Tovarni joylashtirish).\n' + (KAT.length ? KAT.length + ' ta «Каталог» tovari o\'tkazib yuboriladi (qo\'lda).\n' : '') + 'E-IMZO so\'rasa — tasdiqlang. Boshlaymizmi?')) { msg('Bekor qilindi.'); S.yoq = true; }
-      // Yetkazib berish muddati bo'sh bo'lsa — qancha kun qo'yilsin (xodim bir marta kiritadi)
+      let ISH = ROY.filter((z) => !z.kat && !qil.has(z.id));
+      if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
+      // Yetkazib berish muddati bo'sh bo'lsa — qancha kun (xodim bir marta kiritadi)
       let YKUN = '';
       if (!S.yoq) {
         let sk = ''; try { sk = localStorage.getItem('bj_yetkazish_kun') || ''; } catch (_) { /* */ }
-        const j = prompt('Yetkazib berish muddati bo\'sh tovarlarga necha KUN yozilsin? (kamida 5)', sk || '10');
+        const j = prompt(ISH.length + ' ta tovar aktiv qilinadi.\nYetkazib berish muddati bo\'sh tovarlarga necha KUN yozilsin? (kamida 5)', sk || '10');
         if (j === null) { msg('Bekor qilindi.'); S.yoq = true; }
         else { YKUN = String(Math.max(5, parseInt(j, 10) || 10)); try { localStorage.setItem('bj_yetkazish_kun', YKUN); } catch (_) { /* */ } }
       }
-      // 2) Har birini qayta joylash
-      let ok = 0; const X = [];
-      // 2a) BITTA IMZO bilan ommaviy uzaytirish — xaridning o'z «SetRepublishMass» usuli (parol bir marta)
+      let ok = 0, okMass = 0; const X = [], TANLA = [];
+      // 1) BITTA IMZO: xaridning o'z «SetRepublishMass» usuli — to'liq anketali tovarlarni o'zi uzaytiradi
       if (!S.yoq && ISH.length) {
-        const jm = () => +((/of\s+(\d+)/.exec(document.body.innerText) || [])[1] || 0);
         try {
           msg('✍️ ' + ISH.length + ' ta tovar <b>bitta E-IMZO imzosi</b> bilan uzaytirilmoqda… Parol so\'rasa — kiriting.');
           const j0 = jm();
@@ -121,101 +121,64 @@
           });
           obj.signed_Data = JSON.stringify(sig); obj.signature = sig;
           const r = await fetch(api + '/Provider/SetRepublishMass', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem(tk) }, body: JSON.stringify(obj) });
-          const tx = await r.text();
-          if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + tx.slice(0, 200));
-          // ro'yxatni yangilab, nechtasi chiqib ketganini sanaymiz
-          yolga('/provider/shop/offer-list/5'); await sl(2500);
-          yolga('/provider/shop/offer-list/8'); await sl(1500);
-          await kut(() => qatorlar().length || /of\s+\d+/.test(document.body.innerText), 15000); await sl(1500);
-          const j1 = jm();
-          ok = Math.max(0, j0 - j1);
-          const qoldi = j1 - (ROY.length - ISH.length);
-          if (qoldi > 0) X.push(qoldi + ' ta tovar ro\'yxatda qoldi — xarid qabul qilmadi (anketasini qo\'lda tekshiring)');
-          S.mass = true;
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          await sl(2000);
+          const R2 = await royxat();
+          const qolgan = new Set(R2.map((z) => z.id));
+          okMass = ISH.filter((z) => !qolgan.has(z.id)).length;
+          ok += okMass;
+          ISH = ISH.filter((z) => qolgan.has(z.id));
+          msg('✅ ' + okMass + ' ta bitta imzo bilan uzaytirildi. Qolgan ' + ISH.length + ' tasi bittalab tekshirilmoqda…');
         } catch (e) {
-          X.push('Ommaviy usul: ' + e.message + ' — bittalab usulga o\'tildi');
+          X.push('Ommaviy usul ishlamadi: ' + e.message);
         }
       }
-      for (let i = 0; i < ISH.length && !S.yoq && !S.stop && !S.mass; i++) {
+      // 2) Qolganlari — «Joylashtirish» nusxa anketasi (add-offer/<id>): to'ldirib bo'ladiganini to'ldiramiz
+      for (let i = 0; i < ISH.length && !S.yoq && !S.stop; i++) {
         const z = ISH[i];
-        msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
-        yolga('/provider/shop/republish-offer/' + z.id);
+        msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : '') + (TANLA.length ? ' · ✋ ' + TANLA.length : ''));
+        yolga('/provider/shop/add-offer/' + z.id);
         const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]*$/.test(x.value.trim())).length >= 2; return b && n ? b : null; }, 30000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
+        await sl(1500);
         // Katalogdagi mahsulot o'chirilgan bo'lsa «Tovar (ish / xizmat)» bo'sh keladi — joylab bo'lmaydi
-        await sl(600);
-        const tovarBosh = (() => { const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /^\*?\s*(Tovar \(ish \/ xizmat\)|Товар \(работа \/ услуга\))/i.test(e.textContent.trim()) && e.textContent.trim().length < 40); let b = lb; let ns = null; for (let k = 0; k < 5 && b && !ns; k++) { b = b.parentElement; ns = b && b.querySelector('ng-select'); } return ns && !ns.querySelector('.ng-value'); })();
-        if (tovarBosh) { X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak'); continue; }
-        await sl(400);
+        const tovarNs = [...document.querySelectorAll('ng-select')].find((n) => /Tovar \(ish|Товар \(работа/i.test(label(n)));
+        if (tovarNs && !tovarNs.querySelector('.ng-value')) { X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak'); continue; }
         // Yetkazib berish muddati bo'sh bo'lsa — to'ldiramiz
         try {
-          const lb2 = [...document.querySelectorAll('label, span, div, p')].find((e) => e.childElementCount <= 1 && /^\*?\s*(Yetkazib berish muddati|Срок поставки)/i.test(e.textContent.trim()) && e.textContent.trim().length < 40);
-          let bx = lb2; let inp = null;
-          for (let k = 0; k < 5 && bx && !inp; k++) { bx = bx.parentElement; inp = bx && [...bx.querySelectorAll('input')].find((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && !x.closest('ng-select')); }
-          if (inp && !inp.value.trim() && YKUN) {
-            const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-            inp.focus(); set.call(inp, YKUN);
-            ['input', 'change', 'keyup', 'blur'].forEach((tt) => inp.dispatchEvent(new Event(tt, { bubbles: true })));
-            await sl(400);
-          }
-        } catch (_) { /* */ }
-        // Hisob raqamni qayta tanlash (eski ofertadagi raqam endi yaroqsiz bo'lishi mumkin)
-        try {
-          const lb = [...document.querySelectorAll('label, span, div')].find((e) => e.childElementCount <= 1 && /Hisob raqamni tanlang|Выберите расчетный счет|Hisob raqam/i.test(e.textContent.trim()) && e.textContent.trim().length < 40);
-          let box = lb; let ns = null;
-          for (let k = 0; k < 5 && box && !ns; k++) { box = box.parentElement; ns = box && box.querySelector('ng-select'); }
-          if (ns && false) { // hisob raqami o'zgartirilmaydi (kerak emas ekan)
-            const joriy = (ns.querySelector('.ng-value') || {}).textContent || '';
-            const c = ns.querySelector('.ng-select-container') || ns;
-            c.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-            const ops = await kut(() => { const o = [...document.querySelectorAll('.ng-dropdown-panel .ng-option')].filter((x) => !x.classList.contains('ng-option-disabled')); return o.length ? o : null; }, 4000);
-            if (ops) { const op = ops.find((x) => x.textContent.trim() === joriy.trim()) || (ops.length === 1 ? ops[0] : null); if (op) { op.click(); await sl(600); } }
-            document.body.click();
-          }
+          const dt = document.getElementById('delivery_term') || [...document.querySelectorAll('input')].find((x) => x.offsetParent && /Yetkazib berish muddati|Срок поставки/i.test(label(x)));
+          if (dt && !dt.value.trim() && YKUN) { const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; dt.focus(); set.call(dt, YKUN); ['input', 'change', 'keyup', 'blur'].forEach((tt) => dt.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300); }
         } catch (_) { /* */ }
         // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
         try {
-          // «Tovarning surati» sarlavhasi bilan «Hisob raqamni tanlang» orasidagi radio tugmalar — suratlar
           const yozuv = (re) => [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,label,span,div,p')].find((e) => e.childElementCount <= 1 && re.test(e.textContent.trim()) && e.textContent.trim().length < 40);
-          const bosh1 = yozuv(/^(Tovarning surati|Фото товара|Изображение товара)/i);
-          const oxir1 = yozuv(/^\*?\s*(Hisob raqamni tanlang|Выберите расчетный счет)/i);
-          const rs = bosh1 ? [...document.querySelectorAll('input[type=radio]')].filter((x) => (bosh1.compareDocumentPosition(x) & 4) && (!oxir1 || (x.compareDocumentPosition(oxir1) & 4))) : [];
+          const b1 = yozuv(/^(Tovarning surati|Фото товара|Изображение товара)/i), o1 = yozuv(/^\*?\s*(Hisob raqamni tanlang|Выберите расчетный счет)/i);
+          const rs = b1 ? [...document.querySelectorAll('input[type=radio]')].filter((x) => (b1.compareDocumentPosition(x) & 4) && (!o1 || (x.compareDocumentPosition(o1) & 4))) : [];
           if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); rs[0].dispatchEvent(new Event('change', { bubbles: true })); await sl(400); }
         } catch (_) { /* */ }
-        // Tugma faollashishini kutamiz; bo'lmasa — qaysi majburiy maydon bo'sh ekanini yozamiz
-        const faol = await kut(() => !tg.disabled && !tg.classList.contains('disabled'), 6000);
-        if (!faol) {
-          const bosh = [];
-          for (const lb of [...document.querySelectorAll('label, span, div, p')].filter((e) => e.offsetParent && e.childElementCount <= 1 && /^\*\s*\S/.test(e.textContent.trim()) && e.textContent.trim().length < 45)) {
-            let b2 = lb; let f = null;
-            for (let k = 0; k < 4 && b2 && !f; k++) { b2 = b2.parentElement; f = b2 && (b2.querySelector('ng-select') || b2.querySelector('input:not([type=radio]):not([type=checkbox]), textarea')); }
-            if (!f) continue;
-            const yoq = f.tagName === 'NG-SELECT' ? !f.querySelector('.ng-value') : !String(f.value || '').trim();
-            const nom = lb.textContent.replace('*', '').trim();
-            if (yoq && !bosh.includes(nom)) bosh.push(nom);
-          }
-          X.push(z.nom + ': bo\'sh majburiy maydon — ' + (bosh.slice(0, 4).join(', ') || 'noma\'lum'));
-          continue;
-        }
-        tg.scrollIntoView({ block: 'center' });
-        await sl(200);
+        // Tanlash kerak bo'lgan (bo'sh) maydonlar — tovar xususiyatlari: xodim o'zi tanlaydi, robot taxmin qilmaydi
+        const bosh = [...document.querySelectorAll('ng-select')].filter((n) => !n.querySelector('.ng-value') && !n.classList.contains('ng-select-disabled') && !/Mahsulotlarni|qidirish|поиск/i.test(label(n))).map(label);
+        const boshInp = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && !x.value.trim() && /^\*/.test((() => { let p = x; for (let k = 0; k < 4 && p; k++) { p = p.parentElement; const l = p && p.querySelector('label'); if (l) return l.textContent.trim(); } return ''; })())).map(label);
+        const hammasi = [...new Set([...bosh, ...boshInp])];
+        if (hammasi.length) { TANLA.push({ id: z.id, nom: z.nom, m: hammasi }); X.push(z.nom + ': tanlash kerak — ' + hammasi.join(', ') + ' (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
+        tg.scrollIntoView({ block: 'center' }); await sl(200);
+        const T = []; const mo = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && /toast|notif/i.test(n.className + ' ' + ((n.parentElement || {}).className || ''))) T.push(n.innerText.replace(/\s+/g, ' ').trim()); }); mo.observe(document.body, { childList: true, subtree: true });
         tg.click();
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
-        const t0 = Date.now();
-        const nat = await kut(() => {
-          bor();
-          if (Date.now() - t0 > 7000 && /republish-offer/.test(location.pathname) && [...document.querySelectorAll('div,span,small,p')].some((e) => e.offsetParent && e.childElementCount === 0 && /To.ldirilishi shart|обязательн/i.test(e.textContent))) return 'majburiy maydon to\'ldirilmagan (qo\'lda)';
-          if (!/republish-offer/.test(location.pathname)) return 'ok';
-          const er = [...document.querySelectorAll('.toast-error,[class*="toast-error"]')].find((e) => e.offsetParent && e.textContent.trim());
-          return er ? 'xato: ' + er.textContent.trim().slice(0, 80) : null;
-        }, 180000);
+        const nat = await kut(() => { bor(); if (!/add-offer\//.test(location.pathname)) return 'ok'; const er = T.find((t) => /Xato|Ошибка/i.test(t)); if (er) return 'xato: ' + er.replace(/^×?\s*(Xato|Ошибка)\s*/i, '').slice(0, 120); const okT = T.find((t) => /Muvaffaqiyat|Успешно|успешно/i.test(t)); return okT ? 'ok' : null; }, 180000);
+        mo.disconnect();
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); } else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
-        await sl(500);
+        await sl(600);
       }
-      if (!S.yoq) msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi (moderatsiyada)' + (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 6).join('<br>') + '</span>' : '') + (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') + (ESKI.length ? '<br>⏳ ' + ESKI.length + ' ta — tugaganiga 90 kundan oshgan, uzaytirib bo\'lmaydi (yangi oferta kerak)' : ''));
+      if (!S.yoq) {
+        msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi' + (okMass ? ' (' + okMass + ' tasi bitta imzo bilan)' : '') + ' — moderatsiyada' +
+          (TANLA.length ? '<br>✋ <b>' + TANLA.length + '</b> ta tovarda xususiyat tanlash kerak (robot taxmin qilmaydi)' : '') +
+          (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 8).join('<br>') + '</span>' : '') +
+          (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : ''));
+        yolga('/provider/shop/offer-list/8');
+      }
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
       window.__BJ_AKTIV = null;
-      if (!S.yoq) yolga('/provider/shop/offer-list/8');
     })();
     return;
   }
