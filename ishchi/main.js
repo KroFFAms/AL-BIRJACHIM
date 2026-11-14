@@ -244,6 +244,17 @@ async function aktivHammasi() {
   akIsh = false; holatYubor();
   log('♻️ Tayyor:\n' + N.join('\n'));
   bildir('AL-BIRJACHIM — ofertalar', N.join('\n').slice(0, 250));
+  // Telegram'ga hisobot: har firma natijasi + qo'lda qilinadiganlar
+  try {
+    const qolda = [];
+    for (const f of cfg.firmalar) {
+      if (f.platforma !== 'xarid' || !f.akIzoh) continue;
+      const q = String(f.akIzoh).split('\n').filter((x) => /faol emas|qo.lda|o.tmadi|xato|javob kelmadi/i.test(x) && !/ta o.tmadi/.test(x)).slice(0, 12);
+      if (q.length) qolda.push('• ' + (f.nom || f.id) + ':\n  ' + q.join('\n  '));
+    }
+    const matn = '♻️ Ofertalarni aktiv qilish — ' + new Date().toLocaleString('ru-RU') + '\n\n' + N.join('\n') + (qolda.length ? '\n\n✋ Qo\'lda qilish kerak (yangi oferta / to\'ldirish):\n' + qolda.join('\n') : '');
+    if (cfg.ses) await api('?robot_xabar=1', { method: 'POST', body: { matn } });
+  } catch (e) { log('Telegram hisobot yuborilmadi: ' + e.message); }
 }
 function akTekshir() {
   if (!cfg.akAvto || akIsh || cfg.akOxirgi === bugun()) return;
