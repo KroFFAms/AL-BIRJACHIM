@@ -93,9 +93,11 @@
         const z = ISH[i];
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         yolga('/provider/shop/republish-offer/' + z.id);
-        const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].some((x) => x.offsetParent && /\d/.test(x.value) && /narx|цена/i.test((x.closest('div') && x.closest('div').textContent) || '')); return b && n && !b.disabled ? b : null; }, 40000);
+        const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]{2,}$/.test(x.value.trim())).length >= 2; return b && n && !b.disabled ? b : null; }, 40000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
-        await sl(1200);
+        await sl(2500);
+        tg.scrollIntoView({ block: 'center' });
+        await sl(500);
         tg.click();
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         const nat = await kut(() => {
