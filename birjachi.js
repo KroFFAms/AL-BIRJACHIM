@@ -101,7 +101,7 @@
         const z = ISH[i];
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         yolga('/provider/shop/republish-offer/' + z.id);
-        const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]*$/.test(x.value.trim())).length >= 2; return b && n && !b.disabled ? b : null; }, 40000);
+        const tg = await kut(() => { bor(); const b = [...document.querySelectorAll('button')].find((x) => x.offsetParent && /Tovarni joylashtirish|Разместить товар/i.test(x.textContent)); const n = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && /^\d[\d\s.,]*$/.test(x.value.trim())).length >= 2; return b && n ? b : null; }, 30000);
         if (!tg) { X.push(z.nom + ': anketa ochilmadi'); continue; }
         // Katalogdagi mahsulot o'chirilgan bo'lsa «Tovar (ish / xizmat)» bo'sh keladi — joylab bo'lmaydi
         await sl(600);
@@ -134,6 +134,26 @@
             document.body.click();
           }
         } catch (_) { /* */ }
+        // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
+        try {
+          const rs = [...document.querySelectorAll('input[type=radio]')].filter((x) => { if (!x.offsetParent) return false; let c = x; for (let k = 0; k < 3 && c; k++) { c = c.parentElement; if (c && /File Id/i.test(c.textContent) && c.textContent.length < 300) return true; } return false; });
+          if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); await sl(300); }
+        } catch (_) { /* */ }
+        // Tugma faollashishini kutamiz; bo'lmasa — qaysi majburiy maydon bo'sh ekanini yozamiz
+        const faol = await kut(() => !tg.disabled && !tg.classList.contains('disabled'), 6000);
+        if (!faol) {
+          const bosh = [];
+          for (const lb of [...document.querySelectorAll('label, span, div, p')].filter((e) => e.offsetParent && e.childElementCount <= 1 && /^\*\s*\S/.test(e.textContent.trim()) && e.textContent.trim().length < 45)) {
+            let b2 = lb; let f = null;
+            for (let k = 0; k < 4 && b2 && !f; k++) { b2 = b2.parentElement; f = b2 && (b2.querySelector('ng-select') || b2.querySelector('input:not([type=radio]):not([type=checkbox]), textarea')); }
+            if (!f) continue;
+            const yoq = f.tagName === 'NG-SELECT' ? !f.querySelector('.ng-value') : !String(f.value || '').trim();
+            const nom = lb.textContent.replace('*', '').trim();
+            if (yoq && !bosh.includes(nom)) bosh.push(nom);
+          }
+          X.push(z.nom + ': bo\'sh majburiy maydon — ' + (bosh.slice(0, 4).join(', ') || 'noma\'lum'));
+          continue;
+        }
         tg.scrollIntoView({ block: 'center' });
         await sl(200);
         tg.click();
