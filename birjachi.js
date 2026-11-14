@@ -101,7 +101,42 @@
       }
       // 2) Har birini qayta joylash
       let ok = 0; const X = [];
-      for (let i = 0; i < ISH.length && !S.yoq && !S.stop; i++) {
+      // 2a) BITTA IMZO bilan ommaviy uzaytirish — xaridning o'z «SetRepublishMass» usuli (parol bir marta)
+      if (!S.yoq && ISH.length) {
+        const jm = () => +((/of\s+(\d+)/.exec(document.body.innerText) || [])[1] || 0);
+        try {
+          msg('✍️ ' + ISH.length + ' ta tovar <b>bitta E-IMZO imzosi</b> bilan uzaytirilmoqda… Parol so\'rasa — kiriting.');
+          const j0 = jm();
+          const mainU = [...document.scripts].map((s) => s.src).find((s) => /\/main[.-]/.test(s));
+          const mt = mainU ? await fetch(mainU).then((r) => r.text()) : '';
+          const tk = (mt.match(/tokenKey\s*=\s*"([^"]+)"/) || [])[1];
+          const api = (mt.match(/shopUrl:"([^"]+)"/) || [])[1] || 'https://xarid-api-shop.uzex.uz';
+          const raw = localStorage.getItem('esi-id');
+          if (!raw || !tk || typeof window.esiSign !== 'function') throw new Error('E-IMZO kaliti topilmadi');
+          const key = decodeURIComponent(escape(atob(raw)));
+          const obj = { ids: ISH.map((z) => +z.id).filter(Boolean), signed_Data: '', signature: '' };
+          const sig = await new Promise((res, rej) => {
+            const tm = setTimeout(() => rej(new Error('E-IMZO 3 daqiqada javob bermadi')), 180000);
+            try { window.esiSign(key, JSON.stringify(obj), (_k, s) => { clearTimeout(tm); res(s); }); } catch (e) { clearTimeout(tm); rej(e); }
+          });
+          obj.signed_Data = JSON.stringify(sig); obj.signature = sig;
+          const r = await fetch(api + '/Provider/SetRepublishMass', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem(tk) }, body: JSON.stringify(obj) });
+          const tx = await r.text();
+          if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + tx.slice(0, 200));
+          // ro'yxatni yangilab, nechtasi chiqib ketganini sanaymiz
+          yolga('/provider/shop/offer-list/5'); await sl(2500);
+          yolga('/provider/shop/offer-list/8'); await sl(1500);
+          await kut(() => qatorlar().length || /of\s+\d+/.test(document.body.innerText), 15000); await sl(1500);
+          const j1 = jm();
+          ok = Math.max(0, j0 - j1);
+          const qoldi = j1 - (ROY.length - ISH.length);
+          if (qoldi > 0) X.push(qoldi + ' ta tovar ro\'yxatda qoldi — xarid qabul qilmadi (anketasini qo\'lda tekshiring)');
+          S.mass = true;
+        } catch (e) {
+          X.push('Ommaviy usul: ' + e.message + ' — bittalab usulga o\'tildi');
+        }
+      }
+      for (let i = 0; i < ISH.length && !S.yoq && !S.stop && !S.mass; i++) {
         const z = ISH[i];
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         yolga('/provider/shop/republish-offer/' + z.id);
