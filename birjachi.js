@@ -100,8 +100,10 @@
         await sl(500);
         tg.click();
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
+        const t0 = Date.now();
         const nat = await kut(() => {
           bor();
+          if (Date.now() - t0 > 7000 && /republish-offer/.test(location.pathname) && [...document.querySelectorAll('div,span,small,p')].some((e) => e.offsetParent && e.childElementCount === 0 && /To.ldirilishi shart|обязательн/i.test(e.textContent))) return 'majburiy maydon to\'ldirilmagan (qo\'lda)';
           if (!/republish-offer/.test(location.pathname)) return 'ok';
           const er = [...document.querySelectorAll('.toast-error,[class*="toast-error"]')].find((e) => e.offsetParent && e.textContent.trim());
           return er ? 'xato: ' + er.textContent.trim().slice(0, 80) : null;
