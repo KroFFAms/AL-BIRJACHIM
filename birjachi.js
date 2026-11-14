@@ -140,8 +140,12 @@
         } catch (_) { /* */ }
         // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
         try {
-          const rs = [...document.querySelectorAll('input[type=radio]')].filter((x) => { if (!x.offsetParent) return false; let c = x; for (let k = 0; k < 3 && c; k++) { c = c.parentElement; if (c && /File Id/i.test(c.textContent) && c.textContent.length < 300) return true; } return false; });
-          if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); await sl(300); }
+          // «Tovarning surati» sarlavhasi bilan «Hisob raqamni tanlang» orasidagi radio tugmalar — suratlar
+          const yozuv = (re) => [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,label,span,div,p')].find((e) => e.childElementCount <= 1 && re.test(e.textContent.trim()) && e.textContent.trim().length < 40);
+          const bosh1 = yozuv(/^(Tovarning surati|Фото товара|Изображение товара)/i);
+          const oxir1 = yozuv(/^\*?\s*(Hisob raqamni tanlang|Выберите расчетный счет)/i);
+          const rs = bosh1 ? [...document.querySelectorAll('input[type=radio]')].filter((x) => (bosh1.compareDocumentPosition(x) & 4) && (!oxir1 || (x.compareDocumentPosition(oxir1) & 4))) : [];
+          if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); rs[0].dispatchEvent(new Event('change', { bubbles: true })); await sl(400); }
         } catch (_) { /* */ }
         // Tugma faollashishini kutamiz; bo'lmasa — qaysi majburiy maydon bo'sh ekanini yozamiz
         const faol = await kut(() => !tg.disabled && !tg.classList.contains('disabled'), 6000);
