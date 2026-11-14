@@ -58,6 +58,17 @@
     <div id="tl"></div>
   </div>
 
+  <div class="pn" id="pAk">
+    <div class="row" style="margin-bottom:6px"><h3 style="margin:0">♻️ Ofertalarni aktiv qilish</h3><span style="flex:1"></span><button class="ok" id="bAk">▶ Hozir aktiv qilish</button></div>
+    <div class="mu" style="margin-bottom:8px">Har kuni belgilangan vaqtda hamma xarid firmalarining <b>«Срок истек»</b> tovarlarini o'zi qayta joylaydi (Продлить). E-IMZO parol so'rasa — kiriting va <b>«Запомнить на 6 час.»</b> ni belgilang: qolganini dastur o'zi qiladi. «Mahsulot faol emas» deganlarini yangi oferta qilish kerak — ro'yxati jurnalda.</div>
+    <div class="row">
+      <label><input type="checkbox" id="cAk"> Har kuni avtomatik</label>
+      <span>soat</span><input type="time" id="tAk" style="padding:5px;border-radius:7px;border:1px solid var(--ln);background:#0f1b2d;color:var(--tx)">
+      <span style="margin-left:10px">Yetkazib berish muddati bo'sh bo'lsa:</span><input type="number" id="nAk" min="5" max="90"><span>kun</span>
+      <span style="flex:1"></span><span class="mu" id="akOx"></span>
+    </div>
+  </div>
+
   <div class="pn">
     <h3>⚙️ Avtomatik yig'ish</h3>
     <div class="row">
@@ -87,11 +98,16 @@ function chiz() {
   $('bHammasi').textContent = H.ishlayapti ? '⏳ Yig\'ilmoqda…' : '🔄 Hozir yig\'ish';
   if (document.activeElement !== $('nHar')) $('nHar').value = H.har;
   $('cAvto').checked = H.avto; $('cAuto').checked = H.autostart;
+  $('cAk').checked = H.akAvto !== false;
+  if (document.activeElement !== $('tAk')) $('tAk').value = H.akVaqt || '09:00';
+  if (document.activeElement !== $('nAk')) $('nAk').value = H.akKun || 10;
+  $('bAk').disabled = !!H.akIsh; $('bAk').textContent = H.akIsh ? '⏳ Aktiv qilinmoqda…' : '▶ Hozir aktiv qilish';
+  $('akOx').textContent = H.akOxirgi ? 'Oxirgi: ' + H.akOxirgi : '';
   $('kel').textContent = H.avto && H.keyingi ? 'Keyingi: ' + new Date(H.keyingi).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
   $('fl').innerHTML = H.firmalar.length ? H.firmalar.map((f) =>
     '<div class="f"><input type="checkbox" title="Avtomatik yig\'ishga qo\'shilsin" data-oc="' + f.id + '"' + (f.ochiq === false ? '' : ' checked') + '>' +
     '<div><div class="nm">' + esc(f.nom || 'Yangi firma (kirilmoqda…)') + '</div>' +
-    '<div class="mu">' + PN[f.platforma] + ' · ' + tag(f.holat) + (f.bosqich ? ' · ' + esc(f.bosqich) : '') + ' · oxirgi: ' + vaqt(f.oxirgi) + (f.xato ? '<br><span style="color:#ffb0a8">' + esc(f.xato) + '</span>' : '') + '</div></div>' +
+    '<div class="mu">' + PN[f.platforma] + ' · ' + tag(f.holat) + (f.bosqich ? ' · ' + esc(f.bosqich) : '') + (f.akHolat ? ' · ♻️ ' + esc(f.akHolat) : '') + ' · oxirgi: ' + vaqt(f.oxirgi) + (f.xato ? '<br><span style="color:#ffb0a8">' + esc(f.xato) + '</span>' : '') + '</div></div>' +
     '<div class="ac-btns">' +
       (f.holat === 'kirish kerak' || f.holat === 'yangi' ? '<button class="ac" data-k="' + f.id + '">🔑 Kirish</button>' : '<button data-y="' + f.id + '"' + (H.ishlayapti ? ' disabled' : '') + '>🔄 Yig\'ish</button>') +
       '<button data-s="' + f.id + '" title="Kabinet oynasini ko\'rsatish">👁</button>' +
@@ -112,6 +128,10 @@ $('bSayt').onclick = () => ishchi.sayt();
 $('cAvto').onchange = () => ishchi.sozla({ avto: $('cAvto').checked });
 $('cAuto').onchange = () => ishchi.sozla({ autostart: $('cAuto').checked });
 $('nHar').onchange = () => ishchi.sozla({ har: +$('nHar').value });
+$('bAk').onclick = () => { if (confirm('Hamma xarid firmalarining muddati o\'tgan ofertalari qayta joylansinmi?\nE-IMZO parol so\'rasa — kiriting.')) ishchi.aktiv(); };
+$('cAk').onchange = () => ishchi.sozla({ akAvto: $('cAk').checked });
+$('tAk').onchange = () => ishchi.sozla({ akVaqt: $('tAk').value });
+$('nAk').onchange = () => ishchi.sozla({ akKun: +$('nAk').value });
 ishchi.on('holat', (d) => { H = d; chiz(); });
 let TK = [];
 const TKH = { kutilmoqda: 'navbatda', ochildi: 'ochildi — yuborishni kutmoqda', xato: 'xato' };
