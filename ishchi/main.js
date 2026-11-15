@@ -207,7 +207,23 @@ async function aktivFirma(f) {
   const w = firmaOynasi(f, true);
   yangila(f, { akHolat: 'aktiv qilinmoqda…' });
   await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8');
-  if (!ichkaridami(f, w)) { yangila(f, { holat: 'kirish kerak', akHolat: 'kirish kerak' }); log((f.nom || f.id) + ': aktiv qilish — sessiya tugagan, «Kirish» ni bosing'); return 'kirish kerak'; }
+  if (!ichkaridami(f, w)) {
+    // Sessiya tugagan — kirish oynasini ko'rsatib, xodimni 10 daqiqagacha kutamiz (E-IMZO bilan o'zi kiradi)
+    yangila(f, { holat: 'kirilmoqda', akHolat: 'kirish kutilmoqda…' });
+    log((f.nom || f.id) + ': sessiya tugagan — kirish oynasi ochildi, kalitni tanlab parolni kiriting');
+    bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'Xarid kabinetiga kiring (E-IMZO) — robot kutmoqda');
+    w.show(); w.focus();
+    let kirdi = false;
+    for (let i = 0; i < 300 && !w.isDestroyed(); i++) {
+      if (ichkaridami(f, w)) { kirdi = true; break; }
+      try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8'); } catch (_) { /* */ }
+      await sleep(2000);
+    }
+    if (!kirdi) { yangila(f, { holat: 'kirish kerak', akHolat: 'kirish kerak' }); log((f.nom || f.id) + ': 10 daqiqada kirilmadi — o\'tkazib yuborildi'); return 'kirish kerak'; }
+    yangila(f, { holat: 'tayyor' });
+    await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8');
+    if (!ichkaridami(f, w)) { yangila(f, { akHolat: 'kirish kerak' }); return 'kirish kerak'; }
+  }
   await sleep(2000);
   const js = await skriptOl('birjachi.js');
   const kun = String(Math.max(5, +cfg.akKun || 10));
