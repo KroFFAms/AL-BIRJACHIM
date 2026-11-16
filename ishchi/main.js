@@ -2,7 +2,8 @@
 // Firmalar bir marta ulanadi (har biri o'z alohida sessiyasida), keyin dastur ularning
 // kabinetlaridan lotlarni o'zi yig'adi va AL-BIRJACHIM bazasiga yozadi.
 // FAQAT O'QIYDI: taklif bermaydi, hech narsani tasdiqlamaydi.
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, dialog, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, dialog, Notification, safeStorage } = require('electron');
+const { spawn } = require('child_process');
 let autoUpdater = null; try { ({ autoUpdater } = require('electron-updater')); } catch (_) { /* dev rejimda yo'q bo'lishi mumkin */ }
 const path = require('path');
 const fs = require('fs');
@@ -31,7 +32,7 @@ function log(m) {
 
 let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false;
 function send(ch, d) { try { if (win && !win.isDestroyed()) win.webContents.send(ch, d); } catch (_) { /* */ } }
-function holatYubor() { send('holat', { firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akOxirgi: cfg.akOxirgi, akIsh }); }
+function holatYubor() { send('holat', { firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akMass: !!cfg.akMass, akOxirgi: cfg.akOxirgi, akIsh, eimzo: Object.keys(cfg.eimzo || {}) }); }
 function firma(id) { return cfg.firmalar.find((f) => f.id === id); }
 function yangila(f, o) { Object.assign(f, o); saqla(); holatYubor(); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -199,12 +200,116 @@ async function tkOch(id) {
   return { ok: true };
 }
 
+// ---------- 🔑 E-IMZO paroli (Avtopilotdek): robot E-IMZO oynasi chiqqanda parolni o'zi yozadi ----------
+// Parol faqat shu kompyuterda, Windows (DPAPI) bilan shifrlangan holda sozlama.json ichida saqlanadi; hech qayerga yuborilmaydi.
+// Yozish — Windows'ning o'zi orqali (PowerShell + SendKeys): E-IMZO'ning parol oynasi topilganda parol + Enter yuboriladi.
+const EIMZO_PS = `
+$ErrorActionPreference = 'SilentlyContinue'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition @"
+using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
+public class BJW {
+  public delegate bool EP(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EP p, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+  public static List<long[]> Top() {
+    var r = new List<long[]>();
+    EnumWindows((h, l) => { if (IsWindowVisible(h)) { uint pid; GetWindowThreadProcessId(h, out pid); r.Add(new long[] { (long)h, pid }); } return true; }, IntPtr.Zero);
+    return r;
+  }
+  public static string Title(IntPtr h) { var sb = new StringBuilder(512); GetWindowText(h, sb, 512); return sb.ToString(); }
+}
+"@
+$parol = [Console]::In.ReadLine()
+$yoz = -join ($parol.ToCharArray() | ForEach-Object { if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ } })
+$korilgan = @{}
+$nomlar = @{}
+$sh = New-Object -ComObject WScript.Shell
+while ($true) {
+  $hozir = @{}
+  foreach ($w in [BJW]::Top()) {
+    $h = [IntPtr]$w[0]; $pi = $w[1]
+    if (-not $nomlar.ContainsKey($pi)) { $p = Get-Process -Id $pi -ErrorAction SilentlyContinue; if ($p) { $nomlar[$pi] = $p.ProcessName } else { $nomlar[$pi] = '' } }
+    $t = [BJW]::Title($h)
+    if ($t -eq '') { continue }
+    $bu = ($t -match 'E-?IMZO') -or ($nomlar[$pi] -match 'E-?IMZO') -or (($nomlar[$pi] -match 'javaw?$') -and ($t -match 'парол|parol|password|ключ|kalit'))
+    if (-not $bu) { continue }
+    $k = [string]$w[0]
+    $hozir[$k] = 1
+    if ($korilgan.ContainsKey($k)) {
+      if ($korilgan[$k] -ne [DateTime]::MinValue -and ((Get-Date) - $korilgan[$k]).TotalSeconds -gt 10) { Write-Output ('XATO ' + $t); $korilgan[$k] = [DateTime]::MinValue }
+      continue
+    }
+    Start-Sleep -Milliseconds 500
+    [BJW]::ShowWindow($h, 9) | Out-Null
+    [BJW]::SetForegroundWindow($h) | Out-Null
+    Start-Sleep -Milliseconds 250
+    if ([BJW]::GetForegroundWindow() -ne $h) { $sh.AppActivate([int]$pi) | Out-Null; [System.Windows.Forms.SendKeys]::SendWait('%'); [BJW]::SetForegroundWindow($h) | Out-Null; Start-Sleep -Milliseconds 250 }
+    if ([BJW]::GetForegroundWindow() -ne $h) { Write-Output ('FOKUS ' + $t); $korilgan[$k] = Get-Date; continue }
+    [System.Windows.Forms.SendKeys]::SendWait($yoz + '{ENTER}')
+    $korilgan[$k] = Get-Date
+    Write-Output ('YOZILDI ' + $t)
+  }
+  foreach ($k in @($korilgan.Keys)) { if (-not $hozir.ContainsKey($k)) { $korilgan.Remove($k) } }
+  Start-Sleep -Milliseconds 500
+}
+`;
+function eimzoParol(f) {
+  try {
+    const b = (cfg.eimzo || {})[f.id];
+    if (!b || !safeStorage.isEncryptionAvailable()) return '';
+    return safeStorage.decryptString(Buffer.from(b, 'base64'));
+  } catch (_) { return ''; }
+}
+// Parol yozuvchini ishga tushiradi; qaytgan funksiya uni to'xtatadi
+function parolBoshla(f) {
+  const parol = eimzoParol(f);
+  if (!parol || process.platform !== 'win32') return () => {};
+  let p = null;
+  try {
+    const ps1 = path.join(app.getPath('userData'), 'eimzo.ps1');
+    fs.writeFileSync(ps1, EIMZO_PS, 'utf8');
+    p = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    p.stdin.write(parol + '\r\n');
+    let n = 0;
+    p.stdout.on('data', (d) => {
+      for (const q of String(d).split(/\r?\n/).filter(Boolean)) {
+        if (/^YOZILDI/.test(q)) { n++; if (n <= 3 || n % 10 === 0) log((f.nom || f.id) + ': 🔑 E-IMZO paroli avtomatik kiritildi (' + n + ')'); }
+        else if (/^XATO/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO oynasi parol kiritilgach yopilmadi — parol noto\'g\'ri bo\'lishi mumkin, Ishchi\'da «🔑 E-IMZO» ni qayta kiriting'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmadi — tekshiring'); }
+        else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
+      }
+    });
+    p.stderr.on('data', (d) => { const s = String(d).trim(); if (s) log('E-IMZO yozuvchi: ' + s.slice(0, 160)); });
+    p.on('error', (e) => log('E-IMZO yozuvchi ishga tushmadi: ' + e.message));
+    log((f.nom || f.id) + ': 🔑 E-IMZO parolini robot o\'zi kiritadi');
+  } catch (e) { log('E-IMZO yozuvchi: ' + e.message); }
+  return () => { try { if (p && !p.killed) p.kill(); } catch (_) { /* */ } };
+}
+ipcMain.handle('eimzo', (_e, id, parol) => {
+  const f = firma(id); if (!f) return { xato: 'firma topilmadi' };
+  cfg.eimzo = cfg.eimzo || {};
+  if (!parol) { delete cfg.eimzo[id]; saqla(); holatYubor(); log((f.nom || id) + ': E-IMZO paroli o\'chirildi'); return { ok: true }; }
+  if (!safeStorage.isEncryptionAvailable()) return { xato: 'Windows shifrlash mavjud emas — parol saqlanmadi' };
+  try { cfg.eimzo[id] = safeStorage.encryptString(String(parol)).toString('base64'); } catch (e) { return { xato: e.message }; }
+  saqla(); holatYubor(); log((f.nom || id) + ': 🔑 E-IMZO paroli saqlandi (shifrlangan, faqat shu kompyuterda)');
+  return { ok: true };
+});
+
 // ---------- ♻️ Ofertalarni aktiv qilish (har kuni, hamma xarid firmalari) ----------
 // «Mening mahsulotlarim → Срок истек» dagi tovarlarni saytning o'z «Продлить» anketasi orqali qayta joylaydi
 // (birjachi.js dagi mantiq). E-IMZO paroli — E-IMZO oynasida, xodim kiritadi («Запомнить на 6 час.»).
 function bildir(t, m) { try { new Notification({ title: t, body: m }).show(); } catch (_) { /* */ } }
 const bugun = () => new Date().toLocaleDateString('sv-SE');
 async function aktivFirma(f) {
+  const toxta = parolBoshla(f); // 🔑 E-IMZO parolini (saqlangan bo'lsa) robot o'zi yozadi — kirishda ham, imzolashda ham
+  try { return await aktivFirmaIch(f); } finally { toxta(); }
+}
+async function aktivFirmaIch(f) {
   const w = firmaOynasi(f, true);
   yangila(f, { akHolat: 'aktiv qilinmoqda…' });
   await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8');
@@ -228,7 +333,8 @@ async function aktivFirma(f) {
   await sleep(2000);
   const js = await skriptOl('birjachi.js');
   const kun = String(Math.max(5, +cfg.akKun || 10));
-  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';' + js + '\n;1');
+  // __BJ_MASS=false — «bitta imzo» (SetRepublishMass) urinishi o'tkazib yuboriladi, to'g'ridan-to'g'ri birma-bir anketa orqali
+  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.__BJ_MASS=' + (cfg.akMass ? 'true' : 'false') + ';window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';' + js + '\n;1');
   const t0 = Date.now(); let nat = '';
   await sleep(3000);
   while (Date.now() - t0 < 3 * 3600e3) {
@@ -265,7 +371,7 @@ async function aktivHammasi() {
   try {
     const qolda = [];
     for (const f of cfg.firmalar) {
-      if (f.platforma !== 'xarid' || !f.akIzoh) continue;
+      if (f.platforma !== 'xarid' || !f.akIzoh || String(f.akSana || '').slice(0, 10) !== bugun()) continue; // faqat bugungi natija
       const q = String(f.akIzoh).split('\n').filter((x) => /faol emas|qo.lda|o.tmadi|xato|javob kelmadi/i.test(x) && !/ta o.tmadi/.test(x)).slice(0, 12);
       if (q.length) qolda.push('• ' + (f.nom || f.id) + ':\n  ' + q.join('\n  '));
     }
@@ -351,6 +457,7 @@ ipcMain.handle('sozla', (_e, o) => {
   if (o.akAvto != null) cfg.akAvto = !!o.akAvto;
   if (o.akVaqt != null && /^\d{1,2}:\d{2}$/.test(o.akVaqt)) cfg.akVaqt = o.akVaqt;
   if (o.akKun != null) cfg.akKun = Math.max(5, Math.min(90, +o.akKun || 10));
+  if (o.akMass != null) cfg.akMass = !!o.akMass;
   if (o.autostart != null) { cfg.autostart = !!o.autostart; try { app.setLoginItemSettings({ openAtLogin: cfg.autostart }); } catch (_) { /* */ } }
   saqla(); rejala();
 });
@@ -384,7 +491,6 @@ else {
         setTimeout(tek, 90e3); setInterval(tek, 6 * 3600e3);
       } catch (e) { log('Yangilash sozlanmadi: ' + e.message); }
     }
-
     setTimeout(akTekshir, 3 * 60e3); setInterval(akTekshir, 60e3); // ofertalarni aktiv qilish — kuniga bir marta
     holatYubor();
   });
