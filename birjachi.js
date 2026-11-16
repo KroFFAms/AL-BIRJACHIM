@@ -166,7 +166,8 @@
           if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); rs[0].dispatchEvent(new Event('change', { bubbles: true })); await sl(400); }
         } catch (_) { /* */ }
         // Tanlash kerak bo'lgan (bo'sh) maydonlar — tovar xususiyatlari: xodim o'zi tanlaydi, robot taxmin qilmaydi
-        const bosh = [...document.querySelectorAll('ng-select')].filter((n) => !n.querySelector('.ng-value') && !n.classList.contains('ng-select-disabled') && !/Mahsulotlarni|qidirish|поиск/i.test(label(n))).map(label);
+        // faqat KO'RINADIGAN va nomi aniq bo'sh tanlovlar (yashirin/nomsiz select'lar sababli hammasini o'tkazib yubormaslik uchun)
+        const bosh = [...document.querySelectorAll('ng-select')].filter((n) => n.offsetParent && !n.querySelector('.ng-value') && !n.classList.contains('ng-select-disabled') && !/Mahsulotlarni|qidirish|поиск/i.test(label(n)) && label(n) !== '?').map(label);
         const boshInp = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && !x.value.trim() && /^\*/.test((() => { let p = x; for (let k = 0; k < 4 && p; k++) { p = p.parentElement; const l = p && p.querySelector('label'); if (l) return l.textContent.trim(); } return ''; })())).map(label);
         const hammasi = [...new Set([...bosh, ...boshInp])];
         if (hammasi.length) { TANLA.push({ id: z.id, nom: z.nom, m: hammasi }); X.push(z.nom + ': tanlash kerak — ' + hammasi.join(', ') + ' (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
@@ -177,6 +178,7 @@
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         const nat = await kut(() => { bor(); if (!/add-offer\//.test(location.pathname)) return 'ok'; const er = T.find((t) => /Xato|Ошибка/i.test(t)); if (er) return 'xato: ' + er.replace(/^×?\s*(Xato|Ошибка)\s*/i, '').slice(0, 120); const okT = T.find((t) => /Muvaffaqiyat|Успешно|успешно/i.test(t)); return okT ? 'ok' : null; }, 180000);
         mo.disconnect();
+        if (nat && /обязательные поля|majburiy maydon/i.test(nat)) { try { const bo = [...document.querySelectorAll('input,textarea,ng-select')].filter((x) => x.offsetParent && (x.tagName === 'NG-SELECT' ? !x.querySelector('.ng-value') : (x.type !== 'radio' && x.type !== 'checkbox' && x.type !== 'file' && !String(x.value || '').trim()))).map(label).filter((q, qi, qa) => qa.indexOf(q) === qi).slice(0, 10); nat += ' [bo\'sh: ' + bo.join(', ') + ']'; } catch (_) { /* */ } }
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); KUTX = 0; if (i < ISH.length - 1) { msg('✅ ' + ok + ' ta joylandi. Keyingisigacha ' + Math.round(PAUZA / 1000) + ' s kutilmoqda (xarid tezlik chegarasi)…'); await sl(PAUZA); } }
         else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
         else {
