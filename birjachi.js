@@ -102,6 +102,10 @@
         else { YKUN = String(Math.max(5, parseInt(j, 10) || 10)); try { localStorage.setItem('bj_yetkazish_kun', YKUN); } catch (_) { /* */ } }
       }
       let ok = 0, okMass = 0; const X = [], TANLA = [];
+      // Token va API manzili (bir marta)
+      let _tk = null;
+      const tokenOl = async () => { if (_tk) return _tk; const mainU = [...document.scripts].map((s) => s.src).find((s) => /\/main[.-]/.test(s)); const mt = mainU ? await fetch(mainU).then((r) => r.text()).catch(() => '') : ''; _tk = { tk: (mt.match(/tokenKey\s*=\s*"([^"]+)"/) || [])[1], api: (mt.match(/shopUrl:"([^"]+)"/) || [])[1] || 'https://xarid-api-shop.uzex.uz' }; return _tk; };
+      const qidir = (o, k, d = 0) => { if (!o || typeof o !== 'object' || d > 4) return undefined; if (o[k] != null && typeof o[k] !== 'object') return o[k]; for (const x of Object.values(o)) { const r = qidir(x, k, d + 1); if (r != null) return r; } return undefined; };
       // 1) BITTA IMZO: xaridning o'z «SetRepublishMass» usuli — to'liq anketali tovarlarni o'zi uzaytiradi
       // (ko'pincha ishlamaydi; Ishchi window.__BJ_MASS=false bersa — o'tkazib yuboriladi, to'g'ri birma-bir anketaga)
       if (!S.yoq && ISH.length && window.__BJ_MASS !== false) {
@@ -123,10 +127,13 @@
           obj.signed_Data = JSON.stringify(sig); obj.signature = sig;
           const r = await fetch(api + '/Provider/SetRepublishMass', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem(tk) }, body: JSON.stringify(obj) });
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          await sl(2000);
+          await sl(6000);
           const R2 = await royxat();
+          const j1 = jm();
+          // Ro'yxat to'liq yuklanmagan bo'lsa (qatorlar soni umumiy sondan kam) — «yo'qoldi» deb hisoblamaymiz
+          if (j1 && R2.length < j1 - 1) throw new Error('ro\'yxat to\'liq yuklanmadi (' + R2.length + '/' + j1 + '), natija tekshirilmadi');
           const qolgan = new Set(R2.map((z) => z.id));
-          okMass = ISH.filter((z) => !qolgan.has(z.id)).length;
+          okMass = Math.min(ISH.filter((z) => !qolgan.has(z.id)).length, Math.max(0, (j0 || 0) - (j1 || 0)));
           ok += okMass;
           ISH = ISH.filter((z) => qolgan.has(z.id));
           msg('✅ ' + okMass + ' ta bitta imzo bilan uzaytirildi. Qolgan ' + ISH.length + ' tasi bittalab tekshirilmoqda…');
@@ -157,6 +164,17 @@
         try {
           const dt = document.getElementById('delivery_term') || [...document.querySelectorAll('input')].find((x) => x.offsetParent && /Yetkazib berish muddati|Срок поставки/i.test(label(x)));
           if (dt && !dt.value.trim() && YKUN) { const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; dt.focus(); set.call(dt, YKUN); ['input', 'change', 'keyup', 'blur'].forEach((tt) => dt.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300); }
+        } catch (_) { /* */ }
+        // Nusxa anketada «Tovar markasi» va «Ishlab chiqaruvchi» bo'sh keladi — eski ofertadan olib to'ldiramiz
+        try {
+          const pm = document.getElementById('product_mark'), pf = document.getElementById('product_manafacturer');
+          if ((pm && !pm.value.trim()) || (pf && !pf.value.trim())) {
+            const { tk, api } = await tokenOl();
+            const o = tk ? await fetch(api + '/Provider/GetOfferForEdit/' + z.id, { headers: { Authorization: 'Bearer ' + localStorage.getItem(tk) } }).then((r) => r.json()).catch(() => null) : null;
+            const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+            const yoz = (e, val) => { if (e && !e.value.trim() && val) { e.focus(); set.call(e, String(val)); ['input', 'change', 'keyup', 'blur'].forEach((tt) => e.dispatchEvent(new Event(tt, { bubbles: true }))); } };
+            if (o) { yoz(pm, qidir(o, 'product_mark')); yoz(pf, qidir(o, 'product_manafacturer')); await sl(300); }
+          }
         } catch (_) { /* */ }
         // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
         try {
