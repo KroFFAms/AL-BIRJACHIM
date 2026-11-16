@@ -30,9 +30,9 @@ function log(m) {
   send('jurnal', q);
 }
 
-let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false;
+let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false, yangilaQol = false;
 function send(ch, d) { try { if (win && !win.isDestroyed()) win.webContents.send(ch, d); } catch (_) { /* */ } }
-function holatYubor() { send('holat', { firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akMass: !!cfg.akMass, akOxirgi: cfg.akOxirgi, akIsh, eimzo: Object.keys(cfg.eimzo || {}) }); }
+function holatYubor() { send('holat', { versiya: app.getVersion(), firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akMass: !!cfg.akMass, akOxirgi: cfg.akOxirgi, akIsh, eimzo: Object.keys(cfg.eimzo || {}) }); }
 function firma(id) { return cfg.firmalar.find((f) => f.id === id); }
 function yangila(f, o) { Object.assign(f, o); saqla(); holatYubor(); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -454,6 +454,14 @@ ipcMain.handle('ochir', async (_e, id) => {
 });
 ipcMain.handle('sayt', () => { saytgaUlash(); });
 ipcMain.handle('aktiv', () => { aktivHammasi(); });
+// «🔄 Yangilash» tugmasi: hozir tekshiradi, yangisi bo'lsa yuklab, darhol o'rnatib qayta ochadi
+ipcMain.handle('yangila', async () => {
+  if (!autoUpdater) return { xato: 'Yangilash moduli yo\'q' };
+  if (akIsh || ishlayapti) return { xato: 'Robot band (yig\'ish/aktiv qilish) — tugagach yangilang' };
+  yangilaQol = true; log('🔄 Yangilanish tekshirilmoqda… (hozirgi: ' + app.getVersion() + ')');
+  try { await autoUpdater.checkForUpdates(); } catch (e) { yangilaQol = false; return { xato: e.message }; }
+  return { ok: true };
+});
 ipcMain.handle('navbat', async () => { await navbatOl(); return NAVBAT; });
 ipcMain.handle('tk_och', (_e, id) => tkOch(id));
 ipcMain.handle('tk_holat', async (_e, id, holat) => {
@@ -494,7 +502,12 @@ else {
       try {
         autoUpdater.autoDownload = true; autoUpdater.autoInstallOnAppQuit = true;
         autoUpdater.on('update-available', (i) => log('🆕 Yangi versiya topildi: ' + i.version + ' — yuklanmoqda…'));
-        autoUpdater.on('update-downloaded', (i) => { log('✅ ' + i.version + ' yuklandi — dastur qayta ochilganda o\'rnatiladi'); bildir('AL-BIRJACHIM Ishchi', 'Yangi versiya ' + i.version + ' tayyor — dasturni yopib qayta oching'); });
+        autoUpdater.on('update-downloaded', (i) => {
+          log('✅ ' + i.version + ' yuklandi — dastur qayta ochilganda o\'rnatiladi');
+          if (yangilaQol && !akIsh && !ishlayapti) { log('♻️ Yangi versiya o\'rnatilmoqda, dastur qayta ochiladi…'); app.isQuitting = true; setTimeout(() => autoUpdater.quitAndInstall(false, true), 800); return; }
+          bildir('AL-BIRJACHIM Ishchi', 'Yangi versiya ' + i.version + ' tayyor — dasturni yopib qayta oching');
+        });
+        autoUpdater.on('update-not-available', () => { if (yangilaQol) { log('✔ Eng yangi versiya o\'rnatilgan: ' + app.getVersion()); yangilaQol = false; } });
         autoUpdater.on('error', (e) => log('Yangilash: ' + String(e && e.message || e).slice(0, 120)));
         const tek = () => { if (!akIsh && !ishlayapti) autoUpdater.checkForUpdates().catch(() => {}); };
         setTimeout(tek, 90e3); setInterval(tek, 6 * 3600e3);
