@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('ishchi', {
   sayt: () => ipcRenderer.invoke('sayt'),
   sozla: (o) => ipcRenderer.invoke('sozla', o),
   aktiv: () => ipcRenderer.invoke('aktiv'),
+  eimzo: (id, parol) => ipcRenderer.invoke('eimzo', id, parol),
   navbat: () => ipcRenderer.invoke('navbat'),
   tkOch: (id) => ipcRenderer.invoke('tk_och', id),
   tkHolat: (id, h) => ipcRenderer.invoke('tk_holat', id, h),
