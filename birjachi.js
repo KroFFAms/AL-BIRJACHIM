@@ -135,6 +135,8 @@
         }
       }
       // 2) Qolganlari — «Joylashtirish» nusxa anketasi (add-offer/<id>): to'ldirib bo'ladiganini to'ldiramiz
+      // Xarid tezlik chegarasi («Qisqa vaqt oralig'ida juda ko'p e'lon»): har joylashdan keyin pauza, xato kelsa kutib qayta urinish
+      let KUTX = 0; const PAUZA = Math.max(10, +window.__BJ_PAUZA || 30) * 1000;
       for (let i = 0; i < ISH.length && !S.yoq && !S.stop; i++) {
         const z = ISH[i];
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : '') + (TANLA.length ? ' · ✋ ' + TANLA.length : ''));
@@ -168,7 +170,9 @@
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
         const nat = await kut(() => { bor(); if (!/add-offer\//.test(location.pathname)) return 'ok'; const er = T.find((t) => /Xato|Ошибка/i.test(t)); if (er) return 'xato: ' + er.replace(/^×?\s*(Xato|Ошибка)\s*/i, '').slice(0, 120); const okT = T.find((t) => /Muvaffaqiyat|Успешно|успешно/i.test(t)); return okT ? 'ok' : null; }, 180000);
         mo.disconnect();
-        if (nat === 'ok') { ok++; qil.add(z.id); saqla(); } else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
+        if (nat === 'ok') { ok++; qil.add(z.id); saqla(); KUTX = 0; if (i < ISH.length - 1) { msg('✅ ' + ok + ' ta joylandi. Keyingisigacha ' + Math.round(PAUZA / 1000) + ' s kutilmoqda (xarid tezlik chegarasi)…'); await sl(PAUZA); } }
+        else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
+        else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
         await sl(600);
       }
       if (!S.yoq) {
