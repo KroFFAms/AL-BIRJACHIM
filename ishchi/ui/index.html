@@ -60,7 +60,7 @@
   </div>
 
   <div class="pn" id="pAk">
-    <div class="row" style="margin-bottom:6px"><h3 style="margin:0">♻️ Ofertalarni aktiv qilish</h3><span style="flex:1"></span><button class="ok" id="bAk">▶ Hozir aktiv qilish</button></div>
+    <div class="row" style="margin-bottom:6px"><h3 style="margin:0">♻️ Ofertalarni aktiv qilish</h3><span style="flex:1"></span><button class="no" id="bAkS" hidden>⏹ To'xtatish</button><button class="ok" id="bAk">▶ Hozir aktiv qilish</button></div>
     <div class="mu" style="margin-bottom:8px">Har kuni belgilangan vaqtda hamma xarid firmalarining <b>«Срок истек»</b> tovarlarini o'zi qayta joylaydi (har biri alohida anketa — sayt har biriga E-IMZO imzo so'raydi). Firma qatoridagi <b>🔑 E-IMZO</b> ga parolni bir marta kiritib qo'ysangiz — robot E-IMZO oynasi chiqqanda parolni o'zi yozadi, siz o'tirmaysiz. «Mahsulot faol emas» deganlarini yangi oferta qilish kerak — ro'yxati jurnalda.</div>
     <div class="row">
       <label><input type="checkbox" id="cAk"> Har kuni avtomatik</label>
@@ -111,6 +111,7 @@ function chiz() {
   if (!$('bYng').disabled) $('bYng').textContent = '⬆️ Yangilash' + (H.versiya ? ' (' + H.versiya + ')' : '');
   $('bEp').textContent = '🔑 E-IMZO paroli — hamma firmalar uchun' + ((H.eimzo || []).includes('*') ? ' ✓' : '');
   $('bAk').disabled = !!H.akIsh; $('bAk').textContent = H.akIsh ? '⏳ Aktiv qilinmoqda…' : '▶ Hozir aktiv qilish';
+  $('bAkS').hidden = !H.akIsh;
   $('akOx').textContent = H.akOxirgi ? 'Oxirgi: ' + H.akOxirgi : '';
   $('kel').textContent = H.avto && H.keyingi ? 'Keyingi: ' + new Date(H.keyingi).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
   $('fl').innerHTML = H.firmalar.length ? H.firmalar.map((f) =>
@@ -160,6 +161,7 @@ $('cAuto').onchange = () => ishchi.sozla({ autostart: $('cAuto').checked });
 $('nHar').onchange = () => ishchi.sozla({ har: +$('nHar').value });
 $('bAk').onclick = () => { if (confirm('Hamma xarid firmalarining muddati o\'tgan ofertalari qayta joylansinmi?\nE-IMZO parol so\'rasa — kiriting.')) ishchi.aktiv(); };
 $('cAk').onchange = () => ishchi.sozla({ akAvto: $('cAk').checked });
+$('bAkS').onclick = () => { if (confirm('Aktiv qilish to\'xtatilsinmi?')) { ishchi.aktivToxta(); $('bAkS').textContent = '⏳ To\'xtatilmoqda…'; } };
 $('tAk').onchange = () => ishchi.sozla({ akVaqt: $('tAk').value });
 $('nAk').onchange = () => ishchi.sozla({ akKun: +$('nAk').value });
 $('cMass').onchange = () => ishchi.sozla({ akMass: $('cMass').checked });
