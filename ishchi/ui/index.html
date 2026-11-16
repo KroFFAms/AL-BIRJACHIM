@@ -68,6 +68,10 @@
       <label style="margin-left:14px" title="Saytning «bitta imzo bilan hammasini uzaytirish» usuli — ko'pincha ishlamaydi"><input type="checkbox" id="cMass"> Avval bitta imzo bilan urinib ko'rsin</label>
       <span style="flex:1"></span><span class="mu" id="akOx"></span>
     </div>
+    <div class="row" style="margin-top:8px">
+      <button class="ac" id="bEp">🔑 E-IMZO paroli — hamma firmalar uchun</button>
+      <span class="mu">Hamma kalitlarning paroli bir xil bo'lsa — shu yerga bir marta kiriting. Firma qatoridagi 🔑 faqat paroli boshqacha firma uchun.</span>
+    </div>
   </div>
 
   <div class="pn">
@@ -103,6 +107,7 @@ function chiz() {
   if (document.activeElement !== $('tAk')) $('tAk').value = H.akVaqt || '09:00';
   if (document.activeElement !== $('nAk')) $('nAk').value = H.akKun || 10;
   $('cMass').checked = !!H.akMass;
+  $('bEp').textContent = '🔑 E-IMZO paroli — hamma firmalar uchun' + ((H.eimzo || []).includes('*') ? ' ✓' : '');
   $('bAk').disabled = !!H.akIsh; $('bAk').textContent = H.akIsh ? '⏳ Aktiv qilinmoqda…' : '▶ Hozir aktiv qilish';
   $('akOx').textContent = H.akOxirgi ? 'Oxirgi: ' + H.akOxirgi : '';
   $('kel').textContent = H.avto && H.keyingi ? 'Keyingi: ' + new Date(H.keyingi).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
@@ -127,7 +132,7 @@ document.addEventListener('click', (e) => {
   else if (b.dataset.e) eimzoSora(b.dataset.e);
 });
 function eimzoSora(id) {
-  const f = (H && H.firmalar || []).find((x) => x.id === id); const bor = (H && H.eimzo || []).includes(id);
+  const f = id === '*' ? { nom: 'hamma firmalar' } : (H && H.firmalar || []).find((x) => x.id === id); const bor = (H && H.eimzo || []).includes(id);
   document.getElementById('ePd')?.remove();
   const d = document.createElement('div'); d.id = 'ePd';
   d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99';
@@ -155,6 +160,7 @@ $('cAk').onchange = () => ishchi.sozla({ akAvto: $('cAk').checked });
 $('tAk').onchange = () => ishchi.sozla({ akVaqt: $('tAk').value });
 $('nAk').onchange = () => ishchi.sozla({ akKun: +$('nAk').value });
 $('cMass').onchange = () => ishchi.sozla({ akMass: $('cMass').checked });
+$('bEp').onclick = () => eimzoSora('*');
 ishchi.on('holat', (d) => { H = d; chiz(); });
 let TK = [];
 const TKH = { kutilmoqda: 'navbatda', ochildi: 'ochildi — yuborishni kutmoqda', xato: 'xato' };
