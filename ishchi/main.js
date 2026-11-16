@@ -221,6 +221,8 @@ public class BJW {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+  public static string Cls(IntPtr h) { var sb = new StringBuilder(256); GetClassName(h, sb, 256); return sb.ToString(); }
   public static List<long[]> Top() {
     var r = new List<long[]>();
     EnumWindows((h, l) => { if (IsWindowVisible(h)) { uint pid; GetWindowThreadProcessId(h, out pid); r.Add(new long[] { (long)h, pid }); } return true; }, IntPtr.Zero);
@@ -233,15 +235,20 @@ $parol = [Console]::In.ReadLine()
 $yoz = -join ($parol.ToCharArray() | ForEach-Object { if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ } })
 $korilgan = @{}
 $nomlar = @{}
+$korgan = @{}
 $sh = New-Object -ComObject WScript.Shell
+foreach ($w in [BJW]::Top()) { $korgan[[string]$w[0]] = 1 }
 while ($true) {
   $hozir = @{}
   foreach ($w in [BJW]::Top()) {
     $h = [IntPtr]$w[0]; $pi = $w[1]
     if (-not $nomlar.ContainsKey($pi)) { $p = Get-Process -Id $pi -ErrorAction SilentlyContinue; if ($p) { $nomlar[$pi] = $p.ProcessName } else { $nomlar[$pi] = '' } }
     $t = [BJW]::Title($h)
-    if ($t -eq '') { continue }
-    $bu = ($t -match 'E-?IMZO') -or ($nomlar[$pi] -match 'E-?IMZO') -or (($nomlar[$pi] -match 'javaw?$') -and ($t -match 'парол|parol|password|ключ|kalit'))
+    $cls = [BJW]::Cls($h)
+    $kk = [string]$w[0]
+    if (-not $korgan.ContainsKey($kk)) { $korgan[$kk] = 1; Write-Output ('OYNA ' + $nomlar[$pi] + ' | ' + $cls + ' | ' + $t) }
+    if ($t -eq '' -and $cls -notmatch 'SunAwt') { continue }
+    $bu = ($t -match 'E-?IMZO') -or ($nomlar[$pi] -match 'E-?IMZO') -or ($cls -match 'SunAwtDialog') -or (($nomlar[$pi] -match 'javaw?$') -and ($t -match 'парол|parol|password|ключ|kalit'))
     if (-not $bu) { continue }
     $k = [string]$w[0]
     $hozir[$k] = 1
@@ -280,12 +287,13 @@ function parolBoshla(f) {
     fs.writeFileSync(ps1, EIMZO_PS, 'utf8');
     p = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     p.stdin.write(parol + '\r\n');
-    let n = 0;
+    let n = 0, oy = 0; const t0 = Date.now();
     p.stdout.on('data', (d) => {
       for (const q of String(d).split(/\r?\n/).filter(Boolean)) {
         if (/^YOZILDI/.test(q)) { n++; if (n <= 3 || n % 10 === 0) log((f.nom || f.id) + ': 🔑 E-IMZO paroli avtomatik kiritildi (' + n + ')'); }
         else if (/^XATO/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO oynasi parol kiritilgach yopilmadi — parol noto\'g\'ri bo\'lishi mumkin, Ishchi\'da «🔑 E-IMZO» ni qayta kiriting'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmadi — tekshiring'); }
         else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
+        else if (/^OYNA/.test(q)) { oy++; if (oy > 40 || Date.now() - t0 < 3000) continue; log('🪟 yangi oyna: ' + q.slice(5, 140)); }
       }
     });
     p.stderr.on('data', (d) => { const s = String(d).trim(); if (s) log('E-IMZO yozuvchi: ' + s.slice(0, 160)); });
