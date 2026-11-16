@@ -1,7 +1,7 @@
 {
   "name": "al-birjachim-ishchi",
   "productName": "AL-BIRJACHIM Ishchi",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "AL-BIRJACHIM ishchi dasturi: firmalar kabinetlaridan lotlarni yig'adi",
   "main": "main.js",
   "author": "KROFF",
@@ -10,12 +10,16 @@
     "start": "electron .",
     "dist": "electron-builder --win --publish never"
   },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
   "devDependencies": {
     "electron": "33.2.1",
     "electron-builder": "25.1.8"
   },
   "build": {
     "appId": "uz.kroff.birjachim.ishchi",
+    "publish": [{ "provider": "github", "owner": "KroFFAms", "repo": "AL-BIRJACHIM" }],
     "productName": "AL-BIRJACHIM Ishchi",
     "files": ["main.js", "preload.js", "ui/**"],
     "win": { "target": [{ "target": "nsis", "arch": ["x64"] }] },
