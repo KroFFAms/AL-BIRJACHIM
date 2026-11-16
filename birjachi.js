@@ -136,7 +136,13 @@
       }
       // 2) Qolganlari — «Joylashtirish» nusxa anketasi (add-offer/<id>): to'ldirib bo'ladiganini to'ldiramiz
       // Xarid tezlik chegarasi («Qisqa vaqt oralig'ida juda ko'p e'lon»): har joylashdan keyin pauza, xato kelsa kutib qayta urinish
-      let KUTX = 0; const PAUZA = Math.max(10, +window.__BJ_PAUZA || 30) * 1000;
+      let KUTX = 0, MAJB = 0; const PAUZA = Math.max(10, +window.__BJ_PAUZA || 30) * 1000;
+      // Diagnostika: anketadagi BO'SH maydonlar (label bilan) — sayt «не все обязательные поля» desa, nimasi bo'shligini ko'ramiz
+      const boshlar = () => { const L = []; try {
+        for (const x of document.querySelectorAll('input, textarea')) { if (!x.offsetParent || x.type === 'hidden' || x.type === 'checkbox' || x.type === 'radio' || x.closest('ng-select')) continue; if (!String(x.value || '').trim()) L.push(label(x) + (x.id ? '#' + x.id : '')); }
+        for (const n of document.querySelectorAll('ng-select')) { if (!n.querySelector('.ng-value')) L.push(label(n) + (n.classList.contains('ng-select-disabled') ? '(qulf)' : '')); }
+        const G = {}; for (const r of document.querySelectorAll('input[type=radio]')) { if (!r.offsetParent) continue; (G[r.name || '?'] = G[r.name || '?'] || []).push(r); } for (const k in G) if (!G[k].some((r) => r.checked)) L.push('radio:' + k);
+      } catch (_) { /* */ } return [...new Set(L)].slice(0, 20).join(', '); };
       for (let i = 0; i < ISH.length && !S.yoq && !S.stop; i++) {
         const z = ISH[i];
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> anketasi ochilmoqda…<br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : '') + (TANLA.length ? ' · ✋ ' + TANLA.length : ''));
@@ -164,6 +170,7 @@
         const boshInp = [...document.querySelectorAll('input')].filter((x) => x.offsetParent && x.type !== 'radio' && x.type !== 'checkbox' && !x.value.trim() && /^\*/.test((() => { let p = x; for (let k = 0; k < 4 && p; k++) { p = p.parentElement; const l = p && p.querySelector('label'); if (l) return l.textContent.trim(); } return ''; })())).map(label);
         const hammasi = [...new Set([...bosh, ...boshInp])];
         if (hammasi.length) { TANLA.push({ id: z.id, nom: z.nom, m: hammasi }); X.push(z.nom + ': tanlash kerak — ' + hammasi.join(', ') + ' (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
+        const BOSH = boshlar();
         tg.scrollIntoView({ block: 'center' }); await sl(200);
         const T = []; const mo = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && /toast|notif/i.test(n.className + ' ' + ((n.parentElement || {}).className || ''))) T.push(n.innerText.replace(/\s+/g, ' ').trim()); }); mo.observe(document.body, { childList: true, subtree: true });
         tg.click();
@@ -172,7 +179,10 @@
         mo.disconnect();
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); KUTX = 0; if (i < ISH.length - 1) { msg('✅ ' + ok + ' ta joylandi. Keyingisigacha ' + Math.round(PAUZA / 1000) + ' s kutilmoqda (xarid tezlik chegarasi)…'); await sl(PAUZA); } }
         else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
-        else X.push(z.nom + ': ' + (nat || 'javob kelmadi'));
+        else {
+          X.push(z.nom + ': ' + (nat || 'javob kelmadi') + (/обязательн|majburiy|to.ldirilishi shart/i.test(nat || '') && BOSH ? ' | bo\'sh maydonlar: ' + BOSH : ''));
+          if (/обязательн|majburiy|to.ldirilishi shart/i.test(nat || '')) { MAJB++; if (MAJB >= 3) { X.push('⛔ 3 ta ketma-ket «majburiy maydon» xatosi — bu firmada to\'xtatildi (anketa tuzilishi o\'zgargan, jurnaldagi bo\'sh maydonlar ro\'yxatini yuboring)'); break; } }
+        }
         await sl(600);
       }
       if (!S.yoq) {
