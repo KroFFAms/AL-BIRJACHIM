@@ -348,7 +348,7 @@ function parolBoshla(f) {
         else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
         else if (/^TAYYOR/.test(q)) log((f.nom || f.id) + ': E-IMZO yozuvchi tayyor — oynani kutmoqda');
         else if (/^TIP_YOQ/.test(q)) log((f.nom || f.id) + ': ❗ E-IMZO yozuvchi ishga tushmadi (Windows .NET komponenti yuklanmadi)');
-        else if (/^OYNA/.test(q)) { oy++; if (oy > 40 || Date.now() - t0 < 3000) continue; log('🪟 yangi oyna: ' + q.slice(5, 140)); }
+        else if (/^OYNA/.test(q)) { oy++; } // diagnostika — jurnalga yozilmaydi
       }
     });
     p.stderr.on('data', (d) => { const s = String(d).trim(); if (s) log('E-IMZO yozuvchi: ' + s.slice(0, 160)); });
@@ -377,7 +377,7 @@ async function aktivFirma(f) {
   try { return await aktivFirmaIch(f); } finally { toxta(); }
 }
 async function aktivFirmaIch(f) {
-  const w = firmaOynasi(f, true);
+  const w = firmaOynasi(f, false); // oyna ko'rsatilmaydi — fonda ishlaydi (faqat qo'lda kirish kerak bo'lsa ochiladi)
   yangila(f, { akHolat: 'aktiv qilinmoqda…' });
   await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8');
   if (!ichkaridami(f, w)) {
