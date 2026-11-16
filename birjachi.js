@@ -103,7 +103,8 @@
       }
       let ok = 0, okMass = 0; const X = [], TANLA = [];
       // 1) BITTA IMZO: xaridning o'z «SetRepublishMass» usuli — to'liq anketali tovarlarni o'zi uzaytiradi
-      if (!S.yoq && ISH.length) {
+      // (ko'pincha ishlamaydi; Ishchi window.__BJ_MASS=false bersa — o'tkazib yuboriladi, to'g'ri birma-bir anketaga)
+      if (!S.yoq && ISH.length && window.__BJ_MASS !== false) {
         try {
           msg('✍️ ' + ISH.length + ' ta tovar <b>bitta E-IMZO imzosi</b> bilan uzaytirilmoqda… Parol so\'rasa — kiriting.');
           const j0 = jm();
