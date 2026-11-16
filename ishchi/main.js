@@ -62,6 +62,46 @@ function ichkaridami(f, w) {
   try { const u = new URL(w.webContents.getURL()); const p = PLAT[f.platforma]; return p.host.test(u.host) && p.ichi.test(u.pathname) && !/login|auth|signin/i.test(u.href); } catch (_) { return false; }
 }
 
+// ---------- 🤖 Avtomatik kirish: id.uzex.uz sahifasida firmaning kalitini ro'yxatdan tanlab «Кириш» bosadi ----------
+// E-IMZO parolini parolBoshla() yozuvchisi kiritadi (saqlangan bo'lsa). Kalit firma nomi bo'yicha tanlanadi.
+function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
+async function avtoKirish(f, w) {
+  if (!eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
+  const nom = kalit(f.nom || '');
+  if (!nom) return 'nom yoq';
+  const js = `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const vis=e=>e&&e.offsetParent!==null;
+    let ns=null;for(let i=0;i<40&&!ns;i++){ns=[...document.querySelectorAll('nz-select')].find(n=>vis(n)&&/ключ|kalit|key/i.test(n.textContent));if(!ns)await sl(500);}
+    if(!ns)return 'SELECT_YOQ';
+    const sel=ns.querySelector('.ant-select-selector')||ns;
+    sel.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));sel.click();
+    let ops=[];for(let i=0;i<40&&!ops.length;i++){await sl(400);ops=[...document.querySelectorAll('.ant-select-item-option,nz-option-item,[role=option]')].filter(vis).filter(o=>o.textContent.trim());}
+    if(!ops.length)return 'KALIT_YOQ';
+    const norm=s=>String(s).toUpperCase().replace(/["'«»“”]/g,'').replace(/\\s+/g,' ');
+    const q=${JSON.stringify(nom)}.split(' ').filter(x=>x.length>2);
+    let best=null,bs=0;for(const o of ops){const tt=norm(o.textContent);const sc=q.filter(x=>tt.includes(x)).length;if(sc>bs){bs=sc;best=o;}}
+    if(!best||bs<Math.min(2,q.length))return 'MOS_YOQ: '+ops.map(o=>o.textContent.trim().replace(/\\s+/g,' ').slice(0,60)).join(' | ');
+    best.click();await sl(800);
+    let b=null;for(let i=0;i<10&&!b;i++){b=[...document.querySelectorAll('button')].find(x=>vis(x)&&!x.disabled&&/^(Кириш|Kirish|Войти|Вход|Login)$/i.test(x.textContent.trim()));if(!b)await sl(300);}
+    if(!b)return 'TUGMA_YOQ';b.click();return 'OK: '+best.textContent.trim().replace(/\\s+/g,' ').slice(0,60);})()`;
+  let r = '';
+  try { r = String(await w.webContents.executeJavaScript(js)); } catch (e) { r = 'XATO: ' + e.message; }
+  if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 70));
+  else log((f.nom || f.id) + ': avtomatik kirish bo\'lmadi (' + r.slice(0, 160) + ') — qo\'lda kiring');
+  return r;
+}
+// Kirish sahifasida bo'lsa — avtomatik urinib, kabinetga kirishini 2 daqiqagacha kutadi
+async function kirishUrin(f, w, start) {
+  if (ichkaridami(f, w)) return true;
+  const r = await avtoKirish(f, w);
+  if (!/^OK/.test(r)) return false;
+  for (let i = 0; i < 60 && !w.isDestroyed(); i++) {
+    await sleep(2000);
+    if (ichkaridami(f, w)) return true;
+    try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, start); } catch (_) { /* */ }
+  }
+  return ichkaridami(f, w);
+}
+
 // ---------- Kirish (foydalanuvchi E-IMZO bilan o'zi kiradi) ----------
 async function kirish(id) {
   const f = firma(id); if (!f) return;
@@ -70,11 +110,15 @@ async function kirish(id) {
   yangila(f, { holat: 'kirilmoqda' });
   await ochish(w, p.start);
   log((f.nom || 'Yangi firma') + ': kirish oynasi ochildi — kalitni tanlab, parolni kiriting');
+  // Parol saqlangan bo'lsa — robot o'zi kiradi (kalit tanlash + parol)
+  const toxtaP = parolBoshla(f);
+  try { await sleep(2500); await kirishUrin(f, w, p.start); } catch (_) { /* */ }
   // 10 daqiqagacha kutamiz: foydalanuvchi kabinetga kirsa — davom
   for (let i = 0; i < 300; i++) {
     if (w.isDestroyed()) return;
     if (ichkaridami(f, w)) {
       log((f.nom || 'Yangi firma') + ': kabinetga kirildi');
+      toxtaP();
       w.hide();
       yangila(f, { holat: 'tayyor' });
       await yigish(id); // birinchi yig'ish firma nomini ham aniqlaydi
@@ -84,6 +128,7 @@ async function kirish(id) {
     try { const u = new URL(w.webContents.getURL()); if (p.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !p.ichi.test(u.pathname) && i % 5 === 4) await ochish(w, p.start); } catch (_) { /* */ }
     await sleep(2000);
   }
+  toxtaP();
   yangila(f, { holat: 'kirish kerak' });
 }
 
@@ -100,6 +145,11 @@ async function yigish(id) {
   yangila(f, { holat: 'yig\'ilmoqda', bosqich: '' });
   try {
     await ochish(w, p.start);
+    if (!ichkaridami(f, w) && f.platforma === 'xarid' && eimzoParol(f)) { // sessiya tugagan — robot o'zi kirishga urinadi
+      log((f.nom || f.id) + ': sessiya tugagan — robot o\'zi kirmoqda…');
+      const tp = parolBoshla(f); try { await kirishUrin(f, w, p.start); } finally { tp(); }
+      if (ichkaridami(f, w)) await ochish(w, p.start);
+    }
     if (!ichkaridami(f, w)) { yangila(f, { holat: 'kirish kerak' }); log((f.nom || f.id) + ': sessiya tugagan — "Kirish" ni bosing'); return; }
     if (cfg.ses) await w.webContents.executeJavaScript('document.documentElement.dataset.birjachiSessiya=' + JSON.stringify(cfg.ses) + ';1');
     const js = await skriptOl(p.js);
@@ -333,11 +383,14 @@ async function aktivFirmaIch(f) {
   if (!ichkaridami(f, w)) {
     // Sessiya tugagan — kirish oynasini ko'rsatib, xodimni 10 daqiqagacha kutamiz (E-IMZO bilan o'zi kiradi)
     yangila(f, { holat: 'kirilmoqda', akHolat: 'kirish kutilmoqda…' });
-    log((f.nom || f.id) + ': sessiya tugagan — kirish oynasi ochildi, kalitni tanlab parolni kiriting');
-    bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'Xarid kabinetiga kiring (E-IMZO) — robot kutmoqda');
-    w.show(); w.focus();
     let kirdi = false;
-    for (let i = 0; i < 300 && !w.isDestroyed() && !akToxta; i++) {
+    try { kirdi = await kirishUrin(f, w, 'https://xarid.uzex.uz/provider/shop/offer-list/8'); } catch (_) { /* */ }
+    if (!kirdi) {
+      log((f.nom || f.id) + ': sessiya tugagan — kirish oynasi ochildi, kalitni tanlab parolni kiriting');
+      bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'Xarid kabinetiga kiring (E-IMZO) — robot kutmoqda');
+      w.show(); w.focus();
+    }
+    for (let i = 0; i < 300 && !w.isDestroyed() && !akToxta && !kirdi; i++) {
       if (ichkaridami(f, w)) { kirdi = true; break; }
       try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8'); } catch (_) { /* */ }
       await sleep(2000);
