@@ -3,6 +3,7 @@
 // kabinetlaridan lotlarni o'zi yig'adi va AL-BIRJACHIM bazasiga yozadi.
 // FAQAT O'QIYDI: taklif bermaydi, hech narsani tasdiqlamaydi.
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, dialog, Notification } = require('electron');
+let autoUpdater = null; try { ({ autoUpdater } = require('electron-updater')); } catch (_) { /* dev rejimda yo'q bo'lishi mumkin */ }
 const path = require('path');
 const fs = require('fs');
 
@@ -372,6 +373,18 @@ else {
     // Ishga tushgandan 1 daqiqa keyin birinchi yig'ish
     if (cfg.avto && cfg.firmalar.length) { keyingi = Date.now() + 60e3; taymer = setTimeout(hammasi, 60e3); }
     navbatOl(); setInterval(navbatOl, 60e3); // taklif navbati har daqiqada
+    // O'z-o'zini yangilash: GitHub Releases'dagi yangi versiyani yuklab, keyingi ochilishda o'rnatadi
+    if (autoUpdater) {
+      try {
+        autoUpdater.autoDownload = true; autoUpdater.autoInstallOnAppQuit = true;
+        autoUpdater.on('update-available', (i) => log('🆕 Yangi versiya topildi: ' + i.version + ' — yuklanmoqda…'));
+        autoUpdater.on('update-downloaded', (i) => { log('✅ ' + i.version + ' yuklandi — dastur qayta ochilganda o\'rnatiladi'); bildir('AL-BIRJACHIM Ishchi', 'Yangi versiya ' + i.version + ' tayyor — dasturni yopib qayta oching'); });
+        autoUpdater.on('error', (e) => log('Yangilash: ' + String(e && e.message || e).slice(0, 120)));
+        const tek = () => { if (!akIsh && !ishlayapti) autoUpdater.checkForUpdates().catch(() => {}); };
+        setTimeout(tek, 90e3); setInterval(tek, 6 * 3600e3);
+      } catch (e) { log('Yangilash sozlanmadi: ' + e.message); }
+    }
+
     setTimeout(akTekshir, 3 * 60e3); setInterval(akTekshir, 60e3); // ofertalarni aktiv qilish — kuniga bir marta
     holatYubor();
   });
