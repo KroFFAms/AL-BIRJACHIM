@@ -36,6 +36,7 @@
 <header>
   <b>📊 AL-BIRJACHIM Ishchi</b><span class="mu" style="color:#d6e6ff">· lotlarni yig'ish + taklif navbati</span>
   <span class="sp"></span>
+  <button id="bYng" title="Yangi versiya bo'lsa yuklab, o'rnatib qayta ochadi">⬆️ Yangilash</button>
   <button class="ok" id="bHammasi">🔄 Hozir yig'ish</button>
 </header>
 <main>
@@ -107,6 +108,7 @@ function chiz() {
   if (document.activeElement !== $('tAk')) $('tAk').value = H.akVaqt || '09:00';
   if (document.activeElement !== $('nAk')) $('nAk').value = H.akKun || 10;
   $('cMass').checked = !!H.akMass;
+  if (!$('bYng').disabled) $('bYng').textContent = '⬆️ Yangilash' + (H.versiya ? ' (' + H.versiya + ')' : '');
   $('bEp').textContent = '🔑 E-IMZO paroli — hamma firmalar uchun' + ((H.eimzo || []).includes('*') ? ' ✓' : '');
   $('bAk').disabled = !!H.akIsh; $('bAk').textContent = H.akIsh ? '⏳ Aktiv qilinmoqda…' : '▶ Hozir aktiv qilish';
   $('akOx').textContent = H.akOxirgi ? 'Oxirgi: ' + H.akOxirgi : '';
@@ -151,6 +153,7 @@ function eimzoSora(id) {
 }
 document.addEventListener('change', (e) => { const c = e.target; if (c.dataset && c.dataset.oc) ishchi.ochiq(c.dataset.oc, c.checked); });
 $('bHammasi').onclick = () => ishchi.hammasi();
+$('bYng').onclick = async () => { $('bYng').disabled = true; $('bYng').textContent = '⏳ Tekshirilmoqda…'; const r = await ishchi.yangila(); if (r && r.xato) alert(r.xato); setTimeout(() => { $('bYng').disabled = false; $('bYng').textContent = '⬆️ Yangilash' + (H && H.versiya ? ' (' + H.versiya + ')' : ''); }, 8000); };
 $('bSayt').onclick = () => ishchi.sayt();
 $('cAvto').onchange = () => ishchi.sozla({ avto: $('cAvto').checked });
 $('cAuto').onchange = () => ishchi.sozla({ autostart: $('cAuto').checked });
