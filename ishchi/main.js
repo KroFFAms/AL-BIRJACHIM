@@ -30,7 +30,7 @@ function log(m) {
   send('jurnal', q);
 }
 
-let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false, yangilaQol = false;
+let win = null, tray = null, ishlayapti = false, keyingi = 0, taymer = null, akIsh = false, akToxta = false, yangilaQol = false;
 function send(ch, d) { try { if (win && !win.isDestroyed()) win.webContents.send(ch, d); } catch (_) { /* */ } }
 function holatYubor() { send('holat', { versiya: app.getVersion(), firmalar: cfg.firmalar, ses: !!cfg.ses, har: cfg.har, avto: cfg.avto, autostart: cfg.autostart, ishlayapti, keyingi, akAvto: cfg.akAvto, akVaqt: cfg.akVaqt, akKun: cfg.akKun, akMass: !!cfg.akMass, akOxirgi: cfg.akOxirgi, akIsh, eimzo: Object.keys(cfg.eimzo || {}) }); }
 function firma(id) { return cfg.firmalar.find((f) => f.id === id); }
@@ -336,7 +336,7 @@ async function aktivFirmaIch(f) {
     bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'Xarid kabinetiga kiring (E-IMZO) — robot kutmoqda');
     w.show(); w.focus();
     let kirdi = false;
-    for (let i = 0; i < 300 && !w.isDestroyed(); i++) {
+    for (let i = 0; i < 300 && !w.isDestroyed() && !akToxta; i++) {
       if (ichkaridami(f, w)) { kirdi = true; break; }
       try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, 'https://xarid.uzex.uz/provider/shop/offer-list/8'); } catch (_) { /* */ }
       await sleep(2000);
@@ -358,6 +358,7 @@ async function aktivFirmaIch(f) {
     let r = null;
     try { r = JSON.parse(await w.webContents.executeJavaScript('JSON.stringify({ish:!!window.__BJ_AKTIV,m:(document.getElementById("bjAkM")||{}).innerText||""})')); } catch (_) { /* sahifa band */ }
     if (r) { nat = r.m; if (!r.ish) break; const q = /(\d+)\/(\d+)/.exec(r.m); yangila(f, { akHolat: q ? q[0] + ' …' : 'aktiv qilinmoqda…' }); }
+    if (akToxta) { try { await w.webContents.executeJavaScript('window.__BJ_AKTIV&&(window.__BJ_AKTIV.stop=true);1'); } catch (_) { /* */ } await sleep(6000); yangila(f, { akHolat: 'to\'xtatildi' }); try { w.hide(); } catch (_) { /* */ } return 'to\'xtatildi'; }
     await sleep(4000);
   }
   const ok = (/(\d+)\s*ta qayta joylandi/.exec(nat) || [])[1] || '0';
@@ -371,12 +372,13 @@ async function aktivFirmaIch(f) {
 async function aktivHammasi() {
   if (akIsh) return;
   for (let i = 0; i < 90 && ishlayapti; i++) await sleep(20e3); // yig'ish tugashini kutamiz
-  akIsh = true; holatYubor();
+  akIsh = true; akToxta = false; holatYubor();
   log('♻️ Ofertalarni aktiv qilish boshlandi. E-IMZO parol so\'rasa — kiriting va «Запомнить на 6 час.» ni belgilang.');
   bildir('AL-BIRJACHIM', 'Ofertalarni aktiv qilish boshlandi — E-IMZO parol so\'rasa, kiriting');
   const N = [];
   for (const f of cfg.firmalar) {
     if (f.ochiq === false || f.platforma !== 'xarid') continue;
+    if (akToxta) { N.push((f.nom || f.id) + ': to\'xtatildi'); continue; }
     try { N.push((f.nom || f.id) + ': ' + await aktivFirma(f)); } catch (e) { yangila(f, { akHolat: 'xato' }); N.push((f.nom || f.id) + ': xato — ' + e.message); log((f.nom || f.id) + ': aktiv qilish XATO — ' + e.message); }
   }
   cfg.akOxirgi = bugun(); saqla();
@@ -466,6 +468,7 @@ ipcMain.handle('ochir', async (_e, id) => {
 });
 ipcMain.handle('sayt', () => { saytgaUlash(); });
 ipcMain.handle('aktiv', () => { aktivHammasi(); });
+ipcMain.handle('aktiv_toxta', () => { if (akIsh) { akToxta = true; log('⏹ Aktiv qilish to\'xtatilmoqda (joriy tovar tugagach)…'); } });
 // «🔄 Yangilash» tugmasi: hozir tekshiradi, yangisi bo'lsa yuklab, darhol o'rnatib qayta ochadi
 ipcMain.handle('yangila', async () => {
   if (!autoUpdater) return { xato: 'Yangilash moduli yo\'q' };
