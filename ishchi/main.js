@@ -209,6 +209,7 @@ async function tkOch(id) {
 // Yozish — Windows'ning o'zi orqali (PowerShell + SendKeys): E-IMZO'ning parol oynasi topilganda parol + Enter yuboriladi.
 const EIMZO_PS = `
 $ErrorActionPreference = 'SilentlyContinue'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @"
 using System; using System.Text; using System.Collections.Generic; using System.Runtime.InteropServices;
@@ -371,8 +372,11 @@ async function aktivFirmaIch(f) {
 }
 async function aktivHammasi() {
   if (akIsh) return;
-  for (let i = 0; i < 90 && ishlayapti; i++) await sleep(20e3); // yig'ish tugashini kutamiz
+  // Qulf DARHOL qo'yiladi — aks holda yig'ish tugashini kutayotganda tugma qayta-qayta bosilsa, bir nechta parallel ishga tushib ketadi
   akIsh = true; akToxta = false; holatYubor();
+  if (ishlayapti) log('♻️ Aktiv qilish navbatda — yig\'ish tugashini kutmoqda…');
+  for (let i = 0; i < 90 && ishlayapti && !akToxta; i++) await sleep(20e3); // yig'ish tugashini kutamiz
+  if (akToxta) { akIsh = false; holatYubor(); log('⏹ Aktiv qilish bekor qilindi'); return; }
   log('♻️ Ofertalarni aktiv qilish boshlandi. E-IMZO parol so\'rasa — kiriting va «Запомнить на 6 час.» ni belgilang.');
   bildir('AL-BIRJACHIM', 'Ofertalarni aktiv qilish boshlandi — E-IMZO parol so\'rasa, kiriting');
   const N = [];
