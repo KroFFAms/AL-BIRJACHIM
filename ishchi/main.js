@@ -165,7 +165,11 @@ async function navbatOl() {
     const j = await api('?navbat=1&holat=kutilmoqda,ochildi,xato');
     NAVBAT = (j.navbat || []).filter((r) => !r.tugash || new Date(r.tugash).getTime() > Date.now()).map((r) => { const f = firmaTop(r.korxona); return { ...r, fid: f ? f.id : null, fnom: f ? f.nom : '' }; });
     send('navbat', NAVBAT);
-  } catch (e) { send('navbat', NAVBAT); }
+  } catch (e) {
+    send('navbat', NAVBAT);
+    // Sayt sessiyasi tugagan bo'lsa — darhol ko'rsatamiz (aks holda navbat ham, Telegram hisobot ham jim qoladi)
+    if (/kirish kerak/i.test(e.message || '') && cfg.ses) { cfg.ses = ''; saqla(); holatYubor(); log('❗ AL-BIRJACHIM sayt sessiyasi tugagan — «🔗 Ulash» ni qayta bosing'); bildir('AL-BIRJACHIM Ishchi', 'Sayt sessiyasi tugagan — «🔗 Ulash» ni bosing'); }
+  }
 }
 function toldirishSkripti(narx) {
   return `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));
@@ -261,7 +265,7 @@ while ($true) {
 `;
 function eimzoParol(f) {
   try {
-    const b = (cfg.eimzo || {})[f.id];
+    const b = (cfg.eimzo || {})[f.id] || (cfg.eimzo || {})['*']; // firma paroli, bo'lmasa — hamma firmalar uchun umumiy
     if (!b || !safeStorage.isEncryptionAvailable()) return '';
     return safeStorage.decryptString(Buffer.from(b, 'base64'));
   } catch (_) { return ''; }
@@ -291,7 +295,7 @@ function parolBoshla(f) {
   return () => { try { if (p && !p.killed) p.kill(); } catch (_) { /* */ } };
 }
 ipcMain.handle('eimzo', (_e, id, parol) => {
-  const f = firma(id); if (!f) return { xato: 'firma topilmadi' };
+  const f = id === '*' ? { nom: 'Hamma firmalar' } : firma(id); if (!f) return { xato: 'firma topilmadi' };
   cfg.eimzo = cfg.eimzo || {};
   if (!parol) { delete cfg.eimzo[id]; saqla(); holatYubor(); log((f.nom || id) + ': E-IMZO paroli o\'chirildi'); return { ok: true }; }
   if (!safeStorage.isEncryptionAvailable()) return { xato: 'Windows shifrlash mavjud emas — parol saqlanmadi' };
@@ -376,7 +380,12 @@ async function aktivHammasi() {
       if (q.length) qolda.push('• ' + (f.nom || f.id) + ':\n  ' + q.join('\n  '));
     }
     const matn = '♻️ Ofertalarni aktiv qilish — ' + new Date().toLocaleString('ru-RU') + '\n\n' + N.join('\n') + (qolda.length ? '\n\n✋ Qo\'lda qilish kerak (yangi oferta / to\'ldirish):\n' + qolda.join('\n') : '');
-    if (cfg.ses) await api('?robot_xabar=1', { method: 'POST', body: { matn } });
+    if (!cfg.ses) { log('Telegram hisobot yuborilmadi: dastur AL-BIRJACHIM akkauntiga ulanmagan («🔗 Ulash»)'); return; }
+    let xato = '';
+    for (let u = 0; u < 3; u++) { // 3 marta urinamiz (internet/sayt vaqtincha javob bermasa)
+      try { await api('?robot_xabar=1', { method: 'POST', body: { matn } }); log('📨 Telegram hisoboti yuborildi'); xato = ''; break; } catch (e) { xato = e.message; await sleep(30e3); }
+    }
+    if (xato) { log('❗ Telegram hisobot yuborilmadi: ' + xato + (/kirish kerak|401/.test(xato) ? ' — sayt sessiyasi tugagan, «🔗 Ulash» ni qayta bosing' : '')); bildir('AL-BIRJACHIM', 'Telegram hisoboti yuborilmadi: ' + xato); }
   } catch (e) { log('Telegram hisobot yuborilmadi: ' + e.message); }
 }
 function akTekshir() {
