@@ -231,6 +231,8 @@ public class BJW {
   public static string Title(IntPtr h) { var sb = new StringBuilder(512); GetWindowText(h, sb, 512); return sb.ToString(); }
 }
 "@
+if (-not ('BJW' -as [type])) { Write-Output 'TIP_YOQ'; exit }
+Write-Output 'TAYYOR'
 $parol = [Console]::In.ReadLine()
 $yoz = -join ($parol.ToCharArray() | ForEach-Object { if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ } })
 $korilgan = @{}
@@ -293,6 +295,8 @@ function parolBoshla(f) {
         if (/^YOZILDI/.test(q)) { n++; if (n <= 3 || n % 10 === 0) log((f.nom || f.id) + ': 🔑 E-IMZO paroli avtomatik kiritildi (' + n + ')'); }
         else if (/^XATO/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO oynasi parol kiritilgach yopilmadi — parol noto\'g\'ri bo\'lishi mumkin, Ishchi\'da «🔑 E-IMZO» ni qayta kiriting'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmadi — tekshiring'); }
         else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
+        else if (/^TAYYOR/.test(q)) log((f.nom || f.id) + ': E-IMZO yozuvchi tayyor — oynani kutmoqda');
+        else if (/^TIP_YOQ/.test(q)) log((f.nom || f.id) + ': ❗ E-IMZO yozuvchi ishga tushmadi (Windows .NET komponenti yuklanmadi)');
         else if (/^OYNA/.test(q)) { oy++; if (oy > 40 || Date.now() - t0 < 3000) continue; log('🪟 yangi oyna: ' + q.slice(5, 140)); }
       }
     });
