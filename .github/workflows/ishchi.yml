@@ -28,6 +28,9 @@ jobs:
       - name: Releasega joylash
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ishchi-v${{ steps.v.outputs.v }}-${{ github.run_number }}
+          tag_name: v${{ steps.v.outputs.v }}
           name: AL-BIRJACHIM Ishchi ${{ steps.v.outputs.v }} (${{ github.run_number }})
-          files: ishchi/dist/*.exe
+          files: |
+            ishchi/dist/*.exe
+            ishchi/dist/*.blockmap
+            ishchi/dist/latest.yml
