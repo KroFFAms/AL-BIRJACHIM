@@ -1262,7 +1262,7 @@ $('tkX').onclick=()=>{$('tk').hidden=true;};
 $('rbX').onclick=()=>{$('rb').hidden=true;};
 $('rbBtn').onclick=async e=>{e.preventDefault();$('rb').hidden=false;
   try{const L=await fetch('https://api.github.com/repos/KroFFAms/AL-BIRJACHIM/releases?per_page=15',{cache:'no-store'}).then(r=>r.json());
-    const R=(L||[]).find(r=>/^ishchi-v/.test(r.tag_name)&&(r.assets||[]).some(a=>/\.exe$/i.test(a.name)));
+    const R=(L||[]).find(r=>/^(ishchi-)?v\d/.test(r.tag_name)&&(r.assets||[]).some(a=>/\.exe$/i.test(a.name)));
     if(R){const a=R.assets.find(a=>/\.exe$/i.test(a.name));$('rbDl').href=a.browser_download_url;$('rbDl').removeAttribute('target');$('rbV').textContent='Versiya '+(a.name.match(/(\d+\.\d+\.\d+)/)||['',''])[1]+' · '+(a.size/1048576).toFixed(0)+' MB · '+new Date(R.published_at).toLocaleDateString('ru-RU');}
     else $('rbV').textContent='Versiyalar ro\'yxati GitHub sahifasida.';}
   catch(err){$('rbV').textContent='Versiyalar ro\'yxati GitHub sahifasida.';}
