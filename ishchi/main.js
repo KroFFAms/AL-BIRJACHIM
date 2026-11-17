@@ -405,7 +405,7 @@ async function aktivFirmaIch(f) {
   const kun = String(Math.max(5, +cfg.akKun || 10));
   // __BJ_MASS=false — «bitta imzo» (SetRepublishMass) urinishi o'tkazib yuboriladi, to'g'ridan-to'g'ri birma-bir anketa orqali
   // alert() ham bosiladi — saytning modal xabari (masalan E-IMZO WebSocket xatosi) robotni to'xtatib qo'ymasin
-  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.__BJ_MASS=' + (cfg.akMass ? 'true' : 'false') + ';window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';window.alert=(m)=>{window.__BJ_ALERT=String(m);};' + js + '\n;1');
+  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.__BJ_MASS=' + (cfg.akMass ? 'true' : 'false') + ';window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';window.alert=(m)=>{window.__BJ_ALERT=String(m);};window.__BJ_SES=' + JSON.stringify(cfg.ses || '') + ';window.__BJ_AI=' + (cfg.akAI === false ? 'false' : 'true') + ';' + js + '\n;1');
   const t0 = Date.now(); let nat = '';
   await sleep(3000);
   while (Date.now() - t0 < 3 * 3600e3) {
@@ -448,7 +448,7 @@ async function aktivHammasi() {
     const qolda = [];
     for (const f of cfg.firmalar) {
       if (f.platforma !== 'xarid' || !f.akIzoh || String(f.akSana || '').slice(0, 10) !== bugun()) continue; // faqat bugungi natija
-      const q = String(f.akIzoh).split('\n').filter((x) => /faol emas|qo.lda|o.tmadi|xato|javob kelmadi/i.test(x) && !/ta o.tmadi/.test(x)).slice(0, 12);
+      const q = String(f.akIzoh).split('\n').filter((x) => /faol emas|qo.lda|o.tmadi|xato|javob kelmadi|AI|olib tashlandi/i.test(x) && !/ta o.tmadi/.test(x)).slice(0, 12);
       if (q.length) qolda.push('• ' + (f.nom || f.id) + ':\n  ' + q.join('\n  '));
     }
     const matn = '♻️ Ofertalarni aktiv qilish — ' + new Date().toLocaleString('ru-RU') + '\n\n' + N.join('\n') + (qolda.length ? '\n\n✋ Qo\'lda qilish kerak (yangi oferta / to\'ldirish):\n' + qolda.join('\n') : '');
