@@ -53,6 +53,10 @@
     const LS = 'bj_aktiv_qilingan2';
     const QM = (() => { try { const o = JSON.parse(localStorage.getItem(LS) || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { return {}; } })();
     const qil = { has: (id) => QM[id] && (Date.now() - QM[id] < 7 * 86400e3), add: (id) => { QM[id] = Date.now(); } };
+    // Doimiy o'tkazib yuboriladiganlar (YaTT uchun taqiqlangan, katalogda faol emas) — har kuni qayta urinilmaydi
+    const LSO = 'bj_otkaz';
+    const OTK = (() => { try { const o = JSON.parse(localStorage.getItem(LSO) || '{}'); return (o && typeof o === 'object') ? o : {}; } catch (_) { return {}; } })();
+    const otkaz = (id, sabab) => { OTK[id] = { s: String(sabab).slice(0, 80), t: Date.now() }; try { localStorage.setItem(LSO, JSON.stringify(OTK)); } catch (_) { /* */ } };
     const saqla = () => { try { for (const k of Object.keys(QM)) if (Date.now() - QM[k] > 30 * 86400e3) delete QM[k]; localStorage.setItem(LS, JSON.stringify(QM)); } catch (_) { /* */ } };
     const pn = document.createElement('div');
     pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:380px;max-height:60vh;overflow:auto';
@@ -94,7 +98,8 @@
       if (!S.yoq) { msg('Ro\'yxat yig\'ilmoqda…'); ROY = await royxat(); }
       const KAT = ROY.filter((z) => z.kat);
       const OLDIN = ROY.filter((z) => !z.kat && qil.has(z.id)).length; // oxirgi 7 kunda joylangan deb belgilanganlar
-      let ISH = ROY.filter((z) => !z.kat && !qil.has(z.id));
+      const OTKN = ROY.filter((z) => !z.kat && OTK[z.id]).length; // doimiy o'tkazib yuboriladiganlar
+      let ISH = ROY.filter((z) => !z.kat && !qil.has(z.id) && !OTK[z.id]);
       if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (OLDIN ? ' (' + OLDIN + ' ta — oxirgi 7 kunda joylangan, moderatsiyada)' : '') + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
       // Yetkazib berish muddati bo'sh bo'lsa — qancha kun (xodim bir marta kiritadi)
       let YKUN = '';
@@ -162,7 +167,7 @@
         await sl(1500);
         // Katalogdagi mahsulot o'chirilgan bo'lsa «Tovar (ish / xizmat)» bo'sh keladi — joylab bo'lmaydi
         const tovarNs = [...document.querySelectorAll('ng-select')].find((n) => /Tovar \(ish|Товар \(работа/i.test(label(n)));
-        if (tovarNs && !tovarNs.querySelector('.ng-value')) { X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak'); continue; }
+        if (tovarNs && !tovarNs.querySelector('.ng-value')) { otkaz(z.id, 'katalogda faol emas'); X.push(z.nom + ': mahsulot katalogda faol emas — yangi oferta kerak (keyingi kunlarda urinilmaydi)'); continue; }
         // Yetkazib berish muddati bo'sh bo'lsa — to'ldiramiz
         try {
           const dt = document.getElementById('delivery_term') || [...document.querySelectorAll('input')].find((x) => x.offsetParent && /Yetkazib berish muddati|Срок поставки/i.test(label(x)));
@@ -177,6 +182,8 @@
             const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
             const yoz = (e, val) => { if (e && !e.value.trim() && val) { e.focus(); set.call(e, String(val)); ['input', 'change', 'keyup', 'blur'].forEach((tt) => e.dispatchEvent(new Event(tt, { bubbles: true }))); } };
             if (o) { yoz(pm, qidir(o, 'product_mark')); yoz(pf, qidir(o, 'product_manafacturer')); await sl(300); }
+            // Eski ofertada ham bo'lmasa — standart: marka = tovar nomi, ishlab chiqaruvchi = O'zbekiston
+            yoz(pm, z.nom); yoz(pf, 'O\'zbekiston'); await sl(200);
           }
         } catch (_) { /* */ }
         // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
@@ -202,6 +209,7 @@
         mo.disconnect();
         if (nat && /обязательные поля|majburiy maydon/i.test(nat)) { try { const bo = [...document.querySelectorAll('input,textarea,ng-select')].filter((x) => x.offsetParent && (x.tagName === 'NG-SELECT' ? !x.querySelector('.ng-value') : (x.type !== 'radio' && x.type !== 'checkbox' && x.type !== 'file' && !String(x.value || '').trim()))).map(label).filter((q, qi, qa) => qa.indexOf(q) === qi).slice(0, 10); nat += ' [bo\'sh: ' + bo.join(', ') + ']'; } catch (_) { /* */ } }
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); KUTX = 0; if (i < ISH.length - 1) { msg('✅ ' + ok + ' ta joylandi. Keyingisigacha ' + Math.round(PAUZA / 1000) + ' s kutilmoqda (xarid tezlik chegarasi)…'); await sl(PAUZA); } }
+        else if (/YaTT|faoliyat turlari|faol emas|не активен/i.test(nat || '')) { otkaz(z.id, nat); X.push(z.nom + ': ' + nat + ' — keyingi kunlarda urinilmaydi'); }
         else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите|WebSocket|E-IMZO|javob bermadi/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
         else {
           X.push(z.nom + ': ' + (nat || 'javob kelmadi') + (/обязательн|majburiy|to.ldirilishi shart/i.test(nat || '') && BOSH ? ' | bo\'sh maydonlar: ' + BOSH : ''));
@@ -214,7 +222,8 @@
           (TANLA.length ? '<br>✋ <b>' + TANLA.length + '</b> ta tovarda xususiyat tanlash kerak (robot taxmin qilmaydi)' : '') +
           (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 8).join('<br>') + '</span>' : '') +
           (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') +
-          (OLDIN ? '<br>↩️ ' + OLDIN + ' ta — oxirgi 7 kunda joylangan (moderatsiyada), qayta yuborilmadi' : ''));
+          (OLDIN ? '<br>↩️ ' + OLDIN + ' ta — oxirgi 7 kunda joylangan (moderatsiyada), qayta yuborilmadi' : '') +
+          (OTKN ? '<br>⛔ ' + OTKN + ' ta — YaTT taqiqi / katalogda faol emas, o\'tkazib yuborildi' : ''));
         yolga('/provider/shop/offer-list/8');
       }
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
