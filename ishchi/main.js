@@ -404,7 +404,8 @@ async function aktivFirmaIch(f) {
   const js = await skriptOl('birjachi.js');
   const kun = String(Math.max(5, +cfg.akKun || 10));
   // __BJ_MASS=false — «bitta imzo» (SetRepublishMass) urinishi o'tkazib yuboriladi, to'g'ridan-to'g'ri birma-bir anketa orqali
-  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.__BJ_MASS=' + (cfg.akMass ? 'true' : 'false') + ';window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';' + js + '\n;1');
+  // alert() ham bosiladi — saytning modal xabari (masalan E-IMZO WebSocket xatosi) robotni to'xtatib qo'ymasin
+  await w.webContents.executeJavaScript('window.__BJ_AKTIV=null;window.__BJ_MASS=' + (cfg.akMass ? 'true' : 'false') + ';window.confirm=()=>true;window.prompt=()=>' + JSON.stringify(kun) + ';window.alert=(m)=>{window.__BJ_ALERT=String(m);};' + js + '\n;1');
   const t0 = Date.now(); let nat = '';
   await sleep(3000);
   while (Date.now() - t0 < 3 * 3600e3) {
