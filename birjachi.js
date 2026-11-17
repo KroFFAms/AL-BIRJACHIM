@@ -192,13 +192,14 @@
         const BOSH = boshlar();
         tg.scrollIntoView({ block: 'center' }); await sl(200);
         const T = []; const mo = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && /toast|notif/i.test(n.className + ' ' + ((n.parentElement || {}).className || ''))) T.push(n.innerText.replace(/\s+/g, ' ').trim()); }); mo.observe(document.body, { childList: true, subtree: true });
+        window.__BJ_ALERT = '';
         tg.click();
         msg('⏳ ' + (i + 1) + '/' + ISH.length + ' — <b>' + z.nom + '</b> joylanmoqda… <b>E-IMZO so\'rasa, tasdiqlang</b><br>✅ ' + ok + ' ta' + (X.length ? ' · ⚠️ ' + X.length : ''));
-        const nat = await kut(() => { bor(); if (!/add-offer\//.test(location.pathname)) return 'ok'; const er = T.find((t) => /Xato|Ошибка/i.test(t)); if (er) return 'xato: ' + er.replace(/^×?\s*(Xato|Ошибка)\s*/i, '').slice(0, 120); const okT = T.find((t) => /Muvaffaqiyat|Успешно|успешно/i.test(t)); return okT ? 'ok' : null; }, 180000);
+        const nat = await kut(() => { bor(); if (!/add-offer\//.test(location.pathname)) return 'ok'; if (window.__BJ_ALERT) return 'xato: ' + String(window.__BJ_ALERT).slice(0, 120); const er = T.find((t) => /Xato|Ошибка/i.test(t)); if (er) return 'xato: ' + er.replace(/^×?\s*(Xato|Ошибка)\s*/i, '').slice(0, 120); const okT = T.find((t) => /Muvaffaqiyat|Успешно|успешно/i.test(t)); return okT ? 'ok' : null; }, 180000);
         mo.disconnect();
         if (nat && /обязательные поля|majburiy maydon/i.test(nat)) { try { const bo = [...document.querySelectorAll('input,textarea,ng-select')].filter((x) => x.offsetParent && (x.tagName === 'NG-SELECT' ? !x.querySelector('.ng-value') : (x.type !== 'radio' && x.type !== 'checkbox' && x.type !== 'file' && !String(x.value || '').trim()))).map(label).filter((q, qi, qa) => qa.indexOf(q) === qi).slice(0, 10); nat += ' [bo\'sh: ' + bo.join(', ') + ']'; } catch (_) { /* */ } }
         if (nat === 'ok') { ok++; qil.add(z.id); saqla(); KUTX = 0; if (i < ISH.length - 1) { msg('✅ ' + ok + ' ta joylandi. Keyingisigacha ' + Math.round(PAUZA / 1000) + ' s kutilmoqda (xarid tezlik chegarasi)…'); await sl(PAUZA); } }
-        else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
+        else if (/Qisqa vaqt|juda ko.p e.lon|biroz kutib|Слишком много|подождите|WebSocket|E-IMZO|javob bermadi/i.test(nat || '') && KUTX < 5) { KUTX++; const w = 60000 * KUTX; msg('⏸ Xarid: «juda ko\'p e\'lon» — ' + (w / 1000) + ' s kutib, <b>' + z.nom + '</b> qayta uriniladi (' + KUTX + '/5)…'); await sl(w); i--; }
         else {
           X.push(z.nom + ': ' + (nat || 'javob kelmadi') + (/обязательн|majburiy|to.ldirilishi shart/i.test(nat || '') && BOSH ? ' | bo\'sh maydonlar: ' + BOSH : ''));
           if (/обязательн|majburiy|to.ldirilishi shart/i.test(nat || '')) { MAJB++; if (MAJB >= 3) { X.push('⛔ 3 ta ketma-ket «majburiy maydon» xatosi — bu firmada to\'xtatildi (anketa tuzilishi o\'zgargan, jurnaldagi bo\'sh maydonlar ro\'yxatini yuboring)'); break; } }
