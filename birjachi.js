@@ -109,7 +109,7 @@
         if (j === null) { msg('Bekor qilindi.'); S.yoq = true; }
         else { YKUN = String(Math.max(5, parseInt(j, 10) || 10)); try { localStorage.setItem('bj_yetkazish_kun', YKUN); } catch (_) { /* */ } }
       }
-      let ok = 0, okMass = 0; const X = [], TANLA = [];
+      let ok = 0, okMass = 0; const X = [], TANLA = [], AIT = [];
       // Token va API manzili (bir marta)
       let _tk = null;
       const tokenOl = async () => { if (_tk) return _tk; const mainU = [...document.scripts].map((s) => s.src).find((s) => /\/main[.-]/.test(s)); const mt = mainU ? await fetch(mainU).then((r) => r.text()).catch(() => '') : ''; _tk = { tk: (mt.match(/tokenKey\s*=\s*"([^"]+)"/) || [])[1], api: (mt.match(/shopUrl:"([^"]+)"/) || [])[1] || 'https://xarid-api-shop.uzex.uz' }; return _tk; };
@@ -212,6 +212,24 @@
         const hammasi = [...new Set([...bosh, ...boshInp])];
         if (hammasi.length) { TANLA.push({ id: z.id, nom: z.nom, m: hammasi }); X.push(z.nom + ': tanlash kerak — ' + hammasi.join(', ') + ' (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
         const BOSH = boshlar();
+        // 🧠 AI tekshiruvi (Ishchi yoqgan bo'lsa): xarid AI-moderatori qoidalari bo'yicha. Tavsifdan brend/ishlab chiqaruvchi nomini olib tashlaydi;
+        // parametr kam / o'lcham noaniq / ziddiyat bo'lsa — yubormaydi, sababini yozadi.
+        if (window.__BJ_AI && window.__BJ_SES) {
+          let aiToxta = '';
+          try {
+            const ta = document.getElementById('conditions') || [...document.querySelectorAll('textarea')].filter((x) => x.offsetParent).sort((a, b) => b.value.length - a.value.length)[0];
+            const xus = [...document.querySelectorAll('ng-select')].filter((n) => n.offsetParent && n.querySelector('.ng-value')).map((n) => label(n) + ': ' + n.querySelector('.ng-value').textContent.trim()).slice(0, 40);
+            const gv = (id) => ((document.getElementById(id) || {}).value || '').trim();
+            const ar = await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: z.nom, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus }) }).then((r) => r.json()).catch(() => null);
+            if (ar && ar.ok && ar.holat === 'toxtat') aiToxta = (ar.muammolar || []).join('; ') || 'talabga mos emas';
+            else if (ar && ar.ok && ar.holat === 'tuzatildi' && ta && ar.tavsif) {
+              const st = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; ta.focus(); st.call(ta, ar.tavsif); ['input', 'change', 'keyup', 'blur'].forEach((tt) => ta.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300);
+              if (ta.value !== ar.tavsif) aiToxta = 'tavsifni o\'zgartirib bo\'lmadi';
+              else AIT.push(z.nom + ': tavsifdan olib tashlandi — ' + ((ar.olib_tashlandi || []).join(', ') || 'brend nomi'));
+            } else if (!ar || !ar.ok) { if (!S.aiXato) { S.aiXato = true; X.push('🧠 AI tekshiruvi ishlamadi (' + ((ar && ar.xato) || 'javob yo\'q') + ') — tekshiruvsiz davom etildi'); } }
+          } catch (_) { /* */ }
+          if (aiToxta) { X.push(z.nom + ': 🧠 AI: ' + aiToxta + ' — qo\'lda tuzating (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
+        }
         tg.scrollIntoView({ block: 'center' }); await sl(200);
         const T = []; const mo = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1 && /toast|notif/i.test(n.className + ' ' + ((n.parentElement || {}).className || ''))) T.push(n.innerText.replace(/\s+/g, ' ').trim()); }); mo.observe(document.body, { childList: true, subtree: true });
         window.__BJ_ALERT = '';
@@ -235,7 +253,8 @@
           (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 8).join('<br>') + '</span>' : '') +
           (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') +
           (OLDIN ? '<br>↩️ ' + OLDIN + ' ta — oxirgi 7 kunda joylangan (moderatsiyada), qayta yuborilmadi' : '') +
-          (OTKN ? '<br>⛔ ' + OTKN + ' ta — YaTT taqiqi / katalogda faol emas, o\'tkazib yuborildi' : ''));
+          (OTKN ? '<br>⛔ ' + OTKN + ' ta — YaTT taqiqi / katalogda faol emas, o\'tkazib yuborildi' : '') +
+          (AIT.length ? '<br>🧠 AI tuzatdi (' + AIT.length + '):<br><span style="font-size:12px">' + AIT.slice(0, 10).join('<br>') + '</span>' : ''));
         yolga('/provider/shop/offer-list/8');
       }
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
