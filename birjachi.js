@@ -186,13 +186,25 @@
             yoz(pm, z.nom); yoz(pf, 'O\'zbekiston'); await sl(200);
           }
         } catch (_) { /* */ }
-        // Asosiy surat tanlanmagan bo'lsa — birinchisini asosiy qilamiz
+        // Asosiy surat: anketada firmaning BUTUN surat ombori ko'rinadi, shuning uchun faqat shu ofertaning O'Z surati
+        // (eski ofertadagi file_id bo'yicha) tanlanadi. Topilmasa — tovar yuborilmaydi (noto'g'ri surat bilan moderatsiya rad etadi).
+        let suratYoq = false;
         try {
           const yozuv = (re) => [...document.querySelectorAll('h1,h2,h3,h4,h5,h6,label,span,div,p')].find((e) => e.childElementCount <= 1 && re.test(e.textContent.trim()) && e.textContent.trim().length < 40);
           const b1 = yozuv(/^(Tovarning surati|Фото товара|Изображение товара)/i), o1 = yozuv(/^\*?\s*(Hisob raqamni tanlang|Выберите расчетный счет)/i);
           const rs = b1 ? [...document.querySelectorAll('input[type=radio]')].filter((x) => (b1.compareDocumentPosition(x) & 4) && (!o1 || (x.compareDocumentPosition(o1) & 4))) : [];
-          if (rs.length && !rs.some((x) => x.checked)) { rs[0].click(); rs[0].dispatchEvent(new Event('change', { bubbles: true })); await sl(400); }
-        } catch (_) { /* */ }
+          if (rs.length) {
+            const { tk, api } = await tokenOl();
+            const o = tk ? await fetch(api + '/Provider/GetOfferForEdit/' + z.id, { headers: { Authorization: 'Bearer ' + localStorage.getItem(tk) } }).then((r) => r.json()).catch(() => null) : null;
+            const ids = []; const mid = o && qidir(o, 'main_image_id'); if (mid) ids.push(String(mid));
+            const yig = (x, d = 0) => { if (!x || typeof x !== 'object' || d > 5) return; if (x.file_id) ids.push(String(x.file_id)); for (const q of Object.values(x)) yig(q, d + 1); }; yig(o);
+            const radioTop = (id) => rs.find((x) => { let p = x; for (let k = 0; k < 6 && p; k++) { p = p.parentElement; if (p && p.querySelectorAll('input[type=radio]').length === 1 && new RegExp('(^|\\D)' + id + '(\\D|$)').test(p.textContent)) return true; } return false; });
+            let r0 = null; for (const id of ids) { r0 = radioTop(id); if (r0) break; }
+            if (r0) { if (!r0.checked) { r0.click(); r0.dispatchEvent(new Event('change', { bubbles: true })); await sl(400); } }
+            else suratYoq = true;
+          }
+        } catch (_) { suratYoq = true; }
+        if (suratYoq) { X.push(z.nom + ': o\'z surati topilmadi — qo\'lda joylang (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
         // Tanlash kerak bo'lgan (bo'sh) maydonlar — tovar xususiyatlari: xodim o'zi tanlaydi, robot taxmin qilmaydi
         // faqat KO'RINADIGAN va nomi aniq bo'sh tanlovlar (yashirin/nomsiz select'lar sababli hammasini o'tkazib yubormaslik uchun)
         const bosh = [...document.querySelectorAll('ng-select')].filter((n) => n.offsetParent && !n.querySelector('.ng-value') && !n.classList.contains('ng-select-disabled') && !/Mahsulotlarni|qidirish|поиск/i.test(label(n)) && label(n) !== '?').map(label);
