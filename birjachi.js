@@ -49,9 +49,11 @@
     if (window.__BJ_AKTIV) { alert('AL-BIRJACHIM: aktiv qilish allaqachon ishlayapti.'); return; }
     const S = (window.__BJ_AKTIV = { stop: false });
     const sl = (ms) => new Promise((r) => setTimeout(r, ms));
-    const LS = 'bj_aktiv_qilingan';
-    const qil = (() => { try { return new Set(JSON.parse(localStorage.getItem(LS) || '[]')); } catch (_) { return new Set(); } })();
-    const saqla = () => { try { localStorage.setItem(LS, JSON.stringify([...qil].slice(-3000))); } catch (_) { /* */ } };
+    // Joylangan deb belgilanganlar: id → vaqt. 7 kundan eski belgi hisobga olinmaydi (eski xato belgilar tufayli tovar abadiy o'tkazib yuborilmasin)
+    const LS = 'bj_aktiv_qilingan2';
+    const QM = (() => { try { const o = JSON.parse(localStorage.getItem(LS) || '{}'); return (o && typeof o === 'object' && !Array.isArray(o)) ? o : {}; } catch (_) { return {}; } })();
+    const qil = { has: (id) => QM[id] && (Date.now() - QM[id] < 7 * 86400e3), add: (id) => { QM[id] = Date.now(); } };
+    const saqla = () => { try { for (const k of Object.keys(QM)) if (Date.now() - QM[k] > 30 * 86400e3) delete QM[k]; localStorage.setItem(LS, JSON.stringify(QM)); } catch (_) { /* */ } };
     const pn = document.createElement('div');
     pn.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:2147483647;background:#0f1b2d;color:#e8eef7;font:14px/1.45 Segoe UI,Arial,sans-serif;padding:14px 16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:380px;max-height:60vh;overflow:auto';
     pn.innerHTML = '<b>♻️ AL-BIRJACHIM — ofertalarni aktiv qilish</b><div id="bjAkM" style="margin:8px 0;color:#b9c8dc">Tayyorlanmoqda…</div><button id="bjAkS" style="background:#d9473b;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer">To\'xtatish</button>';
@@ -91,8 +93,9 @@
       let ROY = [];
       if (!S.yoq) { msg('Ro\'yxat yig\'ilmoqda…'); ROY = await royxat(); }
       const KAT = ROY.filter((z) => z.kat);
+      const OLDIN = ROY.filter((z) => !z.kat && qil.has(z.id)).length; // oxirgi 7 kunda joylangan deb belgilanganlar
       let ISH = ROY.filter((z) => !z.kat && !qil.has(z.id));
-      if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
+      if (!S.yoq && !ISH.length) { msg('Aktiv qilinadigan tovar topilmadi' + (OLDIN ? ' (' + OLDIN + ' ta — oxirgi 7 kunda joylangan, moderatsiyada)' : '') + (KAT.length ? ' (' + KAT.length + ' ta «Каталог» — qo\'lda)' : '') + '.'); S.yoq = true; }
       // Yetkazib berish muddati bo'sh bo'lsa — qancha kun (xodim bir marta kiritadi)
       let YKUN = '';
       if (!S.yoq) {
@@ -210,7 +213,8 @@
         msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi' + (okMass ? ' (' + okMass + ' tasi bitta imzo bilan)' : '') + ' — moderatsiyada' +
           (TANLA.length ? '<br>✋ <b>' + TANLA.length + '</b> ta tovarda xususiyat tanlash kerak (robot taxmin qilmaydi)' : '') +
           (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 8).join('<br>') + '</span>' : '') +
-          (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : ''));
+          (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') +
+          (OLDIN ? '<br>↩️ ' + OLDIN + ' ta — oxirgi 7 kunda joylangan (moderatsiyada), qayta yuborilmadi' : ''));
         yolga('/provider/shop/offer-list/8');
       }
       const b = document.getElementById('bjAkS'); if (b) { b.textContent = 'Yopish'; b.onclick = () => pn.remove(); }
