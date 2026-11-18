@@ -67,7 +67,7 @@ function ichkaridami(f, w) {
 // Kirish sahifasida ishlaydigan funksiya (firma oynasiga matn sifatida yuboriladi). Kalitlar ro'yxati virtual (ekranda 2–3 tasi),
 // shuning uchun oxirigacha aylantirib hammasi o'qiladi. Tanlash: muddati o'tmagan «Юридическое лицо» kaliti —
 // MChJ uchun «Организация» nomi bo'yicha, YaTT uchun egasining F.I.Sh. bo'yicha. Ikki xil kalit teng mos kelsa — tanlanmaydi.
-async function __kalitTanla(nom) {
+async function __kalitTanla(nom, inn) {
   const sl = (ms) => new Promise((r) => setTimeout(r, ms)); const vis = (e) => e && e.offsetParent !== null;
   let ns = null; for (let i = 0; i < 40 && !ns; i++) { ns = [...document.querySelectorAll('nz-select')].find((n) => vis(n) && /ключ|kalit|key/i.test(n.textContent)); if (!ns) await sl(500); }
   if (!ns) return 'SELECT_YOQ';
@@ -75,7 +75,8 @@ async function __kalitTanla(nom) {
   let vp = null; for (let i = 0; i < 30 && !vp; i++) { await sl(300); vp = document.querySelector('.cdk-virtual-scroll-viewport'); }
   const norm = (s) => String(s).toUpperCase().replace(/["'«»“”‘’ʻʼ`]/g, '').replace(/\s+/g, ' ').trim();
   const q = norm(nom).split(' ').filter((x) => x.length > 2 && !/^\d+$/.test(x));
-  if (!q.length) return 'NOM_YOQ';
+  inn = String(inn || '').replace(/\D/g, '');
+  if (!q.length && !inn) return 'NOM_YOQ';
   const K = new Map();
   const yig = () => {
     for (const o of document.querySelectorAll('.ant-select-item-option')) {
@@ -84,7 +85,8 @@ async function __kalitTanla(nom) {
       const ism = norm(t.replace(/^(?:Срок ЭЦП ключа истек\s*)?\d+\s*/, '').split(/ИНН:|ПИНФЛ:/)[0]);
       const tug = t.match(/-\s*(\d{2})\.(\d{2})\.(\d{4})/); const sana = tug ? +(tug[3] + tug[2] + tug[1]) : 0;
       const yakka = !org || /ЯККА|ТАДБИРКОР/.test(org);
-      K.set(ser, { ser, eskirgan: /истек/i.test(t), yur: /Юридическое/i.test(t), yakka, sana, top: vp ? vp.scrollTop : 0,
+      const rq = t.replace(/сертификата:\s*[0-9A-Fa-f]+/, '').match(/\d{9,14}/g) || [];
+      K.set(ser, { ser, rq, eskirgan: /истек/i.test(t), yur: /Юридическое/i.test(t), yakka, sana, top: vp ? vp.scrollTop : 0,
         sOrg: yakka ? 0 : q.filter((x) => org.includes(x)).length, sIsm: q.filter((x) => ism.includes(x)).length, qisqa: (yakka ? ism : org).slice(0, 50) });
     }
   };
@@ -92,10 +94,13 @@ async function __kalitTanla(nom) {
   if (vp) for (let y = 0; y < 30000; y += 100) { vp.scrollTop = y; vp.dispatchEvent(new Event('scroll')); await sl(90); yig(); if (vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 2) break; }
   const yaroqli = [...K.values()].filter((k) => !k.eskirgan && k.yur);
   const teng = (L, m) => L.length > 1 && L[0][m] === L[1][m] && L[0].qisqa !== L[1].qisqa;
-  let nomz = yaroqli.filter((k) => k.sOrg >= Math.min(2, q.length)).sort((a, b) => b.sOrg - a.sOrg || b.sana - a.sana), m = 'sOrg';
+  // INN (yoki PINFL) saqlangan bo'lsa — kalit shu raqam bo'yicha olinadi (nom yozilishiga bog'liq emas); bir nechta bo'lsa — yuridik va eng yangisi
+  let nomz = inn ? [...K.values()].filter((k) => !k.eskirgan && k.rq.includes(inn)).sort((a, b) => (b.yur - a.yur) || b.sana - a.sana) : [], m = 'inn';
+  if (inn && !nomz.length) return 'INN_MOS_YOQ: ' + inn + ' raqamli amaldagi kalit yo\'q (' + K.size + ' ta kalit ko\'rildi)';
+  if (!nomz.length) { nomz = yaroqli.filter((k) => k.sOrg >= Math.min(2, q.length)).sort((a, b) => b.sOrg - a.sOrg || b.sana - a.sana); m = 'sOrg'; }
   if (!nomz.length) { nomz = yaroqli.filter((k) => k.yakka && k.sIsm >= 2).sort((a, b) => b.sIsm - a.sIsm || b.sana - a.sana); m = 'sIsm'; }
   if (!nomz.length) return 'MOS_YOQ (' + K.size + ' ta kalit ko\'rildi)';
-  if (teng(nomz, m)) return 'IKKI_MOS: ' + nomz.slice(0, 3).map((k) => k.qisqa).join(' | ');
+  if (m !== 'inn' && teng(nomz, m)) return 'IKKI_MOS: ' + nomz.slice(0, 3).map((k) => k.qisqa).join(' | ');
   const b = nomz[0]; let el = null;
   for (const y of [b.top, b.top - 150, b.top + 150, b.top - 300, b.top + 300]) {
     if (vp) { vp.scrollTop = Math.max(0, y); vp.dispatchEvent(new Event('scroll')); } await sl(250);
@@ -105,15 +110,15 @@ async function __kalitTanla(nom) {
   el.click(); await sl(800);
   let btn = null; for (let i = 0; i < 10 && !btn; i++) { btn = [...document.querySelectorAll('button')].find((x) => vis(x) && !x.disabled && /^(Кириш|Kirish|Войти|Вход|Login)$/i.test(x.textContent.trim())); if (!btn) await sl(300); }
   if (!btn) return 'TUGMA_YOQ';
-  btn.click(); return 'OK: ' + b.qisqa + ' (sertifikat ' + b.ser + ', amal muddati ' + String(b.sana).replace(/(\d{4})(\d{2})(\d{2})/, '$3.$2.$1') + ' gacha; ' + K.size + ' ta kalitdan)';
+  btn.click(); return 'OK: ' + b.qisqa + ' (' + (m === 'inn' ? 'INN bo\'yicha, ' : '') + 'sertifikat ' + b.ser + ', amal muddati ' + String(b.sana).replace(/(\d{4})(\d{2})(\d{2})/, '$3.$2.$1') + ' gacha; ' + K.size + ' ta kalitdan)';
 }
 function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
 async function avtoKirish(f, w) {
   // Kalitni robot o'zi tanlaydi (sozlamada avtoKirish:false qilinsa — o'chadi: xodim kalitni tanlaydi, parolni robot yozadi).
   if (cfg.avtoKirish === false || !eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
   const nom = kalit(f.nom || '');
-  if (!nom) return 'nom yoq';
-  const js = '(' + __kalitTanla.toString() + ')(' + JSON.stringify(nom) + ')';
+  if (!nom && !f.inn) return 'nom yoq';
+  const js = '(' + __kalitTanla.toString() + ')(' + JSON.stringify(nom) + ',' + JSON.stringify(f.inn || '') + ')';
   let r = '';
   try { r = String(await w.webContents.executeJavaScript(js)); } catch (e) { r = 'XATO: ' + e.message; }
   if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 520));
@@ -393,6 +398,14 @@ function parolBoshla(f) {
   } catch (e) { log('E-IMZO yozuvchi: ' + e.message); }
   return () => { try { if (p && !p.killed) p.kill(); } catch (_) { /* */ } };
 }
+// Firma INN (YaTT uchun PINFL) — bir marta saqlanadi (sozlama fayli yangilanishda o'chmaydi); kalit shu raqam bo'yicha tanlanadi
+ipcMain.handle('inn', (_e, id, inn) => {
+  const f = firma(id); if (!f) return { xato: 'firma topilmadi' };
+  const r = String(inn || '').replace(/\D/g, '');
+  if (r && r.length !== 9 && r.length !== 14) return { xato: 'INN 9 xonali, PINFL 14 xonali bo\'ladi' };
+  yangila(f, { inn: r || undefined }); log((f.nom || id) + ': INN ' + (r ? 'saqlandi (' + r + ')' : 'o\'chirildi'));
+  return { ok: true };
+});
 ipcMain.handle('eimzo', (_e, id, parol) => {
   const f = id === '*' ? { nom: 'Hamma firmalar' } : firma(id); if (!f) return { xato: 'firma topilmadi' };
   cfg.eimzo = cfg.eimzo || {};
