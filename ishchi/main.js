@@ -67,7 +67,7 @@ function ichkaridami(f, w) {
 function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
 async function avtoKirish(f, w) {
   // Kalitni o'zi tanlash hozircha O'CHIQ (sinovda parol rad etildi) — sozlamada avtoKirish:true bo'lsagina ishlaydi. Xodim kalitni tanlaydi, parolni robot yozadi.
-  if (!cfg.avtoKirish || !eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
+  if (cfg.avtoKirish === false || !eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
   const nom = kalit(f.nom || '');
   if (!nom) return 'nom yoq';
   const js = `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const vis=e=>e&&e.offsetParent!==null;
@@ -79,14 +79,17 @@ async function avtoKirish(f, w) {
     if(!ops.length)return 'KALIT_YOQ';
     const norm=s=>String(s).toUpperCase().replace(/["'«»“”]/g,'').replace(/\\s+/g,' ');
     const q=${JSON.stringify(nom)}.split(' ').filter(x=>x.length>2);
-    let best=null,bs=0;for(const o of ops){const tt=norm(o.textContent);const sc=q.filter(x=>tt.includes(x)).length;if(sc>bs){bs=sc;best=o;}}
+    // Eng ko'p so'z mos kelgan kalit; bir nechta bo'lsa — amal muddati eng kech tugaydigani (eski kalit tanlanmasin)
+    const sana=o=>{let m=0;for(const d of String(o.textContent).matchAll(/(\\d{2})[.\\/-](\\d{2})[.\\/-](\\d{4})/g)){const v=+(d[3]+d[2]+d[1]);if(v>m)m=v;}for(const d of String(o.textContent).matchAll(/(\\d{4})[.\\/-](\\d{2})[.\\/-](\\d{2})/g)){const v=+(d[1]+d[2]+d[3]);if(v>m)m=v;}return m;};
+    let best=null,bs=0;for(const o of ops){const tt=norm(o.textContent);const sc=q.filter(x=>tt.includes(x)).length;if(sc>bs||(sc===bs&&sc>0&&best&&sana(o)>sana(best))){bs=sc;best=o;}}
+    const royxat=ops.map(o=>o.textContent.trim().replace(/\\s+/g,' ').slice(0,70)).join(' | ').slice(0,420);
     if(!best||bs<Math.min(2,q.length))return 'MOS_YOQ: '+ops.map(o=>o.textContent.trim().replace(/\\s+/g,' ').slice(0,60)).join(' | ');
     best.click();await sl(800);
     let b=null;for(let i=0;i<10&&!b;i++){b=[...document.querySelectorAll('button')].find(x=>vis(x)&&!x.disabled&&/^(Кириш|Kirish|Войти|Вход|Login)$/i.test(x.textContent.trim()));if(!b)await sl(300);}
-    if(!b)return 'TUGMA_YOQ';b.click();return 'OK: '+best.textContent.trim().replace(/\\s+/g,' ').slice(0,60);})()`;
+    if(!b)return 'TUGMA_YOQ';b.click();return 'OK: '+best.textContent.trim().replace(/\\s+/g,' ').slice(0,70)+' ‖ ro\\'yxat: '+royxat;})()`;
   let r = '';
   try { r = String(await w.webContents.executeJavaScript(js)); } catch (e) { r = 'XATO: ' + e.message; }
-  if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 70));
+  if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 520));
   else log((f.nom || f.id) + ': avtomatik kirish bo\'lmadi (' + r.slice(0, 160) + ') — qo\'lda kiring');
   return r;
 }
