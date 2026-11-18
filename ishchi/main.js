@@ -90,8 +90,9 @@ async function __kalitTanla(nom, inn) {
         sOrg: yakka ? 0 : q.filter((x) => org.includes(x)).length, sIsm: q.filter((x) => ism.includes(x)).length, qisqa: (yakka ? ism : org).slice(0, 50) });
     }
   };
-  yig();
-  if (vp) for (let y = 0; y < 30000; y += 100) { vp.scrollTop = y; vp.dispatchEvent(new Event('scroll')); await sl(90); yig(); if (vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 2) break; }
+  // Ro'yxat E-IMZO'dan asta-sekin to'ladi: soni o'zgarmay qolguncha (yoki kerakli kalit chiqquncha) qayta-qayta oxirigacha o'qiladi
+  const oqi = async () => { yig(); if (vp) for (let y = 0; y < 30000; y += 100) { vp.scrollTop = y; vp.dispatchEvent(new Event('scroll')); await sl(90); yig(); if (vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 2) break; } };
+  for (let u = 0, oldin = -1; u < 6; u++) { await oqi(); if (K.size && K.size === oldin) break; oldin = K.size; await sl(1500); }
   const yaroqli = [...K.values()].filter((k) => !k.eskirgan && k.yur);
   const teng = (L, m) => L.length > 1 && L[0][m] === L[1][m] && L[0].qisqa !== L[1].qisqa;
   // INN (yoki PINFL) saqlangan bo'lsa — kalit shu raqam bo'yicha olinadi (nom yozilishiga bog'liq emas); bir nechta bo'lsa — yuridik va eng yangisi
@@ -475,7 +476,7 @@ async function aktivFirmaIch(f) {
   const xa = (/(\d+)\s*ta o.tmadi/.exec(nat) || [])[1] || '0';
   const qisqa = /topilmadi/.test(nat) ? 'muddati o\'tgan tovar yo\'q' : '✅ ' + ok + (xa !== '0' ? ' · ⚠️ ' + xa : '');
   yangila(f, { akHolat: qisqa, akSana: new Date().toISOString(), akIzoh: nat.slice(0, 1500) });
-  log((f.nom || f.id) + ': aktiv qilish — ' + qisqa + (xa !== '0' ? '\n' + nat.split('\n').slice(2, 12).join('\n') : ''));
+  log((f.nom || f.id) + ': aktiv qilish — ' + qisqa + (xa !== '0' ? '\n' + nat.split('\n').slice(2, 160).join('\n') : ''));
   try { w.hide(); } catch (_) { /* */ }
   return qisqa;
 }
