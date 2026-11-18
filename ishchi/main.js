@@ -66,7 +66,8 @@ function ichkaridami(f, w) {
 // E-IMZO parolini parolBoshla() yozuvchisi kiritadi (saqlangan bo'lsa). Kalit firma nomi bo'yicha tanlanadi.
 function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
 async function avtoKirish(f, w) {
-  if (!eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
+  // Kalitni o'zi tanlash hozircha O'CHIQ (sinovda parol rad etildi) — sozlamada avtoKirish:true bo'lsagina ishlaydi. Xodim kalitni tanlaydi, parolni robot yozadi.
+  if (!cfg.avtoKirish || !eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
   const nom = kalit(f.nom || '');
   if (!nom) return 'nom yoq';
   const js = `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const vis=e=>e&&e.offsetParent!==null;
