@@ -187,6 +187,23 @@
             yoz(pm, z.nom); yoz(pf, 'O\'zbekiston'); await sl(200);
           }
         } catch (_) { /* */ }
+        // Begona suratlar: anketalar orasida sahifa yangilanmasdan o'tilgani uchun oldin ochilgan tovarlarning suratlari anketada qolib ketadi
+        // va yangi ofertaga qo'shilib yuboriladi (moderatsiya «Rasm mos emas» deb rad etadi). Shu ofertaga tegishli bo'lmagan hamma surat anketadan uziladi.
+        let begonaQoldi = false;
+        try {
+          const { tk: tkS, api: apiS } = await tokenOl();
+          const oS = tkS ? await fetch(apiS + '/Provider/GetOfferForEdit/' + z.id, { headers: { Authorization: 'Bearer ' + localStorage.getItem(tkS) } }).then((r) => r.json()).catch(() => null) : null;
+          const ozi = new Set(((oS && Array.isArray(oS.js_files)) ? oS.js_files : []).map((f) => String(f.file_id)));
+          if (ozi.size) {
+            const tlS = () => [...document.querySelectorAll('div.file')].filter((d) => d.querySelector('input[type=radio]'));
+            const fidS = (d) => (d.textContent.match(/File Id:\s*(\d+)/) || [])[1];
+            const begS = () => tlS().find((d) => fidS(d) && !ozi.has(fidS(d)));
+            for (let k = 0; k < 10 && !tlS().some((d) => ozi.has(fidS(d))); k++) await sl(500);
+            for (let k = 0; k < 60; k++) { const b = begS(); if (!b) break; const ic = b.querySelector('.image-delete-icon-style'); if (!ic) break; ic.click(); await sl(400); }
+            await sl(300); begonaQoldi = !!begS();
+          }
+        } catch (_) { /* */ }
+        if (begonaQoldi) { X.push(z.nom + ': boshqa tovar suratlarini anketadan olib tashlab bo\'lmadi — qo\'lda joylang (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
         // Asosiy surat: anketada firmaning BUTUN surat ombori ko'rinadi, shuning uchun faqat shu ofertaning O'Z surati
         // (eski ofertadagi file_id bo'yicha) tanlanadi. Topilmasa — tovar yuborilmaydi (noto'g'ri surat bilan moderatsiya rad etadi).
         let suratYoq = false;
