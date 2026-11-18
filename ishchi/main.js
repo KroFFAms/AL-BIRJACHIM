@@ -289,6 +289,7 @@ $yoz = -join ($parol.ToCharArray() | ForEach-Object { if ('+^%~(){}[]'.Contains(
 $korilgan = @{}
 $nomlar = @{}
 $korgan = @{}
+$yozuvlar = @()
 $sh = New-Object -ComObject WScript.Shell
 foreach ($w in [BJW]::Top()) { $korgan[[string]$w[0]] = 1 }
 while ($true) {
@@ -318,6 +319,9 @@ while ($true) {
     [System.Windows.Forms.SendKeys]::SendWait($yoz + '{ENTER}')
     $korilgan[$k] = Get-Date
     Write-Output ('YOZILDI ' + $t)
+    # Himoya: 40 soniyada 3 martadan ko'p so'ralsa — parol qabul qilinmayapti; yozishni to'xtatamiz (takror yozmaslik uchun)
+    $yozuvlar = @($yozuvlar | Where-Object { ((Get-Date) - $_).TotalSeconds -lt 40 }) + (Get-Date)
+    if ($yozuvlar.Count -ge 3) { Write-Output 'TAKROR'; exit }
   }
   foreach ($k in @($korilgan.Keys)) { if (-not $hozir.ContainsKey($k)) { $korilgan.Remove($k) } }
   Start-Sleep -Milliseconds 500
@@ -346,6 +350,7 @@ function parolBoshla(f) {
         if (/^YOZILDI/.test(q)) { n++; if (n <= 3 || n % 10 === 0) log((f.nom || f.id) + ': 🔑 E-IMZO paroli avtomatik kiritildi (' + n + ')'); }
         else if (/^XATO/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO oynasi parol kiritilgach yopilmadi — parol noto\'g\'ri bo\'lishi mumkin, Ishchi\'da «🔑 E-IMZO» ni qayta kiriting'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmadi — tekshiring'); }
         else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
+        else if (/^TAKROR/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO parolni qayta-qayta so\'rayapti — parol shu kalitga mos emas yoki noto\'g\'ri kalit tanlangan. Robot yozishni TO\'XTATDI, qo\'lda kiriting va «🔑 E-IMZO» parolini tekshiring'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmayapti — robot yozishni to\'xtatdi'); }
         else if (/^TAYYOR/.test(q)) log((f.nom || f.id) + ': E-IMZO yozuvchi tayyor — oynani kutmoqda');
         else if (/^TIP_YOQ/.test(q)) log((f.nom || f.id) + ': ❗ E-IMZO yozuvchi ishga tushmadi (Windows .NET komponenti yuklanmadi)');
         else if (/^OYNA/.test(q)) { oy++; } // diagnostika — jurnalga yozilmaydi
