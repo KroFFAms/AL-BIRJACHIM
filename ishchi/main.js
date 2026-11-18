@@ -135,7 +135,13 @@ async function kirishUrin(f, w, start) {
     if (ichkaridami(f, w)) return true;
     try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, start); } catch (_) { /* */ }
   }
-  return ichkaridami(f, w);
+  if (ichkaridami(f, w)) return true;
+  // Kirish o'tmadi — sahifa qayerda to'xtaganini jurnalga yozamiz (sababini bilish uchun; parol/kalit yozilmaydi)
+  try {
+    const d = await w.webContents.executeJavaScript('(()=>{const q=(s)=>[...document.querySelectorAll(s)].map((e)=>e.innerText.replace(/\\s+/g," ").trim()).filter(Boolean).join(" / ");return location.host+location.pathname+" | xabar: "+(q(".ant-notification,.ant-message,.ant-alert,.ant-modal,.ant-form-item-explain,[class*=error],[class*=toast]").slice(0,300)||"yo\'q")+" | sahifa: "+document.body.innerText.replace(/\\s+/g," ").trim().slice(0,260)})()');
+    log((f.nom || f.id) + ': 🔎 kirish o\'tmadi, sahifa holati — ' + String(d).slice(0, 700));
+  } catch (e) { log((f.nom || f.id) + ': 🔎 kirish o\'tmadi, sahifani o\'qib bo\'lmadi — ' + e.message); }
+  return false;
 }
 
 // ---------- Kirish (foydalanuvchi E-IMZO bilan o'zi kiradi) ----------
