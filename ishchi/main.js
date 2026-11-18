@@ -113,6 +113,32 @@ async function __kalitTanla(nom, inn) {
   if (!btn) return 'TUGMA_YOQ';
   btn.click(); return 'OK: ' + b.qisqa + ' (' + (m === 'inn' ? 'INN bo\'yicha, ' : '') + 'sertifikat ' + b.ser + ', amal muddati ' + String(b.sana).replace(/(\d{4})(\d{2})(\d{2})/, '$3.$2.$1') + ' gacha; ' + K.size + ' ta kalitdan)';
 }
+// Parol kiritilgach sayt «Выбор роли» oynasini chiqaradi — robot «Поставщик» (yetkazib beruvchi) rolini, INN bo'yicha tashkilotni tanlaydi
+async function __rolTanla(inn) {
+  const sl = (ms) => new Promise((r) => setTimeout(r, ms)); const vis = (e) => e && e.offsetParent !== null;
+  const tx = (e) => e.textContent.replace(/\s+/g, ' ').trim();
+  const POST = /(Поставщик|Yetkazib beruvchi|Таъминотчи|Етказиб берувчи)/i;
+  const BUY = /(Корпоративный заказчик|Korporativ buyurtmachi|Буюртмачи)/i;
+  const hamma = () => [...document.querySelectorAll('div,span,button,li,a,p,td,h1,h2,h3,h4,h5')].filter(vis);
+  if (!hamma().some((e) => /Выбор роли|Выберите роль|Rolni tanlang|Rol tanlang/i.test(tx(e)))) return 'YOQ';
+  const eng = (L) => L.sort((a, b) => tx(a).length - tx(b).length)[0];
+  let nat = '';
+  // 1) INN va «Поставщик» bitta kartada bo'lsa — o'sha karta
+  let n = inn ? eng(hamma().filter((e) => POST.test(tx(e)) && tx(e).includes(inn) && !BUY.test(tx(e)) && tx(e).length < 400)) : null;
+  // 2) bo'lmasa — «Поставщик» yozuvi (bo'lim/tugma)
+  if (!n) n = eng(hamma().filter((e) => POST.test(tx(e)) && !BUY.test(tx(e)) && tx(e).length < 60));
+  if (!n) return 'POSTAVSHIK_YOQ';
+  nat = tx(n).slice(0, 70); n.click(); await sl(1500);
+  // 3) rol ichida tashkilot ro'yxati chiqsa — INN bo'yicha tanlanadi
+  if (inn) {
+    const k = eng(hamma().filter((e) => e !== n && tx(e).includes(inn) && !BUY.test(tx(e)) && tx(e).length < 400));
+    if (k) { nat += ' / ' + tx(k).slice(0, 60); k.click(); await sl(1500); }
+  }
+  // 4) tasdiqlash tugmasi bo'lsa — bosiladi
+  const b = hamma().filter((e) => /^(Кириш|Kirish|Войти|Вход|Davom|Продолжить|Tanlash|Выбрать|OK)$/i.test(tx(e)) && /^(BUTTON|A)$/.test(e.tagName) && !e.disabled)[0];
+  if (b) { b.click(); await sl(800); }
+  return 'OK: ' + nat;
+}
 function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
 async function avtoKirish(f, w) {
   // Kalitni robot o'zi tanlaydi (sozlamada avtoKirish:false qilinsa — o'chadi: xodim kalitni tanlaydi, parolni robot yozadi).
@@ -131,9 +157,17 @@ async function kirishUrin(f, w, start) {
   if (ichkaridami(f, w)) return true;
   const r = await avtoKirish(f, w);
   if (!/^OK/.test(r)) return false;
+  let rol = false;
   for (let i = 0; i < 60 && !w.isDestroyed(); i++) {
     await sleep(2000);
     if (ichkaridami(f, w)) return true;
+    if (!rol && kirishSahifasimi(w)) { // «Выбор роли» oynasi chiqqan bo'lsa — «Поставщик» tanlanadi
+      try {
+        const rr = String(await w.webContents.executeJavaScript('(' + __rolTanla.toString() + ')(' + JSON.stringify(f.inn || '') + ')'));
+        if (/^OK/.test(rr)) { rol = true; log((f.nom || f.id) + ': 🧭 rol tanlandi — ' + rr.slice(4, 200)); }
+        else if (rr !== 'YOQ') log((f.nom || f.id) + ': rol tanlanmadi (' + rr + ')');
+      } catch (_) { /* */ }
+    }
     try { const u = new URL(w.webContents.getURL()); if (PLAT.xarid.host.test(u.host) && !/login|auth|signin|redirect/i.test(u.href) && !/\/provider\//.test(u.pathname) && i % 5 === 4) await ochish(w, start); } catch (_) { /* */ }
   }
   if (ichkaridami(f, w)) return true;
