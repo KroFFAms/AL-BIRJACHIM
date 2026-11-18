@@ -110,6 +110,7 @@
         else { YKUN = String(Math.max(5, parseInt(j, 10) || 10)); try { localStorage.setItem('bj_yetkazish_kun', YKUN); } catch (_) { /* */ } }
       }
       let ok = 0, okMass = 0; const X = [], TANLA = [], AIT = [];
+      const rasmTile = (id) => [...document.querySelectorAll('div.file')].find((d) => d.querySelector('input[type=radio]') && new RegExp('File Id:\\s*' + id + '(\\D|$)').test(d.textContent));
       // Token va API manzili (bir marta)
       let _tk = null;
       const tokenOl = async () => { if (_tk) return _tk; const mainU = [...document.scripts].map((s) => s.src).find((s) => /\/main[.-]/.test(s)); const mt = mainU ? await fetch(mainU).then((r) => r.text()).catch(() => '') : ''; _tk = { tk: (mt.match(/tokenKey\s*=\s*"([^"]+)"/) || [])[1], api: (mt.match(/shopUrl:"([^"]+)"/) || [])[1] || 'https://xarid-api-shop.uzex.uz' }; return _tk; };
@@ -220,13 +221,39 @@
             const ta = document.getElementById('conditions') || [...document.querySelectorAll('textarea')].filter((x) => x.offsetParent).sort((a, b) => b.value.length - a.value.length)[0];
             const xus = [...document.querySelectorAll('ng-select')].filter((n) => n.offsetParent && n.querySelector('.ng-value')).map((n) => label(n) + ': ' + n.querySelector('.ng-value').textContent.trim()).slice(0, 40);
             const gv = (id) => ((document.getElementById(id) || {}).value || '').trim();
-            const ar = await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: z.nom, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus }) }).then((r) => r.json()).catch(() => null);
+            // Suratlar: ofertaga biriktirilgan har bir surat kichraytirilib AI'ga ko'rsatiladi — tovarga mos kelmaganlari anketadan olib tashlanadi
+            const rasm = [];
+            try {
+              const { tk, api } = await tokenOl(); const HH = { Authorization: 'Bearer ' + localStorage.getItem(tk) };
+              const o2 = tk ? await fetch(api + '/Provider/GetOfferForEdit/' + z.id, { headers: HH }).then((r) => r.json()).catch(() => null) : null;
+              for (const f of ((o2 && Array.isArray(o2.js_files)) ? o2.js_files : []).slice(0, 5)) {
+                if (!f || !f.file_id || !f.file_path || !f.file_name || !rasmTile(f.file_id)) continue;
+                const b = await fetch('https://xarid-api-trade.uzex.uz/Common/DownloadFile?path=' + f.file_path + '/' + f.file_name, { headers: HH }).then((r) => (r.ok ? r.blob() : null)).catch(() => null);
+                if (!b || !/^image\//.test(b.type)) continue;
+                const bm = await createImageBitmap(b); const kk = Math.min(1, 640 / Math.max(bm.width, bm.height)); const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(bm.width * kk)); cv.height = Math.max(1, Math.round(bm.height * kk)); cv.getContext('2d').drawImage(bm, 0, 0, cv.width, cv.height);
+                rasm.push({ id: String(f.file_id), b64: cv.toDataURL('image/jpeg', 0.72).split(',')[1] });
+              }
+            } catch (_) { /* suratsiz tekshiriladi */ }
+            const nomT = (tovarNs && tovarNs.querySelector('.ng-value') ? tovarNs.querySelector('.ng-value').textContent.trim() : '') || z.nom;
+            const ar = await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: nomT, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus, rasmlar: rasm }) }).then((r) => r.json()).catch(() => null);
             if (ar && ar.ok && ar.holat === 'toxtat') aiToxta = (ar.muammolar || []).join('; ') || 'talabga mos emas';
             else if (ar && ar.ok && ar.holat === 'tuzatildi' && ta && ar.tavsif) {
               const st = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; ta.focus(); st.call(ta, ar.tavsif); ['input', 'change', 'keyup', 'blur'].forEach((tt) => ta.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300);
               if (ta.value !== ar.tavsif) aiToxta = 'tavsifni o\'zgartirib bo\'lmadi';
               else AIT.push(z.nom + ': tavsifdan olib tashlandi — ' + ((ar.olib_tashlandi || []).join(', ') || 'brend nomi'));
             } else if (!ar || !ar.ok) { if (!S.aiXato) { S.aiXato = true; X.push('🧠 AI tekshiruvi ishlamadi (' + ((ar && ar.xato) || 'javob yo\'q') + ') — tekshiruvsiz davom etildi'); } }
+            // Mos kelmagan suratlarni anketadan olib tashlash (faqat shu ofertadan uziladi, fayl omborda qoladi)
+            if (!aiToxta && ar && ar.ok && rasm.length) {
+              const emas = (ar.rasm_mos_emas || []).filter((id) => rasm.some((q) => q.id === id));
+              if (emas.length >= rasm.length) aiToxta = 'suratlarning hech biri tovar nomiga mos emas';
+              else if (emas.length) {
+                for (const id of emas) { const tl = rasmTile(id); const ic = tl && tl.querySelector('.image-delete-icon-style'); if (ic) { ic.click(); await sl(350); } }
+                const rr = [...document.querySelectorAll('div.file input[type=radio]')];
+                if (rr.length && !rr.some((x) => x.checked)) { rr[0].click(); rr[0].dispatchEvent(new Event('change', { bubbles: true })); await sl(350); }
+                if (emas.some((id) => rasmTile(id))) aiToxta = 'mos kelmagan suratni olib tashlab bo\'lmadi';
+                else AIT.push(z.nom + ': tovarga mos kelmagan ' + emas.length + ' ta surat olib tashlandi');
+              }
+            }
           } catch (_) { /* */ }
           if (aiToxta) { X.push(z.nom + ': 🧠 AI: ' + aiToxta + ' — qo\'lda tuzating (' + location.origin + '/provider/shop/add-offer/' + z.id + ')'); continue; }
         }
