@@ -298,7 +298,7 @@
       if (!S.yoq) {
         msg('🏁 Tugadi. ✅ <b>' + ok + '</b> ta qayta joylandi' + (okMass ? ' (' + okMass + ' tasi bitta imzo bilan)' : '') + ' — moderatsiyada' +
           (TANLA.length ? '<br>✋ <b>' + TANLA.length + '</b> ta tovarda xususiyat tanlash kerak (robot taxmin qilmaydi)' : '') +
-          (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 8).join('<br>') + '</span>' : '') +
+          (X.length ? '<br>⚠️ ' + X.length + ' ta o\'tmadi:<br><span style="font-size:12px">' + X.slice(0, 150).join('<br>') + '</span>' : '') +
           (KAT.length ? '<br>«Каталог»: ' + KAT.length + ' ta — qo\'lda' : '') +
           (OLDIN ? '<br>↩️ ' + OLDIN + ' ta — oxirgi 7 kunda joylangan (moderatsiyada), qayta yuborilmadi' : '') +
           (OTKN ? '<br>⛔ ' + OTKN + ' ta — YaTT taqiqi / katalogda faol emas, o\'tkazib yuborildi' : '') +
