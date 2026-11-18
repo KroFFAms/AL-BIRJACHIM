@@ -221,6 +221,10 @@
             const ta = document.getElementById('conditions') || [...document.querySelectorAll('textarea')].filter((x) => x.offsetParent).sort((a, b) => b.value.length - a.value.length)[0];
             const xus = [...document.querySelectorAll('ng-select')].filter((n) => n.offsetParent && n.querySelector('.ng-value')).map((n) => label(n) + ': ' + n.querySelector('.ng-value').textContent.trim()).slice(0, 40);
             const gv = (id) => ((document.getElementById(id) || {}).value || '').trim();
+            // Aniq o'lcham qoidasi (AI'siz, qat'iy): tavsifda oraliq («16 mm dan 24 mm gacha», «540-1000 об/мин») bo'lsa — yuborilmaydi
+            const tv0 = ta ? ta.value : '';
+            const orl = tv0.match(/(?:^|[^\wа-яё])(\d+(?:[.,]\d+)?\s*[a-zа-яё°%\/.]{0,8}\s*(?:[-–—]|\bdan\b|до|\bto\b)\s*\d+(?:[.,]\d+)?[^\n,;.]{0,14})/i);
+            if (orl && !/(ГОСТ|GOST|ТУ|TSh|DSt|№|ISO|EN)[\s:]*$/i.test(tv0.slice(Math.max(0, orl.index - 10), orl.index + 1))) { aiToxta = 'aniq o\'lcham kerak — tavsifda oraliq yozilgan: «' + orl[1].trim() + '»'; throw 0; }
             // Suratlar: ofertaga biriktirilgan har bir surat kichraytirilib AI'ga ko'rsatiladi — tovarga mos kelmaganlari anketadan olib tashlanadi
             const rasm = [];
             try {
@@ -237,7 +241,7 @@
             const nomT = (tovarNs && tovarNs.querySelector('.ng-value') ? tovarNs.querySelector('.ng-value').textContent.trim() : '') || z.nom;
             const ar = await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: nomT, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus, rasmlar: rasm }) }).then((r) => r.json()).catch(() => null);
             if (ar && ar.ok && ar.holat === 'toxtat') aiToxta = (ar.muammolar || []).join('; ') || 'talabga mos emas';
-            else if (ar && ar.ok && ar.holat === 'tuzatildi' && ta && ar.tavsif) {
+            else if (ar && ar.ok && ar.holat === 'tuzatildi' && ta && ar.tavsif && ar.tavsif.trim() !== ta.value.trim()) {
               const st = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; ta.focus(); st.call(ta, ar.tavsif); ['input', 'change', 'keyup', 'blur'].forEach((tt) => ta.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300);
               if (ta.value !== ar.tavsif) aiToxta = 'tavsifni o\'zgartirib bo\'lmadi';
               else AIT.push(z.nom + ': tavsifdan olib tashlandi — ' + ((ar.olib_tashlandi || []).join(', ') || 'brend nomi'));
