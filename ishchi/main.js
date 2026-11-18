@@ -64,29 +64,56 @@ function ichkaridami(f, w) {
 
 // ---------- 🤖 Avtomatik kirish: id.uzex.uz sahifasida firmaning kalitini ro'yxatdan tanlab «Кириш» bosadi ----------
 // E-IMZO parolini parolBoshla() yozuvchisi kiritadi (saqlangan bo'lsa). Kalit firma nomi bo'yicha tanlanadi.
+// Kirish sahifasida ishlaydigan funksiya (firma oynasiga matn sifatida yuboriladi). Kalitlar ro'yxati virtual (ekranda 2–3 tasi),
+// shuning uchun oxirigacha aylantirib hammasi o'qiladi. Tanlash: muddati o'tmagan «Юридическое лицо» kaliti —
+// MChJ uchun «Организация» nomi bo'yicha, YaTT uchun egasining F.I.Sh. bo'yicha. Ikki xil kalit teng mos kelsa — tanlanmaydi.
+async function __kalitTanla(nom) {
+  const sl = (ms) => new Promise((r) => setTimeout(r, ms)); const vis = (e) => e && e.offsetParent !== null;
+  let ns = null; for (let i = 0; i < 40 && !ns; i++) { ns = [...document.querySelectorAll('nz-select')].find((n) => vis(n) && /ключ|kalit|key/i.test(n.textContent)); if (!ns) await sl(500); }
+  if (!ns) return 'SELECT_YOQ';
+  const sel = ns.querySelector('.ant-select-selector') || ns; sel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); sel.click();
+  let vp = null; for (let i = 0; i < 30 && !vp; i++) { await sl(300); vp = document.querySelector('.cdk-virtual-scroll-viewport'); }
+  const norm = (s) => String(s).toUpperCase().replace(/["'«»“”‘’ʻʼ`]/g, '').replace(/\s+/g, ' ').trim();
+  const q = norm(nom).split(' ').filter((x) => x.length > 2 && !/^\d+$/.test(x));
+  if (!q.length) return 'NOM_YOQ';
+  const K = new Map();
+  const yig = () => {
+    for (const o of document.querySelectorAll('.ant-select-item-option')) {
+      const t = o.textContent.replace(/\s+/g, ' ').trim(); const ser = (t.match(/сертификата:\s*([0-9A-Fa-f]+)/) || [])[1]; if (!ser || K.has(ser)) continue;
+      const org = norm((t.match(/Организация:(.*?)Тип:/) || [])[1] || '');
+      const ism = norm(t.replace(/^(?:Срок ЭЦП ключа истек\s*)?\d+\s*/, '').split(/ИНН:|ПИНФЛ:/)[0]);
+      const tug = t.match(/-\s*(\d{2})\.(\d{2})\.(\d{4})/); const sana = tug ? +(tug[3] + tug[2] + tug[1]) : 0;
+      const yakka = !org || /ЯККА|ТАДБИРКОР/.test(org);
+      K.set(ser, { ser, eskirgan: /истек/i.test(t), yur: /Юридическое/i.test(t), yakka, sana, top: vp ? vp.scrollTop : 0,
+        sOrg: yakka ? 0 : q.filter((x) => org.includes(x)).length, sIsm: q.filter((x) => ism.includes(x)).length, qisqa: (yakka ? ism : org).slice(0, 50) });
+    }
+  };
+  yig();
+  if (vp) for (let y = 0; y < 30000; y += 100) { vp.scrollTop = y; vp.dispatchEvent(new Event('scroll')); await sl(90); yig(); if (vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 2) break; }
+  const yaroqli = [...K.values()].filter((k) => !k.eskirgan && k.yur);
+  const teng = (L, m) => L.length > 1 && L[0][m] === L[1][m] && L[0].qisqa !== L[1].qisqa;
+  let nomz = yaroqli.filter((k) => k.sOrg >= Math.min(2, q.length)).sort((a, b) => b.sOrg - a.sOrg || b.sana - a.sana), m = 'sOrg';
+  if (!nomz.length) { nomz = yaroqli.filter((k) => k.yakka && k.sIsm >= 2).sort((a, b) => b.sIsm - a.sIsm || b.sana - a.sana); m = 'sIsm'; }
+  if (!nomz.length) return 'MOS_YOQ (' + K.size + ' ta kalit ko\'rildi)';
+  if (teng(nomz, m)) return 'IKKI_MOS: ' + nomz.slice(0, 3).map((k) => k.qisqa).join(' | ');
+  const b = nomz[0]; let el = null;
+  for (const y of [b.top, b.top - 150, b.top + 150, b.top - 300, b.top + 300]) {
+    if (vp) { vp.scrollTop = Math.max(0, y); vp.dispatchEvent(new Event('scroll')); } await sl(250);
+    el = [...document.querySelectorAll('.ant-select-item-option')].find((o) => o.textContent.includes(b.ser)); if (el) break;
+  }
+  if (!el) return 'ELEMENT_YOQ: ' + b.qisqa;
+  el.click(); await sl(800);
+  let btn = null; for (let i = 0; i < 10 && !btn; i++) { btn = [...document.querySelectorAll('button')].find((x) => vis(x) && !x.disabled && /^(Кириш|Kirish|Войти|Вход|Login)$/i.test(x.textContent.trim())); if (!btn) await sl(300); }
+  if (!btn) return 'TUGMA_YOQ';
+  btn.click(); return 'OK: ' + b.qisqa + ' (sertifikat ' + b.ser + ', amal muddati ' + String(b.sana).replace(/(\d{4})(\d{2})(\d{2})/, '$3.$2.$1') + ' gacha; ' + K.size + ' ta kalitdan)';
+}
 function kirishSahifasimi(w) { try { return /id\.uzex\.uz/.test(new URL(w.webContents.getURL()).host); } catch (_) { return false; } }
 async function avtoKirish(f, w) {
-  // Kalitni o'zi tanlash hozircha O'CHIQ (sinovda parol rad etildi) — sozlamada avtoKirish:true bo'lsagina ishlaydi. Xodim kalitni tanlaydi, parolni robot yozadi.
+  // Kalitni robot o'zi tanlaydi (sozlamada avtoKirish:false qilinsa — o'chadi: xodim kalitni tanlaydi, parolni robot yozadi).
   if (cfg.avtoKirish === false || !eimzoParol(f) || !kirishSahifasimi(w)) return 'yoq';
   const nom = kalit(f.nom || '');
   if (!nom) return 'nom yoq';
-  const js = `(async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));const vis=e=>e&&e.offsetParent!==null;
-    let ns=null;for(let i=0;i<40&&!ns;i++){ns=[...document.querySelectorAll('nz-select')].find(n=>vis(n)&&/ключ|kalit|key/i.test(n.textContent));if(!ns)await sl(500);}
-    if(!ns)return 'SELECT_YOQ';
-    const sel=ns.querySelector('.ant-select-selector')||ns;
-    sel.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));sel.click();
-    let ops=[];for(let i=0;i<40&&!ops.length;i++){await sl(400);ops=[...document.querySelectorAll('.ant-select-item-option,nz-option-item,[role=option]')].filter(vis).filter(o=>o.textContent.trim());}
-    if(!ops.length)return 'KALIT_YOQ';
-    const norm=s=>String(s).toUpperCase().replace(/["'«»“”]/g,'').replace(/\\s+/g,' ');
-    const q=${JSON.stringify(nom)}.split(' ').filter(x=>x.length>2);
-    // Eng ko'p so'z mos kelgan kalit; bir nechta bo'lsa — amal muddati eng kech tugaydigani (eski kalit tanlanmasin)
-    const sana=o=>{let m=0;for(const d of String(o.textContent).matchAll(/(\\d{2})[.\\/-](\\d{2})[.\\/-](\\d{4})/g)){const v=+(d[3]+d[2]+d[1]);if(v>m)m=v;}for(const d of String(o.textContent).matchAll(/(\\d{4})[.\\/-](\\d{2})[.\\/-](\\d{2})/g)){const v=+(d[1]+d[2]+d[3]);if(v>m)m=v;}return m;};
-    let best=null,bs=0;for(const o of ops){const tt=norm(o.textContent);const sc=q.filter(x=>tt.includes(x)).length;if(sc>bs||(sc===bs&&sc>0&&best&&sana(o)>sana(best))){bs=sc;best=o;}}
-    const royxat=ops.map(o=>o.textContent.trim().replace(/\\s+/g,' ').slice(0,70)).join(' | ').slice(0,420);
-    if(!best||bs<Math.min(2,q.length))return 'MOS_YOQ: '+ops.map(o=>o.textContent.trim().replace(/\\s+/g,' ').slice(0,60)).join(' | ');
-    best.click();await sl(800);
-    let b=null;for(let i=0;i<10&&!b;i++){b=[...document.querySelectorAll('button')].find(x=>vis(x)&&!x.disabled&&/^(Кириш|Kirish|Войти|Вход|Login)$/i.test(x.textContent.trim()));if(!b)await sl(300);}
-    if(!b)return 'TUGMA_YOQ';b.click();return 'OK: '+best.textContent.trim().replace(/\\s+/g,' ').slice(0,70)+' ‖ ro\\'yxat: '+royxat;})()`;
+  const js = '(' + __kalitTanla.toString() + ')(' + JSON.stringify(nom) + ')';
   let r = '';
   try { r = String(await w.webContents.executeJavaScript(js)); } catch (e) { r = 'XATO: ' + e.message; }
   if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 520));
