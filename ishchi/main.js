@@ -315,6 +315,7 @@ public class BJW {
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);
   public static string Cls(IntPtr h) { var sb = new StringBuilder(256); GetClassName(h, sb, 256); return sb.ToString(); }
   public static List<long[]> Top() {
@@ -328,6 +329,8 @@ public class BJW {
 if (-not ('BJW' -as [type])) { Write-Output 'TIP_YOQ'; exit }
 Write-Output 'TAYYOR'
 $parol = [Console]::In.ReadLine()
+$fRuxsat = ([Console]::In.ReadLine() -eq 'F')
+$fVaqt = [DateTime]::MinValue
 $yoz = -join ($parol.ToCharArray() | ForEach-Object { if ('+^%~(){}[]'.Contains([string]$_)) { '{' + $_ + '}' } else { [string]$_ } })
 $korilgan = @{}
 $nomlar = @{}
@@ -354,12 +357,34 @@ while ($true) {
       continue
     }
     Start-Sleep -Milliseconds 500
-    [BJW]::ShowWindow($h, 9) | Out-Null
-    [BJW]::SetForegroundWindow($h) | Out-Null
-    Start-Sleep -Milliseconds 250
-    if ([BJW]::GetForegroundWindow() -ne $h) { $sh.AppActivate([int]$pi) | Out-Null; [System.Windows.Forms.SendKeys]::SendWait('%'); [BJW]::SetForegroundWindow($h) | Out-Null; Start-Sleep -Milliseconds 250 }
-    if ([BJW]::GetForegroundWindow() -ne $h) { Write-Output ('FOKUS ' + $t); $korilgan[$k] = Get-Date; continue }
-    [System.Windows.Forms.SendKeys]::SendWait($yoz + '{ENTER}')
+    # Klaviaturasiz usul oldingi safar ishlamagan bo'lsa (parol oynasi 40 soniya ichida qayta chiqdi) — butunlay o'chiriladi
+    if ($fRuxsat -and $fVaqt -ne [DateTime]::MinValue -and ((Get-Date) - $fVaqt).TotalSeconds -lt 40) { $fRuxsat = $false; Write-Output 'FOKUSSIZ_YOQ' }
+    $oldin = [BJW]::GetForegroundWindow()
+    $fOk = $false
+    if ($fRuxsat -and $oldin -ne $h) {
+      # 1) Klaviaturasiz: parol to'g'ridan-to'g'ri E-IMZO oynasiga xabar qilib yuboriladi — foydalanuvchi ishlayotgan oynaga tegilmaydi
+      [BJW]::PostMessage($h, 0x0006, [IntPtr]1, [IntPtr]::Zero) | Out-Null
+      [BJW]::PostMessage($h, 0x0007, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
+      Start-Sleep -Milliseconds 300
+      foreach ($c in $parol.ToCharArray()) { [BJW]::PostMessage($h, 0x0102, [IntPtr][int]$c, [IntPtr]1) | Out-Null; Start-Sleep -Milliseconds 15 }
+      Start-Sleep -Milliseconds 150
+      [BJW]::PostMessage($h, 0x0100, [IntPtr]13, [IntPtr]0x001C0001) | Out-Null
+      [BJW]::PostMessage($h, 0x0102, [IntPtr]13, [IntPtr]0x001C0001) | Out-Null
+      [BJW]::PostMessage($h, 0x0101, [IntPtr]13, [IntPtr]0x001C0001) | Out-Null
+      for ($i = 0; $i -lt 12; $i++) { Start-Sleep -Milliseconds 250; if (-not [BJW]::IsWindowVisible($h)) { $fOk = $true; break } }
+      if ($fOk) { $fVaqt = Get-Date; Write-Output 'FOKUSSIZ_OK' }
+    }
+    if (-not $fOk) {
+      # 2) Klaviatura orqali (eski usul): oyna oldinga olinadi, maydon tozalanib parol yoziladi, keyin oldingi oyna qaytariladi
+      [BJW]::ShowWindow($h, 9) | Out-Null
+      [BJW]::SetForegroundWindow($h) | Out-Null
+      Start-Sleep -Milliseconds 250
+      if ([BJW]::GetForegroundWindow() -ne $h) { $sh.AppActivate([int]$pi) | Out-Null; [System.Windows.Forms.SendKeys]::SendWait('%'); [BJW]::SetForegroundWindow($h) | Out-Null; Start-Sleep -Milliseconds 250 }
+      if ([BJW]::GetForegroundWindow() -ne $h) { Write-Output ('FOKUS ' + $t); $korilgan[$k] = Get-Date; continue }
+      [System.Windows.Forms.SendKeys]::SendWait('^a{DEL}' + $yoz + '{ENTER}')
+      Start-Sleep -Milliseconds 400
+      if ($oldin -ne [IntPtr]::Zero -and $oldin -ne $h) { [BJW]::SetForegroundWindow($oldin) | Out-Null }
+    }
     $korilgan[$k] = Get-Date
     Write-Output ('YOZILDI ' + $t)
     # Himoya: 40 soniyada 3 martadan ko'p so'ralsa — parol qabul qilinmayapti; yozishni to'xtatamiz (takror yozmaslik uchun)
@@ -386,13 +411,16 @@ function parolBoshla(f) {
     const ps1 = path.join(app.getPath('userData'), 'eimzo.ps1');
     fs.writeFileSync(ps1, EIMZO_PS, 'utf8');
     p = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', ps1], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-    p.stdin.write(parol + '\r\n');
+    p.stdin.write(parol + '\r\n' + (cfg.eimzoFokussiz === false ? 'K' : 'F') + '\r\n');
+    let fAyt = false;
     let n = 0, oy = 0; const t0 = Date.now();
     p.stdout.on('data', (d) => {
       for (const q of String(d).split(/\r?\n/).filter(Boolean)) {
         if (/^YOZILDI/.test(q)) { n++; if (n <= 3 || n % 10 === 0) log((f.nom || f.id) + ': 🔑 E-IMZO paroli avtomatik kiritildi (' + n + ')'); }
         else if (/^XATO/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO oynasi parol kiritilgach yopilmadi — parol noto\'g\'ri bo\'lishi mumkin, Ishchi\'da «🔑 E-IMZO» ni qayta kiriting'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmadi — tekshiring'); }
-        else if (/^FOKUS/.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
+        else if (/^FOKUSSIZ_OK/.test(q)) { if (!fAyt) { fAyt = true; log((f.nom || f.id) + ': 🔑 parol klaviaturasiz kiritilmoqda — kompyuterda bemalol ishlash mumkin'); } }
+        else if (/^FOKUSSIZ_YOQ/.test(q)) { cfg.eimzoFokussiz = false; saqla(); log((f.nom || f.id) + ': klaviaturasiz parol kiritish bu kompyuterda ishlamadi — eski usulga (klaviatura orqali) qaytildi'); }
+        else if (/^FOKUS /.test(q)) log((f.nom || f.id) + ': E-IMZO oynasiga fokus berilmadi — qo\'lda kiriting');
         else if (/^TAKROR/.test(q)) { log((f.nom || f.id) + ': ❗ E-IMZO parolni qayta-qayta so\'rayapti — parol shu kalitga mos emas yoki noto\'g\'ri kalit tanlangan. Robot yozishni TO\'XTATDI, qo\'lda kiriting va «🔑 E-IMZO» parolini tekshiring'); bildir('AL-BIRJACHIM — ' + (f.nom || 'firma'), 'E-IMZO paroli qabul qilinmayapti — robot yozishni to\'xtatdi'); }
         else if (/^TAYYOR/.test(q)) log((f.nom || f.id) + ': E-IMZO yozuvchi tayyor — oynani kutmoqda');
         else if (/^TIP_YOQ/.test(q)) log((f.nom || f.id) + ': ❗ E-IMZO yozuvchi ishga tushmadi (Windows .NET komponenti yuklanmadi)');
