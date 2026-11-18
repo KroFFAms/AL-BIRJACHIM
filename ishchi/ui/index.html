@@ -121,6 +121,7 @@ function chiz() {
     '<div class="ac-btns">' +
       (f.holat === 'kirish kerak' || f.holat === 'yangi' ? '<button class="ac" data-k="' + f.id + '">🔑 Kirish</button>' : '<button data-y="' + f.id + '"' + (H.ishlayapti ? ' disabled' : '') + '>🔄 Yig\'ish</button>') +
       (f.platforma === 'xarid' ? '<button data-e="' + f.id + '" title="E-IMZO parolini saqlash — robot imzolashda o\'zi kiritadi (faqat shu kompyuterda, shifrlangan)">🔑 E-IMZO' + ((H.eimzo || []).includes(f.id) ? ' ✓' : '') + '</button>' : '') +
+      (f.platforma === 'xarid' ? '<button data-i="' + f.id + '" title="Firma INN (YaTT — PINFL): bir marta kiritiladi, robot kalitni shu raqam bo\'yicha topadi">INN' + (f.inn ? ' ✓' : '') + '</button>' : '') +
       '<button data-s="' + f.id + '" title="Kabinet oynasini ko\'rsatish">👁</button>' +
       '<button class="no" data-d="' + f.id + '" title="Olib tashlash">✕</button>' +
     '</div></div>').join('') : '<div class="mu">Hali firma yo\'q. Yuqoridagi «➕ Firma qo\'shish» ni bosing.</div>';
@@ -133,7 +134,25 @@ document.addEventListener('click', (e) => {
   else if (b.dataset.s) ishchi.korsat(b.dataset.s);
   else if (b.dataset.d) ishchi.ochir(b.dataset.d);
   else if (b.dataset.e) eimzoSora(b.dataset.e);
+  else if (b.dataset.i) innSora(b.dataset.i);
 });
+function innSora(id) {
+  const f = (H && H.firmalar || []).find((x) => x.id === id) || {};
+  document.getElementById('ePd')?.remove();
+  const d = document.createElement('div'); d.id = 'ePd';
+  d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99';
+  d.innerHTML = '<div class="pn" style="width:420px;margin:0"><h3 style="margin:0 0 8px">INN — ' + esc(f.nom || 'Firma') + '</h3>' +
+    '<div class="mu" style="margin-bottom:10px">Firma INN (STIR, 9 raqam); YaTT uchun PINFL (14 raqam) ham bo\'ladi. Bir marta kiritiladi — robot kirishda E-IMZO kalitini shu raqam bo\'yicha topadi. Bo\'sh qoldirib saqlansa — o\'chadi.</div>' +
+    '<input type="text" inputmode="numeric" id="ePi" placeholder="masalan 307291211" style="width:100%;box-sizing:border-box;padding:8px;border-radius:7px;border:1px solid var(--ln);background:#0f1b2d;color:var(--tx);font-size:15px">' +
+    '<div class="row" style="margin-top:10px;justify-content:flex-end"><button id="ePx">Bekor</button><button class="ok" id="ePs">Saqlash</button></div></div>';
+  document.body.appendChild(d);
+  const i = d.querySelector('#ePi'); i.value = f.inn || '';
+  const yop = () => d.remove();
+  d.querySelector('#ePx').onclick = yop;
+  d.querySelector('#ePs').onclick = async () => { const r = await ishchi.inn(id, i.value); if (r && r.xato) { alert(r.xato); return; } yop(); };
+  i.onkeydown = (e) => { if (e.key === 'Enter') d.querySelector('#ePs').click(); if (e.key === 'Escape') yop(); };
+  i.focus();
+}
 function eimzoSora(id) {
   const f = id === '*' ? { nom: 'hamma firmalar' } : (H && H.firmalar || []).find((x) => x.id === id); const bor = (H && H.eimzo || []).includes(id);
   document.getElementById('ePd')?.remove();
