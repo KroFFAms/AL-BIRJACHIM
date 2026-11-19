@@ -36,6 +36,8 @@ function holatYubor() { send('holat', { versiya: app.getVersion(), firmalar: cfg
 function firma(id) { return cfg.firmalar.find((f) => f.id === id); }
 function yangila(f, o) { Object.assign(f, o); saqla(); holatYubor(); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Sahifa qotib qolsa (masalan sayt alert oynasini chiqarsa) kutish cheksiz bo'lmasligi uchun — har so'rovga muddat
+const kutib = (pr, ms, nom) => Promise.race([pr, new Promise((_, rj) => setTimeout(() => rj(new Error(nom)), ms))]);
 
 // ---------- Firma oynasi (har firma — alohida sessiya: persist:<id>) ----------
 const OYNA = {};
@@ -48,6 +50,10 @@ function firmaOynasi(f, korsat) {
       webPreferences: { partition: 'persist:' + f.id, backgroundThrottling: false, contextIsolation: true, sandbox: true },
     });
     w.webContents.setUserAgent(UA);
+    // Sayt alert/confirm oynasi chiqarsa, oyna butunlay qotib qoladi va robot javob kutib to'xtab qoladi —
+    // shuning uchun har sahifada ular o'chiriladi, «sahifadan chiqasizmi?» so'rovi esa avtomatik tasdiqlanadi.
+    w.webContents.on('dom-ready', () => { w.webContents.executeJavaScript('window.alert=function(){};window.confirm=function(){return true};window.prompt=function(){return null};1').catch(() => {}); });
+    w.webContents.on('will-prevent-unload', (e) => e.preventDefault());
     w.on('close', (e) => { if (!app.isQuitting) { e.preventDefault(); w.hide(); } });
     OYNA[f.id] = w;
   }
@@ -55,7 +61,7 @@ function firmaOynasi(f, korsat) {
   return w;
 }
 async function ochish(w, url) {
-  try { await w.loadURL(url); } catch (_) { /* sahifa yo'naltirsa ham davom etamiz */ }
+  try { await kutib(w.loadURL(url), 60e3, 'sahifa yuklanmadi'); } catch (_) { /* sahifa yo'naltirsa yoki qotsa ham davom etamiz */ }
   await sleep(2500);
 }
 function ichkaridami(f, w) {
@@ -230,13 +236,13 @@ async function yigish(id) {
     if (!ichkaridami(f, w)) { yangila(f, { holat: 'kirish kerak' }); log((f.nom || f.id) + ': sessiya tugagan — "Kirish" ni bosing'); return; }
     if (cfg.ses) await w.webContents.executeJavaScript('document.documentElement.dataset.birjachiSessiya=' + JSON.stringify(cfg.ses) + ';1');
     const js = await skriptOl(p.js);
-    await w.webContents.executeJavaScript('window.' + p.st + '=undefined;' + js + '\n;1');
+    await kutib(w.webContents.executeJavaScript('window.' + p.st + '=undefined;' + js + '\n;1'), 60e3, 'yig\'uvchi ishga tushmadi — sahifa javob bermadi');
     const t0 = Date.now();
     let S = null;
     while (Date.now() - t0 < 25 * 60e3) {
       await sleep(3000);
       if (w.isDestroyed()) throw new Error('oyna yopildi');
-      S = JSON.parse(await w.webContents.executeJavaScript('JSON.stringify(window.' + p.st + '||null)'));
+      S = JSON.parse(await kutib(w.webContents.executeJavaScript('JSON.stringify(window.' + p.st + '||null)'), 90e3, 'sahifa javob bermadi (oyna qotgan)'));
       if (S && S.korxona && f.nom !== S.korxona) yangila(f, { nom: S.korxona });
       if (S && S.bosqich && S.bosqich !== f.bosqich) yangila(f, { bosqich: String(S.bosqich).slice(0, 60) });
       if (S && S.holat && S.holat !== 'ISHLAYAPTI') break;
@@ -529,7 +535,7 @@ async function aktivFirmaIch(f) {
   while (Date.now() - t0 < 3 * 3600e3) {
     if (w.isDestroyed()) return 'oyna yopildi';
     let r = null;
-    try { r = JSON.parse(await w.webContents.executeJavaScript('JSON.stringify({ish:!!window.__BJ_AKTIV,m:(document.getElementById("bjAkM")||{}).innerText||""})')); } catch (_) { /* sahifa band */ }
+    try { r = JSON.parse(await kutib(w.webContents.executeJavaScript('JSON.stringify({ish:!!window.__BJ_AKTIV,m:(document.getElementById("bjAkM")||{}).innerText||""})'), 90e3, 'javob yo\'q')); } catch (_) { /* sahifa band */ }
     if (r) { nat = r.m; if (!r.ish) break; const q = /(\d+)\/(\d+)/.exec(r.m); yangila(f, { akHolat: q ? q[0] + ' …' : 'aktiv qilinmoqda…' }); }
     if (akToxta) { try { await w.webContents.executeJavaScript('window.__BJ_AKTIV&&(window.__BJ_AKTIV.stop=true);1'); } catch (_) { /* */ } await sleep(6000); yangila(f, { akHolat: 'to\'xtatildi' }); try { w.hide(); } catch (_) { /* */ } return 'to\'xtatildi'; }
     await sleep(4000);
