@@ -98,7 +98,8 @@ async function __kalitTanla(nom, inn) {
   };
   // Ro'yxat E-IMZO'dan asta-sekin to'ladi: soni o'zgarmay qolguncha (yoki kerakli kalit chiqquncha) qayta-qayta oxirigacha o'qiladi
   const oqi = async () => { yig(); if (vp) for (let y = 0; y < 30000; y += 100) { vp.scrollTop = y; vp.dispatchEvent(new Event('scroll')); await sl(90); yig(); if (vp.scrollTop + vp.clientHeight >= vp.scrollHeight - 2) break; } };
-  for (let u = 0, oldin = -1; u < 6; u++) { await oqi(); if (K.size && K.size === oldin) break; oldin = K.size; await sl(1500); }
+  // Ro'yxat bo'sh bo'lsa — E-IMZO hali kalitlarni bermagan: uzoqroq kutamiz (60 soniyagacha)
+  for (let u = 0, oldin = -1; u < 24; u++) { await oqi(); if (K.size && K.size === oldin) break; oldin = K.size; await sl(K.size ? 1200 : 2500); }
   const yaroqli = [...K.values()].filter((k) => !k.eskirgan && k.yur);
   const teng = (L, m) => L.length > 1 && L[0][m] === L[1][m] && L[0].qisqa !== L[1].qisqa;
   // INN (yoki PINFL) saqlangan bo'lsa — kalit shu raqam bo'yicha olinadi (nom yozilishiga bog'liq emas); bir nechta bo'lsa — yuridik va eng yangisi
@@ -434,7 +435,10 @@ while ($true) {
     Write-Output ('YOZILDI ' + $t)
     # Himoya: 40 soniyada 3 martadan ko'p so'ralsa — parol qabul qilinmayapti; yozishni to'xtatamiz (takror yozmaslik uchun)
     $yozuvlar = @($yozuvlar | Where-Object { ((Get-Date) - $_).TotalSeconds -lt 40 }) + (Get-Date)
-    if ($yozuvlar.Count -ge 3) { Write-Output 'TAKROR'; exit }
+    if ($yozuvlar.Count -ge 3) {
+      if ($fRuxsat) { $fRuxsat = $false; $yozuvlar = @(); Write-Output 'FOKUSSIZ_YOQ' }  # avval klaviatura usuliga qaytamiz
+      else { Write-Output 'TAKROR'; exit }
+    }
   }
   foreach ($k in @($korilgan.Keys)) { if (-not $hozir.ContainsKey($k)) { $korilgan.Remove($k) } }
   Start-Sleep -Milliseconds 500
