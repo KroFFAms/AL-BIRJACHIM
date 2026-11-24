@@ -256,7 +256,11 @@
               }
             } catch (_) { /* suratsiz tekshiriladi */ }
             const nomT = (tovarNs && tovarNs.querySelector('.ng-value') ? tovarNs.querySelector('.ng-value').textContent.trim() : '') || z.nom;
-            const ar = await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: nomT, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus, rasmlar: rasm }) }).then((r) => r.json()).catch(() => null);
+            const __sig = (() => { try { return JSON.stringify([z.id, ta ? ta.value : '', gv('product_mark'), gv('product_manafacturer'), xus, rasm.map((q) => q.id)]); } catch (_) { return ''; } })();
+            // Xarajatni tejash: o'zgarmagan oferta ikkinchi marta AI'ga yuborilmaydi — oldingi javobi saqlanib ishlatiladi
+            const __kesh = (() => { try { const c = JSON.parse(localStorage.getItem('bj_ai_' + z.id) || 'null'); return (c && c.sig === __sig && c.ar) ? c.ar : null; } catch (_) { return null; } })();
+            const ar = __kesh || await fetch('https://dbdtnujcospnsuwwazbs.supabase.co/functions/v1/birja?ai_tekshir=1', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-sessiya': window.__BJ_SES }, body: JSON.stringify({ nom: nomT, marka: gv('product_mark'), ishlab: gv('product_manafacturer'), tavsif: ta ? ta.value : '', xususiyatlar: xus, rasmlar: rasm }) }).then((r) => r.json()).catch(() => null);
+            if (!__kesh && ar && ar.ok) { try { localStorage.setItem('bj_ai_' + z.id, JSON.stringify({ sig: __sig, ar, ts: Date.now() })); } catch (_) { /* joy yo'q */ } }
             if (ar && ar.ok && ar.holat === 'toxtat') aiToxta = (ar.muammolar || []).join('; ') || 'talabga mos emas';
             else if (ar && ar.ok && ar.holat === 'tuzatildi' && ta && ar.tavsif && ar.tavsif.trim() !== ta.value.trim()) {
               const st = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set; ta.focus(); st.call(ta, ar.tavsif); ['input', 'change', 'keyup', 'blur'].forEach((tt) => ta.dispatchEvent(new Event(tt, { bubbles: true }))); await sl(300);
