@@ -153,7 +153,7 @@ async function avtoKirish(f, w) {
   if (!nom && !f.inn) return 'nom yoq';
   const js = '(' + __kalitTanla.toString() + ')(' + JSON.stringify(nom) + ',' + JSON.stringify(f.inn || '') + ')';
   let r = '';
-  try { r = String(await w.webContents.executeJavaScript(js)); } catch (e) { r = 'XATO: ' + e.message; }
+  try { r = String(await kutib(w.webContents.executeJavaScript(js), 120e3, 'kalit tanlash javob bermadi')); } catch (e) { r = 'XATO: ' + e.message; }
   if (/^OK/.test(r)) log((f.nom || f.id) + ': 🤖 kalit tanlandi, kirilmoqda — ' + r.slice(4, 520));
   else log((f.nom || f.id) + ': avtomatik kirish bo\'lmadi (' + r.slice(0, 160) + ') — qo\'lda kiring');
   return r;
@@ -169,7 +169,7 @@ async function kirishUrin(f, w, start) {
     if (ichkaridami(f, w)) return true;
     if (!rol && kirishSahifasimi(w)) { // «Выбор роли» oynasi chiqqan bo'lsa — «Поставщик» tanlanadi
       try {
-        const rr = String(await w.webContents.executeJavaScript('(' + __rolTanla.toString() + ')(' + JSON.stringify(f.inn || '') + ')'));
+        const rr = String(await kutib(w.webContents.executeJavaScript('(' + __rolTanla.toString() + ')(' + JSON.stringify(f.inn || '') + ')'), 60e3, 'rol oynasi javob bermadi'));
         if (/^OK/.test(rr)) { rol = true; log((f.nom || f.id) + ': 🧭 rol tanlandi — ' + rr.slice(4, 200)); }
         else if (rr !== 'YOQ') log((f.nom || f.id) + ': rol tanlanmadi (' + rr + ')');
       } catch (_) { /* */ }
@@ -179,7 +179,7 @@ async function kirishUrin(f, w, start) {
   if (ichkaridami(f, w)) return true;
   // Kirish o'tmadi — sahifa qayerda to'xtaganini jurnalga yozamiz (sababini bilish uchun; parol/kalit yozilmaydi)
   try {
-    const d = await w.webContents.executeJavaScript('(()=>{const q=(s)=>[...document.querySelectorAll(s)].map((e)=>e.innerText.replace(/\\s+/g," ").trim()).filter(Boolean).join(" / ");return location.host+location.pathname+" | xabar: "+(q(".ant-notification,.ant-message,.ant-alert,.ant-modal,.ant-form-item-explain,[class*=error],[class*=toast]").slice(0,300)||"yo\'q")+" | sahifa: "+document.body.innerText.replace(/\\s+/g," ").trim().slice(0,260)})()');
+    const d = await kutib(w.webContents.executeJavaScript('(()=>{const q=(s)=>[...document.querySelectorAll(s)].map((e)=>e.innerText.replace(/\\s+/g," ").trim()).filter(Boolean).join(" / ");return location.host+location.pathname+" | xabar: "+(q(".ant-notification,.ant-message,.ant-alert,.ant-modal,.ant-form-item-explain,[class*=error],[class*=toast]").slice(0,300)||"yo\'q")+" | sahifa: "+document.body.innerText.replace(/\\s+/g," ").trim().slice(0,260)})()'), 30e3, 'sahifa javob bermadi');
     log((f.nom || f.id) + ': 🔎 kirish o\'tmadi, sahifa holati — ' + String(d).slice(0, 700));
   } catch (e) { log((f.nom || f.id) + ': 🔎 kirish o\'tmadi, sahifani o\'qib bo\'lmadi — ' + e.message); }
   return false;
@@ -217,7 +217,7 @@ async function kirish(id) {
 
 // ---------- Yig'ish (mavjud AL-BIRJACHIM yig'uvchisi: yigish.js / koop.js) ----------
 async function skriptOl(nom) {
-  const r = await net.fetch(BASE + nom + '?t=' + Date.now(), { cache: 'no-store' });
+  const r = await kutib(net.fetch(BASE + nom + '?t=' + Date.now(), { cache: 'no-store' }), 45e3, nom + ' yuklanmadi — tarmoq javob bermadi');
   if (!r.ok) throw new Error(nom + ' yuklanmadi: HTTP ' + r.status);
   return await r.text();
 }
@@ -234,7 +234,7 @@ async function yigish(id) {
       if (ichkaridami(f, w)) await ochish(w, p.start);
     }
     if (!ichkaridami(f, w)) { yangila(f, { holat: 'kirish kerak' }); log((f.nom || f.id) + ': sessiya tugagan — "Kirish" ni bosing'); return; }
-    if (cfg.ses) await w.webContents.executeJavaScript('document.documentElement.dataset.birjachiSessiya=' + JSON.stringify(cfg.ses) + ';1');
+    if (cfg.ses) await kutib(w.webContents.executeJavaScript('document.documentElement.dataset.birjachiSessiya=' + JSON.stringify(cfg.ses) + ';1'), 30e3, 'sahifa javob bermadi');
     const js = await skriptOl(p.js);
     await kutib(w.webContents.executeJavaScript('window.' + p.st + '=undefined;' + js + '\n;1'), 60e3, 'yig\'uvchi ishga tushmadi — sahifa javob bermadi');
     const t0 = Date.now();
@@ -263,7 +263,12 @@ async function hammasi() {
   if (akIsh) { keyingi = Date.now() + 10 * 60e3; clearTimeout(taymer); taymer = setTimeout(hammasi, 10 * 60e3); holatYubor(); return; }
   ishlayapti = true; holatYubor();
   log('Hamma firmalar yig\'ilmoqda…');
-  for (const f of cfg.firmalar) { if (f.ochiq === false) continue; await yigish(f.id); }
+  // Har firmaga umumiy chegara: biror qadam (sahifa, tarmoq, sayt javobi) qotib qolsa — tashlab, keyingisiga o'tamiz
+  for (const f of cfg.firmalar) {
+    if (f.ochiq === false) continue;
+    try { await kutib(yigish(f.id), 14 * 60e3, 'yig\'ish 14 daqiqada tugamadi — o\'tkazib yuborildi'); }
+    catch (e) { yangila(f, { holat: 'xato', xato: String(e && e.message || e).slice(0, 200), bosqich: '' }); log((f.nom || f.id) + ': ' + (e && e.message || e)); }
+  }
   ishlayapti = false;
   rejala();
   log('Tayyor. Keyingi yig\'ish: ' + (cfg.avto ? new Date(keyingi).toLocaleTimeString('ru-RU') : 'avtomatik o\'chiq'));
