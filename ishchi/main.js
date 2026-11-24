@@ -239,7 +239,7 @@ async function yigish(id) {
     await kutib(w.webContents.executeJavaScript('window.' + p.st + '=undefined;' + js + '\n;1'), 60e3, 'yig\'uvchi ishga tushmadi — sahifa javob bermadi');
     const t0 = Date.now();
     let S = null;
-    while (Date.now() - t0 < 25 * 60e3) {
+    while (Date.now() - t0 < 12 * 60e3) {
       await sleep(3000);
       if (w.isDestroyed()) throw new Error('oyna yopildi');
       S = JSON.parse(await kutib(w.webContents.executeJavaScript('JSON.stringify(window.' + p.st + '||null)'), 90e3, 'sahifa javob bermadi (oyna qotgan)'));
@@ -247,7 +247,7 @@ async function yigish(id) {
       if (S && S.bosqich && S.bosqich !== f.bosqich) yangila(f, { bosqich: String(S.bosqich).slice(0, 60) });
       if (S && S.holat && S.holat !== 'ISHLAYAPTI') break;
     }
-    if (!S || S.holat === 'ISHLAYAPTI') throw new Error('25 daqiqada tugamadi');
+    if (!S || S.holat === 'ISHLAYAPTI') throw new Error('12 daqiqada tugamadi — o\'tkazib yuborildi');
     if (S.holat === 'KIRISH_KERAK') { yangila(f, { holat: 'kirish kerak' }); log((f.nom || f.id) + ': kirish kerak'); return; }
     if (S.holat === 'XATO') throw new Error(S.xato || 'noma\'lum xato');
     const n = S.edokon_soni ?? S.soni ?? (S.natija && S.natija.edokon) ?? '';
@@ -654,7 +654,8 @@ ipcMain.handle('aktiv_toxta', () => { if (akIsh) { akToxta = true; log('⏹ Akti
 // «🔄 Yangilash» tugmasi: hozir tekshiradi, yangisi bo'lsa yuklab, darhol o'rnatib qayta ochadi
 ipcMain.handle('yangila', async () => {
   if (!autoUpdater) return { xato: 'Yangilash moduli yo\'q' };
-  if (akIsh || ishlayapti) return { xato: 'Robot band (yig\'ish/aktiv qilish) — tugagach yangilang' };
+  // Robot band bo'lsa ham yangilanadi: aks holda qotib qolgan yig'ish uni tuzatadigan versiyani o'rnatishga to'sqinlik qiladi
+  if (akIsh || ishlayapti) log('Yangilash: robot band edi — joriy ish to\'xtatilib yangilanadi');
   yangilaQol = true; log('🔄 Yangilanish tekshirilmoqda… (hozirgi: ' + app.getVersion() + ')');
   try { await autoUpdater.checkForUpdates(); } catch (e) { yangilaQol = false; return { xato: e.message }; }
   return { ok: true };
@@ -701,7 +702,7 @@ else {
         autoUpdater.on('update-available', (i) => log('🆕 Yangi versiya topildi: ' + i.version + ' — yuklanmoqda…'));
         autoUpdater.on('update-downloaded', (i) => {
           log('✅ ' + i.version + ' yuklandi — dastur qayta ochilganda o\'rnatiladi');
-          if (yangilaQol && !akIsh && !ishlayapti) { log('♻️ Yangi versiya o\'rnatilmoqda, dastur qayta ochiladi…'); app.isQuitting = true; setTimeout(() => autoUpdater.quitAndInstall(false, true), 800); return; }
+          if (yangilaQol) { log('♻️ Yangi versiya o\'rnatilmoqda, dastur qayta ochiladi…'); app.isQuitting = true; setTimeout(() => autoUpdater.quitAndInstall(false, true), 800); return; }
           bildir('AL-BIRJACHIM Ishchi', 'Yangi versiya ' + i.version + ' tayyor — dasturni yopib qayta oching');
         });
         autoUpdater.on('update-not-available', () => { if (yangilaQol) { log('✔ Eng yangi versiya o\'rnatilgan: ' + app.getVersion()); yangilaQol = false; } });
